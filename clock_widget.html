@@ -76,8 +76,8 @@
 
   #entry-canvas-wrap {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 380px;
+    height: 380px;
   }
   #entry-canvas-wrap canvas {
     border-radius: 50%;
@@ -214,7 +214,7 @@
   <div class="entry-clock" id="ec">
     <div class="entry-clock-label" id="ec-label">ВХОД В СДЕЛКУ</div>
     <div id="entry-canvas-wrap">
-      <canvas id="entryCanvas" width="120" height="120"></canvas>
+      <canvas id="entryCanvas" width="380" height="380"></canvas>
     </div>
     <div class="entry-mins" id="ec-mins">--</div>
 
@@ -314,7 +314,7 @@ function pad(n) { return String(n).padStart(2, '0'); }
 // ═══ CANVAS SETUP ═══
 const canvas = document.getElementById('entryCanvas');
 const ctx = canvas.getContext('2d');
-const EC = 60, ER = 57;
+const EC = 190, ER = 181;
 
 // ═══ AUDIO ═══
 let audioCtx = null;
@@ -474,7 +474,7 @@ function drawClock() {
     ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(Date.now() / (1000 / (2 * Math.PI))))
     : 1;
 
-  ctx.clearRect(0, 0, 120, 120);
+  ctx.clearRect(0, 0, 380, 380);
   ctx.globalAlpha = blinkAlpha;
 
   ctx.beginPath();
@@ -501,20 +501,20 @@ function drawClock() {
 
   const hAng = ((hours % 12) * 30 + minutes * 0.5 - 90) * Math.PI / 180;
   ctx.beginPath(); ctx.moveTo(EC, EC);
-  ctx.lineTo(EC + 30*Math.cos(hAng), EC + 30*Math.sin(hAng));
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.lineTo(EC + 95*Math.cos(hAng), EC + 95*Math.sin(hAng));
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
 
   const mAng = (minutes * 6 - 90) * Math.PI / 180;
   ctx.beginPath(); ctx.moveTo(EC, EC);
-  ctx.lineTo(EC + 44*Math.cos(mAng), EC + 44*Math.sin(mAng));
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.lineTo(EC + 140*Math.cos(mAng), EC + 140*Math.sin(mAng));
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.stroke();
 
   const sAng = (seconds * 6 - 90) * Math.PI / 180;
-  ctx.beginPath(); ctx.moveTo(EC - 10*Math.cos(sAng), EC - 10*Math.sin(sAng));
-  ctx.lineTo(EC + 50*Math.cos(sAng), EC + 50*Math.sin(sAng));
-  ctx.strokeStyle = handColor; ctx.lineWidth = 1; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(EC - 32*Math.cos(sAng), EC - 32*Math.sin(sAng));
+  ctx.lineTo(EC + 158*Math.cos(sAng), EC + 158*Math.sin(sAng));
+  ctx.strokeStyle = handColor; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
 
-  ctx.beginPath(); ctx.arc(EC, EC, 3.5, 0, 2*Math.PI);
+  ctx.beginPath(); ctx.arc(EC, EC, 10, 0, 2*Math.PI);
   ctx.fillStyle = '#fff'; ctx.fill();
   ctx.globalAlpha = 1;
 
