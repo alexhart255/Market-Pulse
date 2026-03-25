@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Циферблат · Вход в сделку</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f0f;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Цифровые часы над циферблатом */
+  .digital-time {
+    font-size: 13px;
+    color: #555;
+    letter-spacing: 0.15em;
+    margin-bottom: 10px;
+    transition: color 0.5s;
+  }
+  .digital-time.green { color: #1D9E75; }
+  .digital-time.red   { color: #E24B4A; }
+
+  /* Сам виджет циферблата */
+  .entry-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 14px 22px 16px;
+    transition: border-color 0.5s, background 0.5s, box-shadow 0.5s;
+    min-width: 180px;
+  }
+  .entry-clock.green {
+    border-color: #1D9E75;
+    background: #0d2018;
+    box-shadow: 0 0 24px 4px rgba(29,158,117,0.18);
+  }
+  .entry-clock.red {
+    border-color: #E24B4A;
+    background: #1e0d0d;
+    box-shadow: 0 0 24px 4px rgba(226,75,74,0.18);
+    animation: entryClockBlink 1s ease-in-out infinite;
+  }
+
+  @keyframes entryClockBlink {
+    0%,100% { background: #1e0d0d; box-shadow: 0 0 18px 2px rgba(226,75,74,0.13); border-color: #E24B4A; }
+    50%      { background: #3a1010; box-shadow: 0 0 32px 8px rgba(226,75,74,0.50); border-color: #ff6b6b; }
+  }
+
+  .entry-clock-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: #555;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    transition: color 0.5s;
+  }
+  .entry-clock-label.green { color: #1D9E75; }
+  .entry-clock-label.red   { color: #E24B4A; }
+
+  #entry-canvas-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+  #entry-canvas-wrap canvas {
+    border-radius: 50%;
+    display: block;
+  }
+
+  .entry-mins {
+    font-size: 11px;
+    margin-top: 10px;
+    color: #555;
+    letter-spacing: 0.05em;
+    transition: color 0.5s;
+    text-align: center;
+  }
+  .entry-mins.green { color: #1D9E75; }
+  .entry-mins.red   { color: #E24B4A; }
+
+  /* Контролы тиканья */
+  .tick-controls {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .tick-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 9px;
+    color: #666;
+    letter-spacing: 0.08em;
+    user-select: none;
+  }
+  .tick-checkbox-row input[type=checkbox] {
+    accent-color: #E24B4A;
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+  }
+
+  .tick-style-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tick-style-row button {
+    font-size: 11px;
+    background: #111;
+    color: #888;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    padding: 2px 7px;
+    cursor: pointer;
+    line-height: 1.4;
+  }
+  .tick-style-row button:hover { color: #fff; border-color: #555; }
+  #tickStyleLabel {
+    font-size: 10px;
+    color: #ccc;
+    min-width: 115px;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .tick-vol-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tick-vol-row span { font-size: 9px; color: #555; }
+  #tickVolume {
+    width: 90px;
+    accent-color: #E24B4A;
+    cursor: pointer;
+    height: 3px;
+  }
+
+  /* Зона UTC смещения внизу */
+  .tz-row {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 0.05em;
+  }
+  .utc-label {
+    color: #555;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .utc-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .utc-btn {
+    font-size: 12px;
+    background: #111;
+    color: #888;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    padding: 2px 8px;
+    cursor: pointer;
+    line-height: 1.4;
+    font-family: inherit;
+  }
+  .utc-btn:hover { color: #fff; border-color: #555; }
+  .utc-value {
+    font-size: 11px;
+    color: #ccc;
+    min-width: 68px;
+    text-align: center;
+    letter-spacing: 0.04em;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    padding: 2px 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="digital-time" id="digitalTime">--:--:--</div>
+
+  <div class="entry-clock" id="ec">
+    <div class="entry-clock-label" id="ec-label">ВХОД В СДЕЛКУ</div>
+    <div id="entry-canvas-wrap">
+      <canvas id="entryCanvas" width="120" height="120"></canvas>
+    </div>
+    <div class="entry-mins" id="ec-mins">--</div>
+
+    <div class="tick-controls">
+      <div class="tick-checkbox-row">
+        <input type="checkbox" id="tickEnabled" checked>
+        ТИКАНЬЕ
+      </div>
+      <div class="tick-style-row">
+        <button id="tickPrev">◀</button>
+        <span id="tickStyleLabel">🕐 Механические</span>
+        <button id="tickNext">▶</button>
+      </div>
+      <div class="tick-vol-row">
+        <span>🔈</span>
+        <input type="range" id="tickVolume" min="0" max="100" value="30">
+        <span>🔊</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tz-row">
+    <span class="utc-label">Часовой пояс:</span>
+    <div class="utc-controls">
+      <button class="utc-btn" id="utcMinus">−</button>
+      <span class="utc-value" id="utcDisplay">UTC+0</span>
+      <button class="utc-btn" id="utcPlus">+</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ UTC OFFSET ═══
+// Значение в минутах (−720 … +840)
+let utcOffsetMin = parseInt(localStorage.getItem('clockUtcOffset') ?? '60'); // default UTC+1 (Zurich winter)
+
+function clampOffset(v) { return Math.max(-720, Math.min(840, v)); }
+
+function formatUtc(min) {
+  const sign = min >= 0 ? '+' : '−';
+  const absMin = Math.abs(min);
+  const h = Math.floor(absMin / 60);
+  const m = absMin % 60;
+  return 'UTC' + sign + h + (m ? ':' + String(m).padStart(2,'0') : '');
+}
+
+function updateUtcDisplay() {
+  document.getElementById('utcDisplay').textContent = formatUtc(utcOffsetMin);
+}
+
+function saveOffset() {
+  localStorage.setItem('clockUtcOffset', String(utcOffsetMin));
+  updateUtcDisplay();
+}
+
+document.getElementById('utcMinus').addEventListener('click', () => {
+  utcOffsetMin = clampOffset(utcOffsetMin - 30);
+  saveOffset();
+});
+document.getElementById('utcPlus').addEventListener('click', () => {
+  utcOffsetMin = clampOffset(utcOffsetMin + 30);
+  saveOffset();
+});
+
+// Шаг 30 мин → по двойному клику меняем на 15 мин шаг
+let clickCount = 0, clickTimer = null;
+['utcMinus','utcPlus'].forEach(id => {
+  document.getElementById(id).addEventListener('dblclick', e => {
+    e.preventDefault();
+    // переключаем режим шага
+    stepMin = stepMin === 30 ? 15 : 30;
+  });
+});
+let stepMin = 30;
+// Переопределяем обработчики с учётом stepMin
+document.getElementById('utcMinus').onclick = () => {
+  utcOffsetMin = clampOffset(utcOffsetMin - stepMin);
+  saveOffset();
+};
+document.getElementById('utcPlus').onclick = () => {
+  utcOffsetMin = clampOffset(utcOffsetMin + stepMin);
+  saveOffset();
+};
+
+updateUtcDisplay();
+
+// Получить текущее время с учётом UTC смещения
+function getNow() {
+  const now = new Date();
+  // UTC timestamp + offset
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + utcOffsetMin * 60000);
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// ═══ CANVAS SETUP ═══
+const canvas = document.getElementById('entryCanvas');
+const ctx = canvas.getContext('2d');
+const EC = 60, ER = 57;
+
+// ═══ AUDIO ═══
+let audioCtx = null;
+function getACtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function soundBell() {
+  const c = getACtx();
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine'; o.frequency.value = 880;
+  g.gain.setValueAtTime(0.4, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.8);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + 0.8);
+}
+
+function soundTrill() {
+  const c = getACtx();
+  [440, 523, 659, 784, 1047].forEach((freq, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = c.currentTime + i * 0.07;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.18);
+  });
+}
+
+// ═══ TICK SOUNDS ═══
+const tickStyleList = [
+  { key: 'classic', label: '🕐 Механические' },
+  { key: 'soft',    label: '🔔 Мягкий клик'  },
+  { key: 'metro',   label: '⏱ Метроном'      },
+  { key: 'vintage', label: '🕰 Старинные'     },
+  { key: 'elec',    label: '💡 Электронный'   },
+];
+let tickStyleIdx = 0;
+
+function updateTickStyleLabel() {
+  document.getElementById('tickStyleLabel').textContent = tickStyleList[tickStyleIdx].label;
+}
+
+document.getElementById('tickPrev').addEventListener('click', () => {
+  tickStyleIdx = (tickStyleIdx - 1 + tickStyleList.length) % tickStyleList.length;
+  updateTickStyleLabel();
+  if (document.getElementById('tickEnabled').checked) playTick();
+});
+document.getElementById('tickNext').addEventListener('click', () => {
+  tickStyleIdx = (tickStyleIdx + 1) % tickStyleList.length;
+  updateTickStyleLabel();
+  if (document.getElementById('tickEnabled').checked) playTick();
+});
+
+const tickSounds = {
+  classic: (ctx, vol, beat) => {
+    const freq = beat % 2 === 0 ? 1800 : 1200;
+    const g = ctx.createGain(), o = ctx.createOscillator();
+    const dist = ctx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) curve[i] = (i < 128 ? i/128 : (i-256)/128) * 3;
+    dist.curve = curve;
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol * 0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
+    o.connect(dist); dist.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.05);
+  },
+  soft: (ctx, vol) => {
+    const g = ctx.createGain();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++)
+      data[i] = (Math.random()*2-1) * Math.exp(-i/(data.length*0.15));
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900; f.Q.value=0.8;
+    g.gain.setValueAtTime(vol * 0.55, ctx.currentTime);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  },
+  metro: (ctx, vol) => {
+    const g = ctx.createGain();
+    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
+    o1.type='triangle'; o1.frequency.value=1500;
+    o2.type='triangle'; o2.frequency.value=800;
+    g.gain.setValueAtTime(vol*0.25, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime+0.06);
+    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+    o1.start(); o1.stop(ctx.currentTime+0.07);
+    o2.start(); o2.stop(ctx.currentTime+0.07);
+  },
+  vintage: (ctx, vol, beat) => {
+    const freq = beat%2===0 ? 420 : 320;
+    const g = ctx.createGain(), o = ctx.createOscillator();
+    const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=600; f.Q.value=4;
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol*0.4, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.18);
+    o.connect(f); f.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.2);
+  },
+  elec: (ctx, vol) => {
+    const g = ctx.createGain(), o = ctx.createOscillator();
+    o.type='sine'; o.frequency.value=2200;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(vol*0.15, ctx.currentTime+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.045);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.05);
+  }
+};
+
+let tickBeat = 0;
+function playTick() {
+  const c = getACtx();
+  if (c.state === 'suspended') c.resume();
+  const style = tickStyleList[tickStyleIdx].key;
+  const vol = parseInt(document.getElementById('tickVolume').value) / 100;
+  const fn = tickSounds[style];
+  if (fn) fn(c, vol, tickBeat);
+  tickBeat++;
+}
+
+let tickLastSec = -1;
+setInterval(() => {
+  if (!document.getElementById('tickEnabled').checked) return;
+  const now = getNow();
+  const min = now.getMinutes(), sec = now.getSeconds();
+  const isRed = min >= 50 || min < 5;
+  if (!isRed) return;
+  if (sec === tickLastSec) return;
+  tickLastSec = sec;
+  playTick();
+}, 100);
+
+document.addEventListener('click', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  getACtx();
+}, { once: false });
+
+// ═══ DRAW CLOCK ═══
+let prevClockRed = null;
+
+function drawClock() {
+  const zh = getNow();
+  const hours = zh.getHours(), minutes = zh.getMinutes(), seconds = zh.getSeconds();
+  const isRed = minutes >= 50 || minutes < 5;
+
+  const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
+  const handColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const borderColor = isRed ? '#E24B4A' : '#1D9E75';
+
+  const blinkAlpha = isRed
+    ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(Date.now() / (1000 / (2 * Math.PI))))
+    : 1;
+
+  ctx.clearRect(0, 0, 120, 120);
+  ctx.globalAlpha = blinkAlpha;
+
+  ctx.beginPath();
+  ctx.arc(EC, EC, ER, 0, 2*Math.PI);
+  ctx.fillStyle = faceColor;
+  ctx.fill();
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  for (let i = 0; i < 60; i++) {
+    const ang = (i * 6 - 90) * Math.PI / 180;
+    const isMajor = i % 5 === 0;
+    const r1 = isMajor ? ER - 9 : ER - 6;
+    ctx.beginPath();
+    ctx.moveTo(EC + r1*Math.cos(ang), EC + r1*Math.sin(ang));
+    ctx.lineTo(EC + (ER-2)*Math.cos(ang), EC + (ER-2)*Math.sin(ang));
+    ctx.strokeStyle = tickColor;
+    ctx.lineWidth = isMajor ? 2 : 0.8;
+    ctx.globalAlpha = isMajor ? 0.9 : 0.4;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  const hAng = ((hours % 12) * 30 + minutes * 0.5 - 90) * Math.PI / 180;
+  ctx.beginPath(); ctx.moveTo(EC, EC);
+  ctx.lineTo(EC + 30*Math.cos(hAng), EC + 30*Math.sin(hAng));
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+
+  const mAng = (minutes * 6 - 90) * Math.PI / 180;
+  ctx.beginPath(); ctx.moveTo(EC, EC);
+  ctx.lineTo(EC + 44*Math.cos(mAng), EC + 44*Math.sin(mAng));
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+
+  const sAng = (seconds * 6 - 90) * Math.PI / 180;
+  ctx.beginPath(); ctx.moveTo(EC - 10*Math.cos(sAng), EC - 10*Math.sin(sAng));
+  ctx.lineTo(EC + 50*Math.cos(sAng), EC + 50*Math.sin(sAng));
+  ctx.strokeStyle = handColor; ctx.lineWidth = 1; ctx.lineCap = 'round'; ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(EC, EC, 3.5, 0, 2*Math.PI);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.globalAlpha = 1;
+
+  const cls = isRed ? 'red' : 'green';
+  const ecEl  = document.getElementById('ec');
+  const ecLab = document.getElementById('ec-label');
+  const ecMin = document.getElementById('ec-mins');
+  const dtEl  = document.getElementById('digitalTime');
+
+  if (ecEl)  ecEl.className  = 'entry-clock ' + cls;
+  if (ecLab) {
+    ecLab.className = 'entry-clock-label ' + cls;
+    ecLab.textContent = isRed ? 'ВХОД ЗАПРЕЩЁН' : 'ВХОД В СДЕЛКУ';
+  }
+  if (dtEl) {
+    dtEl.className = 'digital-time ' + cls;
+    dtEl.textContent = pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+  }
+  if (ecMin) {
+    let minsText;
+    if (minutes >= 50)     minsText = 'последние ' + (60 - minutes) + ' мин часа';
+    else if (minutes < 5)  minsText = 'первые ' + (5 - minutes) + ' мин · ещё запрещён';
+    else                   minsText = 'до конца часа: ' + (60 - minutes) + ' мин';
+    ecMin.className = 'entry-mins ' + cls;
+    ecMin.textContent = minsText;
+  }
+
+  if (prevClockRed !== null) {
+    if (isRed  && !prevClockRed) soundBell();
+    if (!isRed && prevClockRed)  soundTrill();
+  }
+  prevClockRed = isRed;
+}
+
+function loop() {
+  drawClock();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
