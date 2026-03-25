@@ -230,7 +230,7 @@
       </div>
       <div class="tick-vol-row">
         <span>🔈</span>
-        <input type="range" id="tickVolume" min="0" max="100" value="30">
+        <input type="range" id="tickVolume" min="0" max="100" value="50">
         <span>🔊</span>
       </div>
     </div>
@@ -354,11 +354,12 @@ const tickStyleList = [
   { key: 'vintage', label: '🕰 Старинные'     },
   { key: 'elec',    label: '💡 Электронный'   },
 ];
-let tickStyleIdx = 0;
+let tickStyleIdx = 1;
 
 function updateTickStyleLabel() {
   document.getElementById('tickStyleLabel').textContent = tickStyleList[tickStyleIdx].label;
 }
+updateTickStyleLabel();
 
 document.getElementById('tickPrev').addEventListener('click', () => {
   tickStyleIdx = (tickStyleIdx - 1 + tickStyleList.length) % tickStyleList.length;
