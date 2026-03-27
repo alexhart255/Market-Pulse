@@ -433,7 +433,9 @@
     </div>
     <div id="radioStep2" style="display:none;">
       <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🎵 Открыть <span id="radioStationName" style="color:#00e5ff;"></span></div>
-
+      <button onclick="openRadio('fullscreen')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🖥</span><div><div style="font-weight:700;">В этом окне</div><div style="font-size:11px;color:#4a6080;">Полноэкранный режим</div></div>
+      </button>
       <button onclick="openRadio('half')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
         <span style="font-size:18px;">◱</span><div><div style="font-weight:700;">Половина экрана</div><div style="font-size:11px;color:#4a6080;">Рядом с приложением</div></div>
       </button>
@@ -2406,6 +2408,12 @@ function openRadio(mode){
 
 document.addEventListener('DOMContentLoaded', function(){
   updateUtcLabel();
+  // Удалить музыкальную ссылку из localStorage если она там есть
+  try{
+    const saved = JSON.parse(localStorage.getItem(LINKS_KEY)||'[]');
+    const cleaned = saved.filter(l => l.url !== 'https://www.internetradio-schweiz.ch/us/101-smooth-jazz');
+    if(cleaned.length !== saved.length) localStorage.setItem(LINKS_KEY, JSON.stringify(cleaned));
+  }catch(e){}
 });
 
 </script>
