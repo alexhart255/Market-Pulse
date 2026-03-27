@@ -198,6 +198,13 @@
   <button onclick="document.getElementById('investingFS').style.cssText='display:none;';document.getElementById('investingBackBtn').style.display='none';document.getElementById('appRoot').style.display='';document.getElementById('investingFSFrame').src='about:blank';window.scrollTo(0,0);"
     style="background:#0b1522;border:1px solid #1a5a2a;border-radius:9px;padding:8px 18px;color:#60cc80;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">← Вернуться в Market Pulse</button>
 </div>
+<div id="radioFS" style="display:none;position:fixed;inset:0;z-index:1500;background:#0f0f0f;">
+  <iframe id="radioFSFrame" src="about:blank" style="width:100%;height:100%;border:none;display:block;"></iframe>
+</div>
+<div id="radioBackBtn" style="display:none;position:fixed;top:14px;right:18px;z-index:1600;">
+  <button onclick="document.getElementById('radioFS').style.display='none';document.getElementById('radioBackBtn').style.display='none';document.getElementById('appRoot').style.display='';document.getElementById('radioFSFrame').src='about:blank';window.scrollTo(0,0);"
+    style="background:#0b1522;border:1px solid #1a5a2a;border-radius:9px;padding:8px 18px;color:#60cc80;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">← Вернуться в Market Pulse</button>
+</div>
 <!-- ЦИФЕРБЛАТ INLINE PANEL — outside appRoot -->
 <div id="clockInlinePanel" style="display:none;position:fixed;inset:0;z-index:1500;background:#080c14;align-items:center;justify-content:center;flex-direction:column;padding:30px 20px;">
   <div id="clockWidgetContent" style="width:100%;max-width:540px;display:flex;flex-direction:column;align-items:center;"></div>
@@ -262,6 +269,7 @@
     <button class="tab" onclick="openDashMenu(this)">🏦 Биржи</button>
     <button class="tab" onclick="openClockMenu(this)">🕐 Циферблат</button>
     <button class="tab" onclick="openCorr()">📊 Корреляции</button>
+    <button class="tab" onclick="openRadioMenu(this)">🎵 Радио</button>
   </div>
 
   <div class="tab-panel active" id="tab-today">
@@ -398,6 +406,47 @@
     <button onclick="openDash('window')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
       <span style="font-size:18px;">⧉</span><div><div style="font-weight:700;">Отдельное окно</div><div style="font-size:11px;color:#4a6080;">Новое окно браузера</div></div>
     </button>
+  </div>
+</div>
+
+
+<!-- RADIO MENU -->
+<div id="radioMenuOverlay" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:2000;">
+  <div id="radioMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:300px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
+    <div id="radioStep1">
+      <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🎵 Выбери радиостанцию</div>
+      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/us/chilltrax','Chilltrax')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🌊</span><div><div style="font-weight:700;">Chilltrax</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      </button>
+      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/gb/chill','Chill GB')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🇬🇧</span><div><div style="font-weight:700;">Chill (GB)</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      </button>
+      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/us/101-smooth-jazz','101 Smooth Jazz')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🎷</span><div><div style="font-weight:700;">101 Smooth Jazz</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      </button>
+      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/au/sbs-chill','SBS Chill')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🇦🇺</span><div><div style="font-weight:700;">SBS Chill (AU)</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      </button>
+      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/1fm-chillout-lounge','1FM Chillout Lounge')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">☁️</span><div><div style="font-weight:700;">1FM Chillout Lounge</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      </button>
+    </div>
+    <div id="radioStep2" style="display:none;">
+      <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🎵 Открыть <span id="radioStationName" style="color:#00e5ff;"></span></div>
+
+      <button onclick="openRadio('half')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">◱</span><div><div style="font-weight:700;">Половина экрана</div><div style="font-size:11px;color:#4a6080;">Рядом с приложением</div></div>
+      </button>
+      <button onclick="openRadio('tab')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🗂️</span><div><div style="font-weight:700;">Новая вкладка</div><div style="font-size:11px;color:#4a6080;">Открыть рядом в браузере</div></div>
+      </button>
+      <button onclick="openRadio('window')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">⧉</span><div><div style="font-weight:700;">Отдельное окно</div><div style="font-size:11px;color:#4a6080;">Новое окно браузера</div></div>
+      </button>
+      <button onclick="document.getElementById('radioStep1').style.display='';document.getElementById('radioStep2').style.display='none';" style="display:flex;align-items:center;gap:8px;width:100%;background:transparent;border:none;border-radius:9px;padding:8px 12px;color:#4a6080;font-family:'Syne',sans-serif;font-size:11px;cursor:pointer;margin-top:4px;" onmouseover="this.style.color='#c0d8f0'" onmouseout="this.style.color='#4a6080'">
+        ← Назад
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1699,17 +1748,9 @@ function startEdit(id){
 // ═══════════════════════════════════════════
 const LINKS_KEY='mp_links';
 const DEFAULT_LINKS=[
-  {id:'default_1',url:'https://x.com/DeItaone',title:'x.com/DeItaone',openMode:'tab'},
-  {id:'default_2',url:'https://www.internetradio-schweiz.ch/us/101-smooth-jazz',title:'Internetradio-smooth-jazz',openMode:'tab'}
+  {id:'default_1',url:'https://x.com/DeItaone',title:'x.com/DeItaone',openMode:'tab'}
 ];
-function getLinks(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(LINKS_KEY)||'[]');
-    const savedIds=new Set(saved.map(l=>l.id));
-    const defs=DEFAULT_LINKS.filter(d=>!savedIds.has(d.id));
-    return [...saved,...defs];
-  }catch(e){return DEFAULT_LINKS;}
-}
+function getLinks(){try{const saved=JSON.parse(localStorage.getItem(LINKS_KEY)||'[]');const savedIds=new Set(saved.map(l=>l.id));const defs=DEFAULT_LINKS.filter(d=>!savedIds.has(d.id));return[...saved,...defs];}catch(e){return DEFAULT_LINKS;}}
 function setLinks(l){ localStorage.setItem(LINKS_KEY,JSON.stringify(l)); }
 function saveLink(){
   const urlEl=document.getElementById('linkUrl');
@@ -2321,6 +2362,48 @@ loop();
 // ═══════════════════════════════════════════
 // INIT ON LOAD
 // ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════
+// RADIO MENU
+// ═══════════════════════════════════════════
+let _radioUrl = '';
+function openRadioMenu(btn){
+  const overlay=document.getElementById('radioMenuOverlay');
+  const box=document.getElementById('radioMenuBox');
+  const rect=btn.getBoundingClientRect();
+  document.getElementById('radioStep1').style.display='';
+  document.getElementById('radioStep2').style.display='none';
+  overlay.style.display='block';
+  const top=rect.bottom+6;
+  const left=Math.min(rect.left, window.innerWidth-310);
+  box.style.top=top+'px';
+  box.style.left=Math.max(8,left)+'px';
+}
+function selectRadio(url, name){
+  _radioUrl = url;
+  document.getElementById('radioStationName').textContent = name;
+  document.getElementById('radioStep1').style.display='none';
+  document.getElementById('radioStep2').style.display='';
+}
+function openRadio(mode){
+  document.getElementById('radioMenuOverlay').style.display='none';
+  const url = _radioUrl;
+  if(mode==='fullscreen'){
+    document.getElementById('appRoot').style.display='none';
+    const fs=document.getElementById('radioFS');
+    fs.style.display='block';
+    document.getElementById('radioFSFrame').src=url;
+    document.getElementById('radioBackBtn').style.display='flex';
+    window.scrollTo(0,0);
+  } else if(mode==='half'){
+    window.open(url,'_blank','width='+Math.round(screen.width/2)+',height='+screen.height+',left='+Math.round(screen.width/2)+',top=0,menubar=no,toolbar=no,location=yes,scrollbars=yes');
+  } else if(mode==='tab'){
+    const w=window.open(url,'_blank'); if(!w) window.open(url,'_blank');
+  } else if(mode==='window'){
+    const w=window.open(url,'_blank','width=1280,height=860,menubar=no,toolbar=no,location=no,scrollbars=yes'); if(!w) alert('Разреши всплывающие окна.');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   updateUtcLabel();
 });
