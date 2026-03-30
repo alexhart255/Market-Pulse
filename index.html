@@ -236,6 +236,16 @@
     <div class="today-count pulse-wrap" id="todayCount">0</div>
   </div>
 
+  <!-- POWELL REMINDER BANNER -->
+  <div id="powellReminder" style="display:none;background:linear-gradient(135deg,#1a1000 0%,#221500 100%);border:1px solid #aa6600;border-left:3px solid var(--orange);border-radius:10px;padding:14px 18px;margin-bottom:16px;align-items:center;gap:14px;">
+    <div style="font-size:26px;flex-shrink:0;">⚠️</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;color:var(--orange);letter-spacing:.5px;margin-bottom:3px;">ОБНОВИ КАЛЕНДАРЬ ВЫСТУПЛЕНИЙ ФРС</div>
+      <div id="powellReminderText" style="font-size:12px;color:#c8a060;line-height:1.5;"></div>
+    </div>
+    <a href="https://www.federalreserve.gov/newsevents/calendar.htm" target="_blank" style="flex-shrink:0;background:#aa6600;color:#fff;border:none;border-radius:7px;padding:8px 14px;font-family:Syne,sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;">Открыть календарь ФРС →</a>
+  </div>
+
   <!-- UTC OFFSET BAR -->
   <div style="display:flex;align-items:center;gap:8px;padding:4px 0 10px;flex-wrap:wrap;">
     <span style="font-size:11px;color:var(--muted);">🕐 Мой UTC:</span>
@@ -244,6 +254,7 @@
       onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
       onkeydown="if(event.key==='Enter')applyMyUtc()">
     <button onclick="applyMyUtc()" style="background:#0d1e30;border:1px solid var(--accent);border-radius:6px;padding:4px 10px;color:var(--accent);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">ОК</button>
+    <button onclick="applyAutoUtc()" id="autoUtcBtn" style="background:#0d2018;border:1px solid #1a5a28;border-radius:6px;padding:4px 10px;color:#60cc80;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='#1a5a28'" title="Определить мой часовой пояс автоматически">⟳ Авто</button>
     <span id="utcActiveLabel" style="font-size:11px;color:#80e040;font-family:'Space Mono',monospace;"></span>
     <span id="utcResetBtn" onclick="resetMyUtc()" style="display:none;font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">сбросить</span>
     <div style="margin-left:auto;display:flex;gap:8px;">
@@ -652,19 +663,41 @@ function resetMyUtc(){
   updateUtcLabel();
   render();
 }
-function updateUtcLabel(){
+function applyAutoUtc(){
+  // Определяем смещение браузера — работает для любого часового пояса автоматически
+  const offsetMin = -new Date().getTimezoneOffset(); // в минутах
+  const offsetH = offsetMin / 60;
+  setMyUtc(offsetH);
+  const inp = document.getElementById('utcOffsetInput');
+  if(inp) inp.value = offsetH >= 0 ? '+' + offsetH : offsetH;
+  updateUtcLabel(true);
+  // Мигание кнопки подтверждение
+  const btn = document.getElementById('autoUtcBtn');
+  if(btn){ btn.textContent='✓ Применено'; btn.style.borderColor='var(--green)'; setTimeout(()=>{btn.textContent='⟳ Авто';btn.style.borderColor='#1a5a28';},1500); }
+  render();
+}
+function updateUtcLabel(isAuto){
   const v=getMyUtc();
   const lbl=document.getElementById('utcActiveLabel');
   const btn=document.getElementById('utcResetBtn');
   const inp=document.getElementById('utcOffsetInput');
+  const autoBtnEl=document.getElementById('autoUtcBtn');
   if(v!==null){
     const s=v>=0?'+':'';
-    if(lbl) lbl.textContent='UTC'+s+v+' активен';
+    const autoTag=isAuto?' · Авто':'';
+    if(lbl) lbl.textContent='UTC'+s+v+' активен'+autoTag;
     if(btn) btn.style.display='';
-    if(inp) inp.value=v;
+    if(inp) inp.value=(v>=0?'+':'')+v;
+    // подсветить кнопку Авто если режим авто
+    if(autoBtnEl){
+      autoBtnEl.style.background=isAuto?'#0a2a18':'#0d2018';
+      autoBtnEl.style.borderColor=isAuto?'var(--green)':'#1a5a28';
+      autoBtnEl.style.color=isAuto?'var(--green)':'#60cc80';
+    }
   } else {
     if(lbl) lbl.textContent='';
     if(btn) btn.style.display='none';
+    if(autoBtnEl){ autoBtnEl.style.background='#0d2018'; autoBtnEl.style.borderColor='#1a5a28'; autoBtnEl.style.color='#60cc80'; }
   }
 }
 
@@ -1098,6 +1131,31 @@ YouTube — отдельная метрика: показывает конкур
     warn: null,
   },
 
+  powell_speech: {
+    what: `Помимо официальных заседаний FOMC, глава ФРС Пауэлл регулярно выступает публично: в университетах, на конференциях, в Конгрессе (слушания), на форумах центральных банков. Эти выступления <strong>планируются заранее</strong> и публикуются в официальном календаре ФРС на federalreserve.gov.
+
+Форматы бывают разные: речь с текстом (самый важный), модерируемая дискуссия (вопросы-ответы), парламентские слушания (Конгресс задаёт вопросы).`,
+    why: `Между заседаниями FOMC Пауэлл — главный канал коммуникации ФРС с рынком. Трейдеры анализируют каждое слово: изменился ли тон? Появились ли новые намёки на будущие решения?
+
+<strong>Особенно важны:</strong> выступления за 1–2 недели до заседания FOMC — это последний шанс ФРС «подготовить» рынок к решению. Также важны слушания в Конгрессе (~2 раза в год) — там Пауэлл обязан отвечать на прямые вопросы.`,
+    numbers: [
+      {val:'~15–20', label:'выступлений в год'},
+      {val:'±0.5–2%', label:'движение рынка'},
+      {val:'2×/год', label:'слушания в Конгрессе'},
+      {val:'мин.', label:'реакция рынка'},
+    ],
+    up: {
+      label:'Голубиный тон — рынок РАСТЁТ ↑',
+      text:'Пауэлл говорит о прогрессе в борьбе с инфляцией, упоминает риски для занятости, намекает на снижение ставок → акции и крипто растут, доллар слабеет.',
+    },
+    down: {
+      label:'Ястребиный тон — рынок ПАДАЕТ ↓',
+      text:'Пауэлл говорит что инфляция ещё не побеждена, ставки останутся высокими, экономика сильная → акции падают, доллар крепнет.',
+    },
+    tip: `<strong>Ключевые фразы на которые реагирует рынок:</strong> «data dependent» (нейтрально), «not in a hurry» (ставки останутся высоко → плохо), «progress on inflation» (хорошо), «prepared to adjust» (намёк на изменение политики). Смотрите на тон <em>относительно прошлого выступления</em> — стал жёстче или мягче?`,
+    warn: `<strong>Важно:</strong> не все выступления одинаково значимы. Речь в Гарварде или на закрытом форуме — меньше влияние. Слушания в Конгрессе и выступления на крупных конференциях (ECB Forum, Jackson Hole) — максимальное влияние. Следите за контекстом события.`,
+  },
+
   jackson: {
     what: `Каждый август в курортном городке Джексон Хол (Вайоминг, США) ФРС проводит <strong>ежегодный симпозиум</strong> — конференцию центральных банкиров со всего мира. Председатель ФРС Пауэлл выступает с речью.`,
     why: `Джексон Хол исторически стал местом где ФРС <em>объявляет о серьёзных изменениях в политике</em>. Именно здесь в 2022 Пауэлл сказал что будет «причинять боль» экономике чтобы победить инфляцию — рынок упал на 3% за день.
@@ -1164,6 +1222,16 @@ const EVENTS = [
     schedule:(y,m,d)=>{const dates=['2025-1-22','2025-2-19','2025-3-26','2025-4-16','2025-5-21','2025-6-18','2025-7-16','2025-8-20','2025-9-17','2025-10-15','2025-11-19','2025-12-17','2026-1-21','2026-2-19','2026-3-25','2026-4-15','2026-5-20','2026-6-17','2026-7-15','2026-8-19','2026-9-16','2026-10-14','2026-11-18','2026-12-16'];return dates.includes(`${y}-${m}-${d}`);}},
   {id:'eia_crude',title:'🛢️ EIA — Запасы сырой нефти (США)',desc:'Еженедельные данные по запасам нефти от Управления энергетической информации США. Каждую среду.',impact:'Запасы растут → нефть дешевеет. Запасы падают → нефть дорожает. Движение нефти ±1–3%',time:'16:30 CET',priority:'medium',tag:'econ',
     schedule:(y,m,d)=>new Date(y,m-1,d).getDay()===3},
+  {id:'powell_speech',title:'🎤 Речь Пауэлла / Выступление ФРС',desc:'Публичное выступление главы ФРС вне заседания FOMC — конференции, университеты, слушания в Конгрессе.',impact:'Рынок следит за каждым словом. Ястребиный тон → акции падают. Голубиный → ралли. Движение ±0.5–2%',time:'Зависит от события',priority:'high',tag:'fed',
+    schedule:(y,m,d)=>{
+      const dow=new Date(y,m-1,d).getDay();
+      if(dow===2){
+        if(m===2&&d>=11&&d<=17)return true;
+        if(m===7&&d>=9&&d<=15)return true;
+      }
+      const manual=['2026-3-30','2026-4-16','2026-5-1','2026-6-2','2026-6-24','2026-7-10','2026-9-4','2026-10-2','2026-11-6','2026-12-4'];
+      return manual.includes(`${y}-${m}-${d}`);
+    }},
 ];
 
 // ═══════════════════════════════════════════
@@ -1351,6 +1419,30 @@ function render(){
 
   // ALL
   document.getElementById('allList').innerHTML=[...EVENTS].sort((a,b)=>priorityOrder(a.priority)-priorityOrder(b.priority)).map((e,i)=>eventCardHTMLEx(e,i*30,getNextDate(e))).join('');
+
+  // POWELL REMINDER
+  (function(){
+    const MANUAL_POWELL=['2026-3-30','2026-4-16','2026-5-1','2026-6-2','2026-6-24','2026-7-10','2026-9-4','2026-10-2','2026-11-6','2026-12-4'];
+    const todayMs=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+    const futureDates=MANUAL_POWELL.map(s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).getTime();}).filter(t=>t>=todayMs).sort((a,b)=>a-b);
+    const banner=document.getElementById('powellReminder');
+    const txt=document.getElementById('powellReminderText');
+    if(!banner||!txt)return;
+    const MONTHS_R=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    if(futureDates.length===0){
+      txt.innerHTML='Все внесённые даты выступлений уже прошли! Зайди на сайт ФРС и добавь новые даты в код (массив <b>manual</b> в событии <b>powell_speech</b>).';
+      banner.style.display='flex';
+    } else {
+      const lastDate=new Date(futureDates[futureDates.length-1]);
+      const daysLeft=Math.round((futureDates[futureDates.length-1]-todayMs)/(1000*60*60*24));
+      if(daysLeft<=45){
+        txt.innerHTML='Последняя внесённая дата выступления — <b>'+lastDate.getDate()+' '+MONTHS_R[lastDate.getMonth()]+' '+lastDate.getFullYear()+' г.</b> (через '+daysLeft+' дн.). Зайди на сайт ФРС и добавь актуальные даты в код.';
+        banner.style.display='flex';
+      } else {
+        banner.style.display='none';
+      }
+    }
+  })();
 }
 
 function switchTab(name,el){
