@@ -270,6 +270,7 @@
     <button class="tab" onclick="openClockMenu(this)">🕐 Циферблат</button>
     <button class="tab" onclick="openCorr()">📊 Корреляции</button>
     <button class="tab" onclick="openRadioMenu(this)">🎵 Радио</button>
+    <button class="tab" onclick="switchTab('utcconv',this)">🌐 UTC</button>
   </div>
 
   <div class="tab-panel active" id="tab-today">
@@ -348,6 +349,55 @@
     <div id="catFilterBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:32px;"></div>
     <select id="noteFilter" onchange="renderNotes()" style="display:none;"></select>
     <div id="notesList"></div>
+  </div>
+
+  <!-- UTC CONVERTER TAB -->
+  <div class="tab-panel" id="tab-utcconv">
+    <div class="section-title">Конвертер UTC времени</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- LEFT: Input UTC -->
+      <div style="background:#0d1e30;border:1px solid var(--border);border-radius:14px;padding:24px;">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">🌍 Время встречи</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <span style="font-size:11px;color:var(--muted);min-width:50px;">UTC±</span>
+          <input id="utcconv-offset-input" type="number" min="-12" max="14" step="0.5" value="0"
+            style="width:70px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="utcConvCalc()">
+          <span id="utcconv-offset-badge" style="font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;">UTC+0</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--muted);min-width:50px;">Время</span>
+          <input id="utcconv-time-input" type="time" value="12:00"
+            style="background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:18px;outline:none;color-scheme:dark;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="utcConvCalc()">
+        </div>
+      </div>
+      <!-- RIGHT: My timezone result (auto Zurich + manual override) -->
+      <div style="background:#0a1f14;border:1px solid #1a4028;border-radius:14px;padding:24px;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#4a8060;">📍 У меня</div>
+          <div id="utcconv-my-badge" style="font-size:11px;color:#4a8060;font-family:'Space Mono',monospace;background:#060e0a;border:1px solid #1a4028;border-radius:5px;padding:3px 8px;"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <span style="font-size:11px;color:#4a8060;min-width:50px;">UTC±</span>
+          <input id="utcconv-my-offset" type="number" min="-12" max="14" step="0.5" placeholder="авто"
+            style="width:70px;background:#060e0a;border:1px solid #1a4028;border-radius:7px;padding:7px 10px;color:#80e0a0;font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='#1a4028'"
+            oninput="utcConvCalc()">
+          <button onclick="utcConvReset()" title="Сбросить на Цюрих"
+            style="font-size:10px;background:transparent;border:1px solid #1a4028;border-radius:5px;color:#4a8060;padding:4px 8px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;"
+            onmouseover="this.style.color='var(--green)';this.style.borderColor='var(--green)'"
+            onmouseout="this.style.color='#4a8060';this.style.borderColor='#1a4028'">↺ Цюрих</button>
+        </div>
+        <div style="padding:16px 14px;background:#060e0a;border-radius:8px;border:1px solid #1a4028;text-align:center;">
+          <div id="utcconv-result" style="font-family:'Space Mono',monospace;font-size:36px;color:var(--green);letter-spacing:4px;font-weight:700;">—</div>
+          <div id="utcconv-dayshift" style="font-size:11px;color:#4a8060;margin-top:6px;min-height:16px;"></div>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 40px rgba(0,255,136,.05);"></div>
+      </div>
+    </div>
   </div>
 
   <!-- LINKS TAB -->
@@ -2411,7 +2461,59 @@ document.addEventListener('DOMContentLoaded', function(){
     const cleaned=saved.filter(l=>l.url!=='https://www.internetradio-schweiz.ch/us/101-smooth-jazz');
     if(cleaned.length!==saved.length) localStorage.setItem(LINKS_KEY,JSON.stringify(cleaned));
   }catch(e){}
+  utcConvCalc();
 });
+
+// ═══════════════════════════════════════════
+// UTC CONVERTER
+// ═══════════════════════════════════════════
+function getZurichOffsetHours(){
+  try {
+    const now = new Date();
+    const zurichStr = now.toLocaleString('en-US', {timeZone: 'Europe/Zurich', hour12: false, hour:'2-digit', minute:'2-digit'});
+    const utcStr   = now.toLocaleString('en-US', {timeZone: 'UTC',            hour12: false, hour:'2-digit', minute:'2-digit'});
+    const toMins = s => { const p = s.split(':'); return parseInt(p[0])*60 + parseInt(p[1]); };
+    let diff = toMins(zurichStr) - toMins(utcStr);
+    if(diff > 720) diff -= 1440;
+    if(diff < -720) diff += 1440;
+    return diff / 60;
+  } catch(e) { return 1; }
+}
+function utcConvReset(){
+  document.getElementById('utcconv-my-offset').value = '';
+  utcConvCalc();
+}
+const UTC_WORLD_ZONES=[];
+function utcConvCalc(){
+  const timeVal=document.getElementById('utcconv-time-input').value||'12:00';
+  const srcOffset=parseFloat(document.getElementById('utcconv-offset-input').value)||0;
+  const manualInput=document.getElementById('utcconv-my-offset').value;
+  const myOffset = manualInput !== '' ? parseFloat(manualInput) : getZurichOffsetHours();
+  const isAuto = manualInput === '';
+
+  const fmtOff=v=>'UTC'+(v>=0?'+':'')+v;
+  document.getElementById('utcconv-offset-badge').textContent=fmtOff(srcOffset);
+  const badge = document.getElementById('utcconv-my-badge');
+  badge.textContent = fmtOff(myOffset) + (isAuto ? ' · Цюрих' : '');
+
+  const [hStr,mStr]=timeVal.split(':');
+  const h=parseInt(hStr)||0;
+  const m=parseInt(mStr)||0;
+
+  const srcMins=h*60+m;
+  const utc0Mins=srcMins - srcOffset*60;
+  const myMins=utc0Mins + myOffset*60;
+
+  const fmtMins=mins=>{const nm=((mins%1440)+1440)%1440;const hh=Math.floor(nm/60);const mm=nm%60;return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');};
+
+  document.getElementById('utcconv-result').textContent=fmtMins(myMins);
+
+  const dayDiff=Math.floor(myMins/1440);
+  const ds=document.getElementById('utcconv-dayshift');
+  if(dayDiff>0) ds.textContent='(следующий день)';
+  else if(dayDiff<0) ds.textContent='(предыдущий день)';
+  else ds.textContent='(тот же день)';
+}
 
 </script>
 </body>
