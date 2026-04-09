@@ -97,6 +97,37 @@
   }
   .next-open .t-my { font-size: 14px; font-weight: 500; }
   footer { margin-top: 1.5rem; font-size: 11px; color: var(--text3); text-align: center; }
+
+  /* ── Баннер-напоминание об обновлении праздников ── */
+  #holiday-reminder {
+    display: none;
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    z-index: 9999; width: calc(100% - 2rem); max-width: 540px;
+    background: #FFF3E0; border: 1px solid #F0A840;
+    border-radius: var(--radius-lg); padding: 14px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    font-size: 13px; color: #5C3200;
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown {
+    from { opacity:0; transform: translateX(-50%) translateY(-10px); }
+    to   { opacity:1; transform: translateX(-50%) translateY(0); }
+  }
+  @media (prefers-color-scheme: dark) {
+    #holiday-reminder { background: #3A2000; border-color: #C07800; color: #FFDAA0; }
+  }
+  #holiday-reminder .remind-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  #holiday-reminder .remind-title {
+    font-size: 14px; font-weight: 600; margin-bottom: 5px;
+  }
+  #holiday-reminder .remind-body { line-height: 1.5; }
+  #holiday-reminder .remind-close {
+    cursor: pointer; font-size: 18px; line-height: 1; opacity: 0.6;
+    flex-shrink: 0; padding: 0 4px;
+  }
+  #holiday-reminder .remind-close:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -111,6 +142,20 @@
 </div>
 
 <div class="grid" id="grid"></div>
+
+<!-- Баннер напоминания (показывается в декабре каждого года) -->
+<div id="holiday-reminder">
+  <div class="remind-head">
+    <div>
+      <div class="remind-title">🗓 Пора обновить праздники!</div>
+      <div class="remind-body">
+        Наступает новый год — нужно прошить актуальные праздники бирж.<br>
+        Передай этот файл ИИ для обновления данных на <strong id="remind-next-year"></strong> год.
+      </div>
+    </div>
+    <span class="remind-close" onclick="dismissReminder()" title="Закрыть">✕</span>
+  </div>
+</div>
 
 <footer>Обновляется каждые 30 сек · DST рассчитывается автоматически · Праздники 2025–2026</footer>
 
@@ -624,6 +669,43 @@ function render() {
 document.getElementById('utcOffset').addEventListener('input', render);
 render();
 setInterval(render, 30000);
+
+// ─── НАПОМИНАНИЕ ОБ ОБНОВЛЕНИИ ПРАЗДНИКОВ ────────────────────────────────────
+// Показывается каждый год в декабре (и в январе, если не закрыли).
+// Закрытие запоминается в localStorage с ключом вида "reminderDismissed_2025".
+// В следующем году ключ другой → напоминание всплывает снова автоматически.
+(function() {
+  const now = new Date();
+  const month = now.getMonth(); // 0=янв, 11=дек
+  const year  = now.getFullYear();
+
+  // Показываем в декабре (11) или январе (0) текущего года
+  const isReminderPeriod = (month === 11) || (month === 0);
+  if (!isReminderPeriod) return;
+
+  // Ключ привязан к году, в котором напоминание было закрыто
+  const dismissKey = 'reminderDismissed_' + year;
+
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(dismissKey) === '1'; } catch(e) {}
+
+  if (!dismissed) {
+    const nextYear = (month === 11) ? year + 1 : year;
+    const el = document.getElementById('holiday-reminder');
+    const ny = document.getElementById('remind-next-year');
+    if (ny) ny.textContent = nextYear;
+    if (el) el.style.display = 'block';
+  }
+})();
+
+function dismissReminder() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const dismissKey = 'reminderDismissed_' + year;
+  try { localStorage.setItem(dismissKey, '1'); } catch(e) {}
+  const el = document.getElementById('holiday-reminder');
+  if (el) el.style.display = 'none';
+}
 </script>
 </body>
 </html>
