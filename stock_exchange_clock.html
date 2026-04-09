@@ -61,11 +61,15 @@
   .card-title { font-size: 15px; font-weight: 500; }
   .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
-  .badge.open { background: #EAF3DE; color: #3B6D11; }
-  .badge.closed { background: #FCEBEB; color: #A32D2D; }
+  .badge.open    { background: #EAF3DE; color: #3B6D11; }
+  .badge.closed  { background: #FCEBEB; color: #A32D2D; }
+  .badge.holiday { background: #FFF3E0; color: #8D5100; }
+  .badge.weekend { background: #F3EDFC; color: #5D35A0; }
   @media (prefers-color-scheme: dark) {
-    .badge.open { background: #27500A; color: #C0DD97; }
-    .badge.closed { background: #791F1F; color: #F7C1C1; }
+    .badge.open    { background: #27500A; color: #C0DD97; }
+    .badge.closed  { background: #791F1F; color: #F7C1C1; }
+    .badge.holiday { background: #5C3200; color: #FFDAA0; }
+    .badge.weekend { background: #2E1A55; color: #C9ABFF; }
   }
   .row {
     display: flex; justify-content: space-between; align-items: center;
@@ -78,6 +82,14 @@
   .dst {
     font-size: 11px; color: var(--text3); margin-top: 8px;
     border-top: 0.5px solid var(--border); padding-top: 8px;
+  }
+  .holiday-note {
+    font-size: 11px; color: #8D5100; margin-top: 6px;
+    border-top: 0.5px solid var(--border); padding-top: 8px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .holiday-note { color: #FFDAA0; }
   }
   .next-open {
     display: flex; justify-content: space-between; align-items: center;
@@ -100,9 +112,10 @@
 
 <div class="grid" id="grid"></div>
 
-<footer>Обновляется каждые 30 сек · DST рассчитывается автоматически</footer>
+<footer>Обновляется каждые 30 сек · DST рассчитывается автоматически · Праздники 2025–2026</footer>
 
 <script>
+// ─── БИРЖИ ──────────────────────────────────────────────────────────────────
 const EX = [
   {
     id: 'asx', name: 'ASX', city: 'Сидней', country: 'Австралия', tz: 'Australia/Sydney',
@@ -112,7 +125,7 @@ const EX = [
     id: 'tse', name: 'TSE', city: 'Токио', country: 'Япония', tz: 'Asia/Tokyo',
     sessions: [
       { name: 'Утренняя сессия', open: [9,0], close: [11,30] },
-      { name: 'Дневная сессия', open: [12,30], close: [15,30] }
+      { name: 'Дневная сессия',  open: [12,30], close: [15,30] }
     ]
   },
   {
@@ -122,8 +135,167 @@ const EX = [
   {
     id: 'nyse', name: 'NYSE / NASDAQ', city: 'Нью-Йорк', country: 'США', tz: 'America/New_York',
     sessions: [{ name: 'Основная сессия', open: [9,30], close: [16,0] }]
+  },
+  {
+    id: 'cme', name: 'CME Globex', city: 'Чикаго', country: 'США', tz: 'America/Chicago',
+    // Работает почти круглосуточно: вс 17:00 – пт 16:00, перерыв каждый день 16:00–17:00
+    // overnight=true означает особый режим — сессия переходит через полночь
+    overnight: true,
+    sessions: [
+      { name: 'Основная сессия', open: [17,0], close: [16,0] }
+    ]
   }
 ];
+
+// ─── ПРАЗДНИКИ ───────────────────────────────────────────────────────────────
+// Формат: 'YYYY-MM-DD': 'Название праздника'
+// Ключ — дата в локальном времени биржи (в её часовом поясе).
+
+const HOLIDAYS = {
+  // ── ASX (Австралия / Сидней) ─────────────────────────────────────────────
+  asx: {
+    // 2025
+    '2025-01-01': 'Новый год',
+    '2025-01-27': 'День Австралии (перенос)',
+    '2025-04-18': 'Страстная пятница',
+    '2025-04-21': 'Пасхальный понедельник',
+    '2025-04-25': 'День АНЗАК',
+    '2025-06-09': 'День рождения королевы (NSW)',
+    '2025-08-11': 'День банка (NSW)',
+    '2025-12-25': 'Рождество',
+    '2025-12-26': 'День подарков',
+    // 2026
+    '2026-01-01': 'Новый год',
+    '2026-01-26': 'День Австралии',
+    '2026-04-03': 'Страстная пятница',
+    '2026-04-06': 'Пасхальный понедельник',
+    '2026-04-27': 'День АНЗАК (перенос)',
+    '2026-06-08': 'День рождения короля (NSW)',
+    '2026-12-25': 'Рождество',
+    '2026-12-28': 'День подарков (перенос)',
+  },
+  // ── TSE (Япония / Токио) ─────────────────────────────────────────────────
+  tse: {
+    // 2025
+    '2025-01-01': 'Новый год',
+    '2025-01-02': 'Новый год (доп.)',
+    '2025-01-03': 'Новый год (доп.)',
+    '2025-01-13': 'День совершеннолетия',
+    '2025-02-11': 'День основания государства',
+    '2025-02-24': 'День императора',
+    '2025-03-21': 'День весеннего равноденствия',
+    '2025-04-29': 'День Сёва',
+    '2025-05-03': 'День Конституции',
+    '2025-05-04': 'День зелени',
+    '2025-05-05': 'День детей',
+    '2025-05-06': 'День детей (перенос)',
+    '2025-07-21': 'День моря',
+    '2025-08-11': 'День гор',
+    '2025-09-15': 'День уважения к пожилым',
+    '2025-09-23': 'День осеннего равноденствия',
+    '2025-10-13': 'День спорта',
+    '2025-11-03': 'День культуры',
+    '2025-11-24': 'День благодарности труда (перенос)',
+    '2025-12-31': 'Канун Нового года (биржа закрыта)',
+    // 2026
+    '2026-01-01': 'Новый год',
+    '2026-01-02': 'Новый год (доп.)',
+    '2026-01-03': 'Новый год (доп.)',
+    '2026-01-12': 'День совершеннолетия',
+    '2026-02-11': 'День основания государства',
+    '2026-02-23': 'День императора',
+    '2026-03-20': 'День весеннего равноденствия',
+    '2026-04-29': 'День Сёва',
+    '2026-05-03': 'День Конституции',
+    '2026-05-04': 'День зелени',
+    '2026-05-05': 'День детей',
+    '2026-05-06': 'День детей (перенос)',
+    '2026-07-20': 'День моря',
+    '2026-08-11': 'День гор',
+    '2026-09-21': 'День уважения к пожилым',
+    '2026-09-22': 'Мост (неторговый день)',
+    '2026-09-23': 'День осеннего равноденствия',
+    '2026-10-12': 'День спорта',
+    '2026-11-03': 'День культуры',
+    '2026-11-23': 'День благодарности труда',
+    '2026-12-31': 'Канун Нового года (биржа закрыта)',
+  },
+  // ── LSE (Великобритания / Лондон) ────────────────────────────────────────
+  lse: {
+    // 2025
+    '2025-01-01': 'Новый год',
+    '2025-04-18': 'Страстная пятница',
+    '2025-04-21': 'Пасхальный понедельник',
+    '2025-05-05': 'Ранний май (Bank Holiday)',
+    '2025-05-26': 'Весенний Bank Holiday',
+    '2025-08-25': 'Летний Bank Holiday',
+    '2025-12-25': 'Рождество',
+    '2025-12-26': 'День подарков',
+    // 2026
+    '2026-01-01': 'Новый год',
+    '2026-04-03': 'Страстная пятница',
+    '2026-04-06': 'Пасхальный понедельник',
+    '2026-05-04': 'Ранний май (Bank Holiday)',
+    '2026-05-25': 'Весенний Bank Holiday',
+    '2026-08-31': 'Летний Bank Holiday',
+    '2026-12-25': 'Рождество',
+    '2026-12-28': 'День подарков (перенос)',
+  },
+  // ── NYSE / NASDAQ (США / Нью-Йорк) ──────────────────────────────────────
+  nyse: {
+    // 2025
+    '2025-01-01': 'Новый год',
+    '2025-01-20': 'День Мартина Лютера Кинга',
+    '2025-02-17': 'День президентов',
+    '2025-04-18': 'Страстная пятница',
+    '2025-05-26': 'День памяти',
+    '2025-06-19': 'День Юнетинт',
+    '2025-07-04': 'День независимости',
+    '2025-09-01': 'День труда',
+    '2025-11-27': 'День благодарения',
+    '2025-12-25': 'Рождество',
+    // 2026
+    '2026-01-01': 'Новый год',
+    '2026-01-19': 'День Мартина Лютера Кинга',
+    '2026-02-16': 'День президентов',
+    '2026-04-03': 'Страстная пятница',
+    '2026-05-25': 'День памяти',
+    '2026-06-19': 'День Юнетинт',
+    '2026-07-03': 'День независимости (перенос)',
+    '2026-09-07': 'День труда',
+    '2026-11-26': 'День благодарения',
+    '2026-12-25': 'Рождество',
+  },
+  // ── CME / CBOE (США / Чикаго) ────────────────────────────────────────────
+  // Праздники совпадают с NYSE для акционных инструментов
+  cme: {
+    // 2025
+    '2025-01-01': 'Новый год',
+    '2025-01-20': 'День Мартина Лютера Кинга',
+    '2025-02-17': 'День президентов',
+    '2025-04-18': 'Страстная пятница',
+    '2025-05-26': 'День памяти',
+    '2025-06-19': 'День Юнетинт',
+    '2025-07-04': 'День независимости',
+    '2025-09-01': 'День труда',
+    '2025-11-27': 'День благодарения',
+    '2025-11-28': 'День благодарения (сокращ. сессия)', // early close, treated as holiday here
+    '2025-12-25': 'Рождество',
+    // 2026
+    '2026-01-01': 'Новый год',
+    '2026-01-19': 'День Мартина Лютера Кинга',
+    '2026-02-16': 'День президентов',
+    '2026-04-03': 'Страстная пятница',
+    '2026-05-25': 'День памяти',
+    '2026-06-19': 'День Юнетинт',
+    '2026-07-03': 'День независимости (перенос)',
+    '2026-09-07': 'День труда',
+    '2026-11-26': 'День благодарения',
+    '2026-12-25': 'Рождество',
+  }
+};
+
+// ─── ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ─────────────────────────────────────────────────
 
 function getOffMin(tz, date) {
   const d = date || new Date();
@@ -133,8 +305,8 @@ function getOffMin(tz, date) {
     const [h, mi, se] = tp.split(':');
     return new Date(Date.UTC(+y, +mo-1, +day, +h, +mi, +se));
   };
-  const u = d.toLocaleString('en-US', { timeZone: 'UTC', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const t = d.toLocaleString('en-US', { timeZone: tz,  hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const u = d.toLocaleString('en-US', { timeZone: 'UTC', hour12: false, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const t = d.toLocaleString('en-US', { timeZone: tz,  hour12: false, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
   return (p(t) - p(u)) / 60000;
 }
 
@@ -146,7 +318,71 @@ function conv(lh, lm, exchOff, targetOff) {
   return [Math.floor(t / 60), t % 60];
 }
 
+/** Возвращает дату в часовом поясе биржи как строку 'YYYY-MM-DD' */
+function localDateStr(tz, date) {
+  const d = date || new Date();
+  const [mo, day, yr] = d.toLocaleString('en-US', {
+    timeZone: tz, month:'2-digit', day:'2-digit', year:'numeric'
+  }).split('/');
+  return `${yr}-${mo}-${day}`;
+}
+
+/** Возвращает день недели (0=Sun) в часовом поясе биржи */
+function localDOW(tz, date) {
+  const d = date || new Date();
+  const s = d.toLocaleString('en-US', { timeZone: tz, weekday: 'short' });
+  return { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 }[s];
+}
+
+/** Проверяет праздник. Возвращает строку с именем праздника или null */
+function getHoliday(exch, date) {
+  const key = localDateStr(exch.tz, date);
+  return (HOLIDAYS[exch.id] && HOLIDAYS[exch.id][key]) || null;
+}
+
+/** Проверяет выходной (суббота/воскресенье в часовом поясе биржи) */
+function isWeekend(exch, date) {
+  const dow = localDOW(exch.tz, date);
+  return dow === 0 || dow === 6;
+}
+
+/** Специальная проверка для CME Globex (overnight режим: 17:00 вс – 16:00 пт, перерыв 16:00–17:00) */
+function isCMEOpen(now) {
+  const tz = 'America/Chicago';
+  const dow = localDOW(tz, now); // 0=Sun,1=Mon,...,6=Sat
+  const off = getOffMin(tz, now);
+  const cur = (now.getUTCHours() * 60 + now.getUTCMinutes() + off + 1440) % 1440; // минуты с начала чик. дня
+  // cur: текущее время в минутах (0=00:00, 1020=17:00, 960=16:00)
+
+  if (dow === 6) return false; // суббота — закрыто весь день
+
+  // Праздник: если сегодня праздник — считаем закрытым
+  // (проверяется снаружи в getStatus)
+
+  if (dow === 0) {
+    // Воскресенье: открыто только с 17:00 (1020 мин)
+    return cur >= 1020;
+  }
+  if (dow === 5) {
+    // Пятница: открыто до 16:00 (960 мин), перерыва нет — просто закрывается
+    return cur < 960;
+  }
+  // Пн–Чт: открыто 00:00–16:00 и 17:00–23:59 (перерыв 16:00–17:00)
+  return cur < 960 || cur >= 1020;
+}
+
 function isOpen(exch, now) {
+  if (getHoliday(exch, now)) return false;
+
+  if (exch.overnight) {
+    // Суббота — закрыто
+    if (localDOW(exch.tz, now) === 6) return false;
+    return isCMEOpen(now);
+  }
+
+  // Обычная биржа
+  if (isWeekend(exch, now)) return false;
+
   const off = getOffMin(exch.tz, now);
   const cur = (now.getUTCHours() * 60 + now.getUTCMinutes() + off + 1440) % 1440;
   return exch.sessions.some(s => {
@@ -155,46 +391,121 @@ function isOpen(exch, now) {
   });
 }
 
-// Returns { dayLabel, timeStr } for the next opening of an exchange in the user's local offset
+/** Возвращает статус биржи: 'open' | 'closed' | 'weekend' | 'holiday' */
+function getStatus(exch, now) {
+  if (getHoliday(exch, now)) return 'holiday';
+  if (exch.overnight) {
+    if (localDOW(exch.tz, now) === 6) return 'weekend'; // суббота
+    return isCMEOpen(now) ? 'open' : 'closed';
+  }
+  if (isWeekend(exch, now)) return 'weekend';
+  if (isOpen(exch, now))    return 'open';
+  return 'closed';
+}
+
+/** Следующее открытие биржи (с учётом выходных и праздников) */
 function nextOpen(exch, now, myOff) {
-  const DAYS_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-  // Search up to 7 days ahead, minute by minute is slow — iterate day by day
-  for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
-    // Try each session
+  const dowMap = { Sun:'Вс', Mon:'Пн', Tue:'Вт', Wed:'Ср', Thu:'Чт', Fri:'Пт', Sat:'Сб' };
+
+  for (let daysAhead = 0; daysAhead <= 14; daysAhead++) {
     for (const s of exch.sessions) {
-      // Build a Date for the candidate open moment (in exchange local time)
-      // We iterate: for daysAhead=0 we check if opening is still in the future today
       const candidate = new Date(now);
       candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
-      // Get exchange offset for that candidate day
+
+      // Пропускаем выходные
+      if (isWeekend(exch, candidate)) continue;
+      // Пропускаем праздники
+      if (getHoliday(exch, candidate)) continue;
+
       const exchOff = getOffMin(exch.tz, candidate);
-      // Exchange local midnight of candidate day (UTC ms)
       const exchLocalStr = candidate.toLocaleString('en-US', {
         timeZone: exch.tz, hour12: false,
-        year: 'numeric', month: '2-digit', day: '2-digit'
+        year:'numeric', month:'2-digit', day:'2-digit'
       });
       const [mo, day, yr] = exchLocalStr.split('/');
-      // Open time in UTC ms
-      const openUTC = Date.UTC(+yr, +mo - 1, +day, s.open[0] - Math.floor(exchOff/60), s.open[1] - (exchOff % 60));
+      const openUTC = Date.UTC(+yr, +mo-1, +day,
+        s.open[0] - Math.floor(exchOff/60),
+        s.open[1] - (exchOff % 60));
+
       if (openUTC > now.getTime()) {
-        // Compute open time in user's local offset
         const openDate = new Date(openUTC);
-        const userMin = (openDate.getUTCHours() * 60 + openDate.getUTCMinutes() + ((myOff % 1440) + 1440)) % 1440;
-        const userH = Math.floor(userMin / 60), userM = userMin % 60;
-        // Day label: use exchange local date for day-of-week
-        const exchOpenDate = new Date(openUTC);
-        // Show exchange local day name + date number
-        const exchDayStr = exchOpenDate.toLocaleString('en-US', { timeZone: exch.tz, weekday: 'short', day: 'numeric' });
-        // Convert to Russian weekday using JS
-        const dowIdx = new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, weekday: 'short' });
-        const dowMap = { Sun: 'Вс', Mon: 'Пн', Tue: 'Вт', Wed: 'Ср', Thu: 'Чт', Fri: 'Пт', Sat: 'Сб' };
-        const dayNum = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, day: 'numeric' })).padStart(2,'0');
-        const monthNum = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, month: 'numeric' })).padStart(2,'0');
-        const yearShort = new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, year: '2-digit' });
-        const dayLabel = (dowMap[dowIdx] || dowIdx) + ', ' + dayNum + '.' + monthNum + '.' + yearShort;
+        const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+        const userH = Math.floor(userMin/60), userM = userMin%60;
+        const dowIdx = openDate.toLocaleString('en-US', { timeZone: exch.tz, weekday:'short' });
+        const dayNum   = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, day:'numeric' })).padStart(2,'0');
+        const monthNum = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, month:'numeric' })).padStart(2,'0');
+        const yearShort = new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, year:'2-digit' });
+        const dayLabel = (dowMap[dowIdx]||dowIdx) + ', ' + dayNum + '.' + monthNum + '.' + yearShort;
         return { dayLabel, timeStr: fmt(userH, userM), sessionName: s.name };
       }
     }
+  }
+  return null;
+}
+
+/** Следующее открытие CME (из перерыва или после выходных/праздника) */
+function nextOpenCME(exch, now, myOff) {
+  const dowMap = { Sun:'Вс', Mon:'Пн', Tue:'Вт', Wed:'Ср', Thu:'Чт', Fri:'Пт', Sat:'Сб' };
+  const tz = exch.tz;
+
+  // Случай 1: будний день, сейчас перерыв (16:00–17:00) → открытие сегодня в 17:00
+  const dow = localDOW(tz, now);
+  if (dow >= 1 && dow <= 4 && !getHoliday(exch, now)) {
+    const off = getOffMin(tz, now);
+    const cur = (now.getUTCHours() * 60 + now.getUTCMinutes() + off + 1440) % 1440;
+    if (cur >= 960 && cur < 1020) {
+      // Открытие в 17:00 сегодня по чикаго
+      const todayStr = now.toLocaleString('en-US', { timeZone: tz, month:'2-digit', day:'2-digit', year:'numeric' });
+      const [mo, day, yr] = todayStr.split('/');
+      const openUTC = Date.UTC(+yr, +mo-1, +day, 17 - Math.floor(off/60), -(off%60));
+      const openDate = new Date(openUTC);
+      const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+      const dowIdx = openDate.toLocaleString('en-US', { timeZone: tz, weekday:'short' });
+      const dayNum = String(openDate.toLocaleString('en-US', { timeZone: tz, day:'numeric' })).padStart(2,'0');
+      const monthNum = String(openDate.toLocaleString('en-US', { timeZone: tz, month:'numeric' })).padStart(2,'0');
+      const yearShort = openDate.toLocaleString('en-US', { timeZone: tz, year:'2-digit' });
+      return {
+        dayLabel: (dowMap[dowIdx]||dowIdx) + ', ' + dayNum + '.' + monthNum + '.' + yearShort,
+        timeStr: fmt(Math.floor(userMin/60), userMin%60),
+        sessionName: 'Globex'
+      };
+    }
+  }
+
+  // Случай 2: суббота или праздник → следующее воскресенье 17:00
+  // Или пятница после 16:00 → воскресенье 17:00
+  for (let daysAhead = 1; daysAhead <= 7; daysAhead++) {
+    const candidate = new Date(now);
+    candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+    const cdow = localDOW(tz, candidate);
+    if (cdow === 6) continue; // суббота — пропуск
+    if (getHoliday(exch, candidate)) continue;
+
+    // Открытие: если воскресенье → 17:00, иначе (пн) → 00:00+1 мин (уже открыто с предыдущего вечера)
+    // Для отображения удобнее показать ближайший момент открытия
+    // Воскресенье: открытие 17:00
+    let openHour = 0, openMin = 0;
+    if (cdow === 0) { openHour = 17; openMin = 0; }
+    // Пн–Пт после праздника: открытие 17:00 предыдущего дня (вс) — но проще показать 17:00 следующего открытого дня
+    // На практике после праздника открытие в 17:00 предыдущего вечера (вс) уже прошло, показываем 17:00 этого дня
+
+    const exchOff = getOffMin(tz, candidate);
+    const dateStr = candidate.toLocaleString('en-US', { timeZone: tz, month:'2-digit', day:'2-digit', year:'numeric' });
+    const [mo, day, yr] = dateStr.split('/');
+    const openUTC = Date.UTC(+yr, +mo-1, +day, openHour - Math.floor(exchOff/60), openMin - (exchOff%60));
+    if (openUTC <= now.getTime()) continue;
+
+    const openDate = new Date(openUTC);
+    const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+    const dowIdx = openDate.toLocaleString('en-US', { timeZone: tz, weekday:'short' });
+    const dayNum = String(openDate.toLocaleString('en-US', { timeZone: tz, day:'numeric' })).padStart(2,'0');
+    const monthNum = String(openDate.toLocaleString('en-US', { timeZone: tz, month:'numeric' })).padStart(2,'0');
+    const yearShort = openDate.toLocaleString('en-US', { timeZone: tz, year:'2-digit' });
+    return {
+      dayLabel: (dowMap[dowIdx]||dowIdx) + ', ' + dayNum + '.' + monthNum + '.' + yearShort,
+      timeStr: fmt(Math.floor(userMin/60), userMin%60),
+      sessionName: 'Globex'
+    };
   }
   return null;
 }
@@ -207,36 +518,77 @@ function dstNote(tz, now) {
   const on = getOffMin(tz, now);
   const isDST = on === Math.max(oj, oji);
   const h = on / 60, sign = h >= 0 ? '+' : '';
-  return (isDST ? 'Летнее время (DST)' : 'Зимнее время') + ' · UTC' + sign + (h % 1 === 0 ? h : h.toFixed(1));
+  return (isDST ? 'Летнее время (DST)' : 'Зимнее время') + ' · UTC' + sign + (h%1===0 ? h : h.toFixed(1));
 }
+
+// ─── РЕНДЕР ───────────────────────────────────────────────────────────────────
 
 function render() {
   const myOff = (parseFloat(document.getElementById('utcOffset').value) || 0) * 60;
   const now = new Date();
-  const raw = (now.getUTCHours() * 60 + now.getUTCMinutes() + ((myOff % 1440) + 1440) % 1440) % 1440;
-  document.getElementById('myTime').textContent = 'Сейчас: ' + fmt(Math.floor(raw / 60), raw % 60);
+  const raw = (now.getUTCHours()*60 + now.getUTCMinutes() + ((myOff%1440)+1440)%1440) % 1440;
+  document.getElementById('myTime').textContent = 'Сейчас: ' + fmt(Math.floor(raw/60), raw%60);
 
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
 
   for (const ex of EX) {
-    const off = getOffMin(ex.tz, now);
-    const open = isOpen(ex, now);
-    const note = dstNote(ex.tz, now);
+    const off    = getOffMin(ex.tz, now);
+    const status = getStatus(ex, now);
+    const note   = dstNote(ex.tz, now);
+    const holiday= getHoliday(ex, now);
+
+    // Бейдж
+    const badgeMap = {
+      open:    { cls:'open',    text:'● Открыта' },
+      closed:  { cls:'closed',  text:'● Закрыта' },
+      weekend: { cls:'weekend', text:'● Выходной' },
+      holiday: { cls:'holiday', text:'● Праздник' },
+    };
+    const badge = badgeMap[status];
+
+    // Строки сессий
     let rows = '';
-    for (const s of ex.sessions) {
-      const [mh, mm]   = conv(s.open[0],  s.open[1],  off, myOff);
-      const [ch, cm]   = conv(s.close[0], s.close[1], off, myOff);
-      const [uh, um]   = conv(s.open[0],  s.open[1],  off, 0);
-      const [uch, ucm] = conv(s.close[0], s.close[1], off, 0);
-      rows += `<div class="row">
-        <span class="row-label">${s.name}</span>
-        <div class="times">
-          <div class="t-my">${fmt(mh,mm)} – ${fmt(ch,cm)}</div>
-        </div>
+    if (ex.overnight) {
+      // CME: пересчитываем ключевые моменты в часовой пояс пользователя
+      const [sunOpenH, sunOpenM]     = conv(17,  0, off, myOff); // вс открытие
+      const [breakStartH, breakStartM] = conv(16,  0, off, myOff); // перерыв начало
+      const [breakEndH,   breakEndM]   = conv(17,  0, off, myOff); // перерыв конец
+      const [friCloseH,  friCloseM]  = conv(16,  0, off, myOff); // пт закрытие
+      rows = `<div class="row">
+        <span class="row-label">Вс открытие</span>
+        <div class="times"><div class="t-my">${fmt(sunOpenH, sunOpenM)}</div></div>
+      </div>
+      <div class="row">
+        <span class="row-label">Пн–Чт перерыв</span>
+        <div class="times"><div class="t-my">${fmt(breakStartH, breakStartM)} – ${fmt(breakEndH, breakEndM)}</div></div>
+      </div>
+      <div class="row">
+        <span class="row-label">Пт закрытие</span>
+        <div class="times"><div class="t-my">${fmt(friCloseH, friCloseM)}</div></div>
       </div>`;
+    } else {
+      for (const s of ex.sessions) {
+        const [mh, mm] = conv(s.open[0],  s.open[1],  off, myOff);
+        const [ch, cm] = conv(s.close[0], s.close[1], off, myOff);
+        rows += `<div class="row">
+          <span class="row-label">${s.name}</span>
+          <div class="times">
+            <div class="t-my">${fmt(mh,mm)} – ${fmt(ch,cm)}</div>
+          </div>
+        </div>`;
+      }
     }
-    const next = nextOpen(ex, now, myOff);
+
+    // Следующее открытие
+    let next = null;
+    if (status !== 'open') {
+      if (ex.overnight) {
+        next = nextOpenCME(ex, now, myOff);
+      } else {
+        next = nextOpen(ex, now, myOff);
+      }
+    }
     const nextRow = next
       ? `<div class="next-open">
           <span class="row-label">Следующее открытие</span>
@@ -245,12 +597,26 @@ function render() {
           </div>
         </div>`
       : '';
+
+    // Примечание о празднике
+    const holidayNote = holiday
+      ? `<div class="holiday-note">🎌 ${holiday}</div>`
+      : (status === 'weekend' ? `<div class="holiday-note">📅 Выходной день — биржа закрыта</div>` : '');
+
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<div class="card-head">
-      <div><div class="card-title">${ex.name}</div><div class="card-sub">${ex.city} · ${ex.country}</div></div>
-      <span class="badge ${open ? 'open' : 'closed'}">${open ? '● Открыта' : '● Закрыта'}</span>
-    </div>${rows}${nextRow}<div class="dst">${note}</div>`;
+    card.innerHTML = `
+      <div class="card-head">
+        <div>
+          <div class="card-title">${ex.name}</div>
+          <div class="card-sub">${ex.city} · ${ex.country}</div>
+        </div>
+        <span class="badge ${badge.cls}">${badge.text}</span>
+      </div>
+      ${rows}
+      ${nextRow}
+      ${holidayNote}
+      <div class="dst">${note}</div>`;
     grid.appendChild(card);
   }
 }
