@@ -56,7 +56,10 @@
   .card {
     background: var(--bg); border-radius: var(--radius-lg);
     border: 0.5px solid var(--border); padding: 1rem 1.125rem;
+    display: flex; flex-direction: column;
   }
+  .card-body { flex: 1; }
+  .card-footer { margin-top: auto; }
   .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .card-title { font-size: 15px; font-weight: 500; }
   .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
@@ -96,6 +99,21 @@
     padding: 8px 0; border-top: 0.5px solid var(--border); gap: 8px;
   }
   .next-open .t-my { font-size: 14px; font-weight: 500; }
+  .countdown {
+    display: flex; gap: 6px; margin-top: 8px;
+    border-top: 0.5px solid var(--border); padding-top: 8px;
+    align-items: flex-end;
+  }
+  .countdown-label {
+    font-size: 11px; color: var(--text2); margin-bottom: 9px; white-space: nowrap;
+  }
+  .countdown-units { display: flex; gap: 5px; }
+  .cdu {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg2); border-radius: 6px; padding: 4px 7px; min-width: 38px;
+  }
+  .cdu-val { font-size: 15px; font-weight: 600; line-height: 1.2; }
+  .cdu-name { font-size: 10px; color: var(--text3); margin-top: 2px; }
   footer { margin-top: 1.5rem; font-size: 11px; color: var(--text3); text-align: center; }
 
   /* ── Баннер-напоминание об обновлении праздников ── */
@@ -157,7 +175,7 @@
   </div>
 </div>
 
-<footer>Обновляется каждые 30 сек · DST рассчитывается автоматически · Праздники 2025–2026</footer>
+<footer>Обновляется каждую секунду · DST рассчитывается автоматически · Праздники 2025–2026</footer>
 
 <script>
 // ─── БИРЖИ ──────────────────────────────────────────────────────────────────
@@ -555,6 +573,60 @@ function nextOpenCME(exch, now, myOff) {
   return null;
 }
 
+/** Возвращает UTC timestamp (мс) следующего открытия обычной биржи */
+function nextOpenUTCms(exch, now) {
+  for (let daysAhead = 0; daysAhead <= 14; daysAhead++) {
+    for (const s of exch.sessions) {
+      const candidate = new Date(now);
+      candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+      if (isWeekend(exch, candidate)) continue;
+      if (getHoliday(exch, candidate)) continue;
+      const exchOff = getOffMin(exch.tz, candidate);
+      const exchLocalStr = candidate.toLocaleString('en-US', {
+        timeZone: exch.tz, hour12: false,
+        year:'numeric', month:'2-digit', day:'2-digit'
+      });
+      const [mo, day, yr] = exchLocalStr.split('/');
+      const openUTC = Date.UTC(+yr, +mo-1, +day,
+        s.open[0] - Math.floor(exchOff/60),
+        s.open[1] - (exchOff % 60));
+      if (openUTC > now.getTime()) return openUTC;
+    }
+  }
+  return null;
+}
+
+/** Возвращает UTC timestamp (мс) следующего открытия CME */
+function nextOpenCMEms(exch, now) {
+  const tz = exch.tz;
+  const dow = localDOW(tz, now);
+  const off = getOffMin(tz, now);
+  const cur = (now.getUTCHours() * 60 + now.getUTCMinutes() + off + 1440) % 1440;
+
+  // Будний день в перерыве 16:00–17:00 → открытие сегодня в 17:00
+  if (dow >= 1 && dow <= 4 && !getHoliday(exch, now)) {
+    if (cur >= 960 && cur < 1020) {
+      const todayStr = now.toLocaleString('en-US', { timeZone: tz, month:'2-digit', day:'2-digit', year:'numeric' });
+      const [mo, day, yr] = todayStr.split('/');
+      return Date.UTC(+yr, +mo-1, +day, 17 - Math.floor(off/60), -(off%60));
+    }
+  }
+  for (let daysAhead = 1; daysAhead <= 7; daysAhead++) {
+    const candidate = new Date(now);
+    candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+    const cdow = localDOW(tz, candidate);
+    if (cdow === 6) continue;
+    if (getHoliday(exch, candidate)) continue;
+    const exchOff = getOffMin(tz, candidate);
+    const dateStr = candidate.toLocaleString('en-US', { timeZone: tz, month:'2-digit', day:'2-digit', year:'numeric' });
+    const [mo, day, yr] = dateStr.split('/');
+    const openHour = (cdow === 0) ? 17 : 0;
+    const openUTC = Date.UTC(+yr, +mo-1, +day, openHour - Math.floor(exchOff/60), -(exchOff%60));
+    if (openUTC > now.getTime()) return openUTC;
+  }
+  return null;
+}
+
 function dstNote(tz, now) {
   const jan = new Date(now.getFullYear(), 0, 15);
   const jul = new Date(now.getFullYear(), 6, 15);
@@ -627,11 +699,14 @@ function render() {
 
     // Следующее открытие
     let next = null;
+    let nextUTCms = null;
     if (status !== 'open') {
       if (ex.overnight) {
         next = nextOpenCME(ex, now, myOff);
+        nextUTCms = nextOpenCMEms(ex, now);
       } else {
         next = nextOpen(ex, now, myOff);
+        nextUTCms = nextOpenUTCms(ex, now);
       }
     }
     const nextRow = next
@@ -643,6 +718,29 @@ function render() {
         </div>`
       : '';
 
+    // Таймер обратного отсчёта
+    let countdownRow = '';
+    if (nextUTCms !== null) {
+      const diffMs = nextUTCms - now.getTime();
+      if (diffMs > 0) {
+        const totalSec = Math.floor(diffMs / 1000);
+        const dd = Math.floor(totalSec / 86400);
+        const hh = Math.floor((totalSec % 86400) / 3600);
+        const mm2 = Math.floor((totalSec % 3600) / 60);
+        const ss = totalSec % 60;
+        const pad = n => String(n).padStart(2, '0');
+        countdownRow = `<div class="countdown">
+          <span class="countdown-label">До открытия</span>
+          <div class="countdown-units">
+            <div class="cdu"><span class="cdu-val">${pad(dd)}</span><span class="cdu-name">дней</span></div>
+            <div class="cdu"><span class="cdu-val">${pad(hh)}</span><span class="cdu-name">часов</span></div>
+            <div class="cdu"><span class="cdu-val">${pad(mm2)}</span><span class="cdu-name">минут</span></div>
+            <div class="cdu"><span class="cdu-val">${pad(ss)}</span><span class="cdu-name">секунд</span></div>
+          </div>
+        </div>`;
+      }
+    }
+
     // Примечание о празднике
     const holidayNote = holiday
       ? `<div class="holiday-note">🎌 ${holiday}</div>`
@@ -651,24 +749,29 @@ function render() {
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
-      <div class="card-head">
-        <div>
-          <div class="card-title">${ex.name}</div>
-          <div class="card-sub">${ex.city} · ${ex.country}</div>
+      <div class="card-body">
+        <div class="card-head">
+          <div>
+            <div class="card-title">${ex.name}</div>
+            <div class="card-sub">${ex.city} · ${ex.country}</div>
+          </div>
+          <span class="badge ${badge.cls}">${badge.text}</span>
         </div>
-        <span class="badge ${badge.cls}">${badge.text}</span>
+        ${rows}
+        ${nextRow}
       </div>
-      ${rows}
-      ${nextRow}
-      ${holidayNote}
-      <div class="dst">${note}</div>`;
+      <div class="card-footer">
+        ${countdownRow}
+        ${holidayNote}
+        <div class="dst">${note}</div>
+      </div>`;
     grid.appendChild(card);
   }
 }
 
 document.getElementById('utcOffset').addEventListener('input', render);
 render();
-setInterval(render, 30000);
+setInterval(render, 1000);
 
 // ─── НАПОМИНАНИЕ ОБ ОБНОВЛЕНИИ ПРАЗДНИКОВ ────────────────────────────────────
 // Показывается каждый год в декабре (и в январе, если не закрыли).
