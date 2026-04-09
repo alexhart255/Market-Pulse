@@ -277,6 +277,7 @@
   <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;">
     <button class="tab" onclick="switchTab('notes',this);loadNotes()">📓 Блокнот</button>
     <button class="tab" onclick="switchTab('links',this);renderLinks()">🔗 Ссылки</button>
+    <button class="tab" onclick="switchTab('exchanges',this);renderExchanges()">🕐 Расписание бирж</button>
     <button class="tab" onclick="openDashMenu(this)">🏦 Биржи</button>
     <button class="tab" onclick="openClockMenu(this)">🕐 Циферблат</button>
     <button class="tab" onclick="openCorr()">📊 Корреляции</button>
@@ -408,6 +409,33 @@
         </div>
         <div style="position:absolute;inset:0;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 40px rgba(0,255,136,.05);"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- EXCHANGE SCHEDULE TAB -->
+  <div class="tab-panel" id="tab-exchanges">
+    <div class="section-title">Расписание открытия мировых бирж</div>
+
+    <!-- UTC timezone selector -->
+    <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--muted);letter-spacing:1px;">📍 МОЙ ЧАСОВОЙ ПОЯС:</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--muted);">UTC</span>
+        <input id="exchUtcInput" type="number" min="-12" max="14" step="0.5" placeholder="авто"
+          style="width:70px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          oninput="renderExchanges()">
+        <button onclick="exchAutoUtc()" style="background:#0d2018;border:1px solid #1a5a28;border-radius:6px;padding:5px 12px;color:#60cc80;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">⟳ Авто (Цюрих)</button>
+        <span id="exchUtcLabel" style="font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;"></span>
+      </div>
+    </div>
+
+    <div id="exchangeCards" style="display:flex;flex-direction:column;gap:14px;"></div>
+
+    <div style="margin-top:18px;background:#08111e;border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--muted);line-height:1.8;">
+      <strong style="color:var(--accent);">ℹ️ Примечание:</strong>
+      Время отображается в вашем часовом поясе с учётом перехода на летнее/зимнее время.
+      Биржи не работают в выходные и местные праздники. CME (Чикаго) делает ежедневный перерыв ~1 ч 15 мин (15:15–16:30 CT). Обновляется автоматически каждую секунду.
     </div>
   </div>
 
@@ -2566,8 +2594,441 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // ═══════════════════════════════════════════
-// UTC CONVERTER
+// EXCHANGE SCHEDULE
 // ═══════════════════════════════════════════
+
+// Get user's UTC offset for exchange tab (auto = Zurich)
+function getExchUtcOffset() {
+  const inp = document.getElementById('exchUtcInput');
+  if (inp && inp.value !== '') return parseFloat(inp.value);
+  // Auto: use Zurich timezone
+  try {
+    const now = new Date();
+    const zurichStr = now.toLocaleString('en-US', {timeZone:'Europe/Zurich', hour12:false, hour:'2-digit', minute:'2-digit'});
+    const utcStr    = now.toLocaleString('en-US', {timeZone:'UTC',            hour12:false, hour:'2-digit', minute:'2-digit'});
+    const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+    let d = toM(zurichStr) - toM(utcStr);
+    if(d>720) d-=1440; if(d<-720) d+=1440;
+    return d/60;
+  } catch(e) { return 1; }
+}
+
+function exchAutoUtc() {
+  const inp = document.getElementById('exchUtcInput');
+  // Detect Zurich offset automatically
+  try {
+    const now = new Date();
+    const zurichStr = now.toLocaleString('en-US', {timeZone:'Europe/Zurich', hour12:false, hour:'2-digit', minute:'2-digit'});
+    const utcStr    = now.toLocaleString('en-US', {timeZone:'UTC',            hour12:false, hour:'2-digit', minute:'2-digit'});
+    const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+    let d = toM(zurichStr) - toM(utcStr);
+    if(d>720) d-=1440; if(d<-720) d+=1440;
+    if(inp) inp.value = '';
+    renderExchanges();
+  } catch(e) {}
+}
+
+// Convert UTC minutes of day → user local time string
+function utcMinsToLocal(utcMinutes, userOffset) {
+  const localMins = ((utcMinutes + userOffset * 60) % 1440 + 1440) % 1440;
+  const h = Math.floor(localMins / 60);
+  const m = localMins % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+// Is current moment between two UTC minute values? (handles wrap past midnight)
+function isNowBetweenUtc(startUtcMins, endUtcMins, nowUtcMins) {
+  if (startUtcMins <= endUtcMins) {
+    return nowUtcMins >= startUtcMins && nowUtcMins < endUtcMins;
+  } else {
+    // wraps midnight
+    return nowUtcMins >= startUtcMins || nowUtcMins < endUtcMins;
+  }
+}
+
+// Get UTC offset for a named timezone right now (handles DST correctly)
+function getNamedTzOffset(tzName) {
+  try {
+    const now = new Date();
+    const tzStr  = now.toLocaleString('en-US', {timeZone: tzName, hour12:false, hour:'2-digit', minute:'2-digit'});
+    const utcStr = now.toLocaleString('en-US', {timeZone:'UTC',   hour12:false, hour:'2-digit', minute:'2-digit'});
+    const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
+    let d = toM(tzStr) - toM(utcStr);
+    if(d>720) d-=1440; if(d<-720) d+=1440;
+    return d/60;
+  } catch(e) { return 0; }
+}
+
+// Exchange definitions — open/close in UTC minutes of day for CURRENT season (DST-aware)
+// Each exchange returns its schedule dynamically
+function getExchanges() {
+  const now = new Date();
+  const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const dayOfWeek = now.getUTCDay(); // 0=Sun,6=Sat — but we use local exchange day
+  const userOffset = getExchUtcOffset();
+
+  // Helper: get current UTC offset for a timezone
+  const sydOff = getNamedTzOffset('Australia/Sydney');   // +10 or +11
+  const tokOff = getNamedTzOffset('Asia/Tokyo');          // always +9
+  const lonOff = getNamedTzOffset('Europe/London');       // 0 or +1
+  const nyOff  = getNamedTzOffset('America/New_York');    // -5 or -4
+  const chiOff = getNamedTzOffset('America/Chicago');     // -6 or -5
+
+  // Local day of week for each exchange
+  function localDow(tzOffset) {
+    const localMins = ((nowUtcMins + tzOffset * 60) % 1440 + 1440) % 1440;
+    const localDayOffset = Math.floor((nowUtcMins + tzOffset * 60) / 1440);
+    const utcDay = now.getUTCDay();
+    return ((utcDay + Math.floor((nowUtcMins + tzOffset * 60) / 1440)) % 7 + 7) % 7;
+  }
+
+  // Convert local exchange hour:min → UTC mins
+  function toUtcMins(localH, localM, tzOff) {
+    return (((localH * 60 + localM) - tzOff * 60) % 1440 + 1440) % 1440;
+  }
+
+  const sydDay  = localDow(sydOff);
+  const tokDay  = localDow(tokOff);
+  const lonDay  = localDow(lonOff);
+  const nyDay   = localDow(nyOff);
+  const chiDay  = localDow(chiOff);
+
+  const isWeekend = d => d === 0 || d === 6;
+
+  // Sydney ASX: Mon–Fri 10:00–16:00 Sydney time
+  const sydOpen  = toUtcMins(10, 0, sydOff);
+  const sydClose = toUtcMins(16, 0, sydOff);
+  const sydOpen2 = utcMinsToLocal(sydOpen,  userOffset);
+  const sydClose2= utcMinsToLocal(sydClose, userOffset);
+  const sydIsOpen = !isWeekend(sydDay) && isNowBetweenUtc(sydOpen, sydClose, nowUtcMins);
+
+  // Tokyo TSE: Mon–Fri 09:00–15:30 Japan time (lunch break 11:30–12:30)
+  const tokOpen1 = toUtcMins(9,  0, tokOff);
+  const tokClose1= toUtcMins(11, 30, tokOff);
+  const tokOpen2u= toUtcMins(12, 30, tokOff);
+  const tokClose2= toUtcMins(15, 30, tokOff);
+  const tokIsOpen = !isWeekend(tokDay) && (isNowBetweenUtc(tokOpen1, tokClose1, nowUtcMins) || isNowBetweenUtc(tokOpen2u, tokClose2, nowUtcMins));
+  const tokIsLunch= !isWeekend(tokDay) && isNowBetweenUtc(tokClose1, tokOpen2u, nowUtcMins);
+
+  // London LSE: Mon–Fri 08:00–16:30 London time
+  const lonOpen  = toUtcMins(8,  0, lonOff);
+  const lonClose = toUtcMins(16, 30, lonOff);
+  const lonIsOpen = !isWeekend(lonDay) && isNowBetweenUtc(lonOpen, lonClose, nowUtcMins);
+
+  // New York NYSE/NASDAQ: Mon–Fri 09:30–16:00 ET
+  const nyOpen  = toUtcMins(9,  30, nyOff);
+  const nyClose = toUtcMins(16,  0, nyOff);
+  const nyIsOpen = !isWeekend(nyDay) && isNowBetweenUtc(nyOpen, nyClose, nowUtcMins);
+
+  // Chicago CME (Futures, e.g. ES, NQ, Gold, Oil):
+  // Main session: Sun 17:00 – Fri 16:00 CT (nearly 24h, with daily break 15:15–16:30 CT)
+  // Daily break (settlement): 15:15–16:30 CT every day Mon–Fri
+  // We show: open/close of main session + break window
+  const chiBreakStart = toUtcMins(15, 15, chiOff);
+  const chiBreakEnd   = toUtcMins(16, 30, chiOff);
+  // Sunday open: 17:00 CT
+  const chiSunOpen    = toUtcMins(17,  0, chiOff);
+  // Friday close: 16:00 CT
+  const chiMainClose  = toUtcMins(16,  0, chiOff);
+
+  // CME is CLOSED: Saturday all day, Sunday before 17:00 CT, during daily break
+  const chiIsBreak = isNowBetweenUtc(chiBreakStart, chiBreakEnd, nowUtcMins);
+
+  // Determine if CME main session is active
+  // Closed: Saturday; Sunday before 17:00 CT; during break Mon–Fri
+  let chiIsOpen = false;
+  if (chiDay === 6) { chiIsOpen = false; } // Saturday closed
+  else if (chiDay === 0) { // Sunday
+    chiIsOpen = nowUtcMins >= chiSunOpen || chiSunOpen > 720; // after 17:00 CT on Sunday
+    // More precise:
+    chiIsOpen = isNowBetweenUtc(chiSunOpen, 1440, nowUtcMins) || (chiSunOpen > nowUtcMins && nowUtcMins < 60);
+    // Simplify: just check if past Sunday 17:00 CT
+    const chiNowLocal = ((nowUtcMins + chiOff * 60) % 1440 + 1440) % 1440;
+    chiIsOpen = chiNowLocal >= 17 * 60;
+  } else {
+    // Mon–Fri: open unless in break or past Friday 16:00
+    if (chiDay === 5 && isNowBetweenUtc(chiMainClose, chiSunOpen > chiMainClose ? chiSunOpen : 1440, nowUtcMins)) {
+      chiIsOpen = false; // Friday after 16:00 CT
+    } else {
+      chiIsOpen = !chiIsBreak;
+    }
+  }
+
+  const fmt = (h, m) => String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  const offStr = o => 'UTC' + (o >= 0 ? '+' : '') + o;
+  const userOffStr = 'UTC' + (userOffset >= 0 ? '+' : '') + userOffset;
+
+  return [
+    {
+      id: 'sydney',
+      name: 'Сидней (ASX)',
+      flag: '🇦🇺',
+      region: 'АЗИАТСКАЯ СЕССИЯ',
+      regionColor: '#ff9500',
+      tz: 'Australia/Sydney',
+      tzOff: sydOff,
+      tzLabel: offStr(sydOff),
+      isOpen: sydIsOpen,
+      isWeekend: isWeekend(sydDay),
+      sessions: [
+        { label: 'Основная сессия', open: sydOpen, close: sydClose, isBreak: false }
+      ],
+      openLocal: sydOpen2,
+      closeLocal: sydClose2,
+      openLocalExch: fmt(10,0),
+      closeLocalExch: fmt(16,0),
+      note: 'Пн–Пт, 10:00–16:00 по Сиднею'
+    },
+    {
+      id: 'tokyo',
+      name: 'Токио (TSE)',
+      flag: '🇯🇵',
+      region: 'АЗИАТСКАЯ СЕССИЯ',
+      regionColor: '#ff9500',
+      tz: 'Asia/Tokyo',
+      tzOff: tokOff,
+      tzLabel: offStr(tokOff),
+      isOpen: tokIsOpen,
+      isLunch: tokIsLunch,
+      isWeekend: isWeekend(tokDay),
+      sessions: [
+        { label: 'Утренняя сессия', open: tokOpen1,  close: tokClose1, isBreak: false },
+        { label: 'Обеденный перерыв', open: tokClose1, close: tokOpen2u, isBreak: true },
+        { label: 'Дневная сессия',  open: tokOpen2u, close: tokClose2, isBreak: false },
+      ],
+      openLocal:  utcMinsToLocal(tokOpen1,  userOffset),
+      closeLocal: utcMinsToLocal(tokClose2, userOffset),
+      openLocalExch:  fmt(9,0),
+      closeLocalExch: fmt(15,30),
+      lunchStartLocal: utcMinsToLocal(tokClose1, userOffset),
+      lunchEndLocal:   utcMinsToLocal(tokOpen2u, userOffset),
+      note: 'Пн–Пт, 09:00–11:30 и 12:30–15:30 по Токио'
+    },
+    {
+      id: 'london',
+      name: 'Лондон (LSE)',
+      flag: '🇬🇧',
+      region: 'ЕВРОПЕЙСКАЯ СЕССИЯ',
+      regionColor: '#00e5ff',
+      tz: 'Europe/London',
+      tzOff: lonOff,
+      tzLabel: offStr(lonOff),
+      isOpen: lonIsOpen,
+      isWeekend: isWeekend(lonDay),
+      sessions: [
+        { label: 'Основная сессия', open: lonOpen, close: lonClose, isBreak: false }
+      ],
+      openLocal:  utcMinsToLocal(lonOpen,  userOffset),
+      closeLocal: utcMinsToLocal(lonClose, userOffset),
+      openLocalExch:  fmt(8,0),
+      closeLocalExch: fmt(16,30),
+      note: 'Пн–Пт, 08:00–16:30 по Лондону'
+    },
+    {
+      id: 'newyork',
+      name: 'Нью-Йорк (NYSE/NASDAQ)',
+      flag: '🇺🇸',
+      region: 'АМЕРИКАНСКАЯ СЕССИЯ',
+      regionColor: '#00ff88',
+      tz: 'America/New_York',
+      tzOff: nyOff,
+      tzLabel: offStr(nyOff),
+      isOpen: nyIsOpen,
+      isWeekend: isWeekend(nyDay),
+      sessions: [
+        { label: 'Основная сессия', open: nyOpen, close: nyClose, isBreak: false }
+      ],
+      openLocal:  utcMinsToLocal(nyOpen,  userOffset),
+      closeLocal: utcMinsToLocal(nyClose, userOffset),
+      openLocalExch:  fmt(9,30),
+      closeLocalExch: fmt(16,0),
+      note: 'Пн–Пт, 09:30–16:00 по Нью-Йорку'
+    },
+    {
+      id: 'chicago',
+      name: 'Чикаго (CME Futures)',
+      flag: '🇺🇸',
+      region: 'АМЕРИКАНСКАЯ СЕССИЯ',
+      regionColor: '#00ff88',
+      tz: 'America/Chicago',
+      tzOff: chiOff,
+      tzLabel: offStr(chiOff),
+      isOpen: chiIsOpen,
+      isBreak: chiIsBreak,
+      isWeekend: chiDay === 6,
+      sessions: [
+        { label: 'Вс 17:00 – Пт 16:00 CT (почти круглосуточно)', open: chiSunOpen, close: chiMainClose, isBreak: false },
+        { label: 'Ежедневный перерыв (расчёт)', open: chiBreakStart, close: chiBreakEnd, isBreak: true },
+      ],
+      openLocal:       utcMinsToLocal(chiSunOpen,    userOffset),
+      closeLocal:      utcMinsToLocal(chiMainClose,  userOffset),
+      breakStartLocal: utcMinsToLocal(chiBreakStart, userOffset),
+      breakEndLocal:   utcMinsToLocal(chiBreakEnd,   userOffset),
+      openLocalExch:   'Вс 17:00',
+      closeLocalExch:  'Пт 16:00',
+      note: 'Вс 17:00 – Пт 16:00 CT · Перерыв 15:15–16:30 CT (ежедн.)'
+    }
+  ];
+}
+
+let _exchInterval = null;
+
+function renderExchanges() {
+  const container = document.getElementById('exchangeCards');
+  if (!container) return;
+
+  const exchanges = getExchanges();
+  const userOffset = getExchUtcOffset();
+  const userOffStr = 'UTC' + (userOffset >= 0 ? '+' : '') + userOffset;
+  const lbl = document.getElementById('exchUtcLabel');
+  if (lbl) {
+    const inp = document.getElementById('exchUtcInput');
+    const isAuto = !inp || inp.value === '';
+    lbl.textContent = userOffStr + (isAuto ? ' · Цюрих (авто)' : '');
+  }
+
+  const now = new Date();
+  const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes() + now.getUTCSeconds()/60;
+
+  // Progress bar: % through current session
+  function sessionProgress(openMins, closeMins) {
+    let prog = (nowUtcMins - openMins) / (closeMins - openMins);
+    if (prog < 0) prog = 0; if (prog > 1) prog = 1;
+    return Math.round(prog * 100);
+  }
+
+  // Time remaining until open or close
+  function minsUntil(targetUtcMins) {
+    let d = targetUtcMins - nowUtcMins;
+    if (d < 0) d += 1440;
+    return d;
+  }
+
+  let html = '';
+  let lastRegion = '';
+
+  exchanges.forEach(ex => {
+    if (ex.region !== lastRegion) {
+      html += `<div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:${ex.regionColor};padding:4px 0 6px;opacity:.8;">${ex.region}</div>`;
+      lastRegion = ex.region;
+    }
+
+    let statusLabel, statusColor, statusBg, statusBorder, progressPct = 0, timeHint = '';
+
+    const mainSession = ex.sessions.find(s => !s.isBreak);
+
+    if (ex.isWeekend || (ex.id === 'chicago' && ex.isWeekend)) {
+      statusLabel = '⛔ ЗАКРЫТО (выходной)';
+      statusColor = '#4a6080';
+      statusBg    = '#080c14';
+      statusBorder= '#1e2d42';
+    } else if (ex.id === 'chicago' && ex.isBreak) {
+      statusLabel = '⏸ ПЕРЕРЫВ (расчёт позиций)';
+      statusColor = '#ffaa00';
+      statusBg    = '#1a1000';
+      statusBorder= '#4a3000';
+      const mUntil = minsUntil(ex.sessions.find(s=>s.isBreak).close);
+      const h2 = Math.floor(mUntil/60), m2 = Math.round(mUntil%60);
+      timeHint = `До конца перерыва: ${h2 > 0 ? h2+'ч ' : ''}${m2}мин`;
+    } else if (ex.id === 'tokyo' && ex.isLunch) {
+      statusLabel = '⏸ ОБЕДЕННЫЙ ПЕРЕРЫВ';
+      statusColor = '#ffaa00';
+      statusBg    = '#1a1000';
+      statusBorder= '#4a3000';
+      const breakSess = ex.sessions.find(s=>s.isBreak);
+      const mUntil = minsUntil(breakSess.close);
+      const h2 = Math.floor(mUntil/60), m2 = Math.round(mUntil%60);
+      timeHint = `До открытия: ${h2>0?h2+'ч ':''}${m2}мин · Дневная сессия в ${ex.lunchEndLocal}`;
+    } else if (ex.isOpen) {
+      statusLabel = '🟢 ОТКРЫТО';
+      statusColor = '#00ff88';
+      statusBg    = '#061610';
+      statusBorder= '#1a5a28';
+      if (mainSession) {
+        progressPct = sessionProgress(mainSession.open, mainSession.close);
+        const mUntil = minsUntil(mainSession.close);
+        const h2 = Math.floor(mUntil/60), m2 = Math.round(mUntil%60);
+        timeHint = `Закрытие через: ${h2>0?h2+'ч ':''}${m2}мин`;
+      }
+    } else {
+      statusLabel = '🔴 ЗАКРЫТО';
+      statusColor = '#ff3b5c';
+      statusBg    = '#160608';
+      statusBorder= '#4a1a20';
+      if (mainSession) {
+        const mUntil = minsUntil(mainSession.open);
+        const h2 = Math.floor(mUntil/60), m2 = Math.round(mUntil%60);
+        timeHint = `До открытия: ${h2>0?h2+'ч ':''}${m2}мин`;
+      }
+    }
+
+    // Build sessions rows
+    let sessionsHtml = '';
+    ex.sessions.forEach(s => {
+      const openL  = utcMinsToLocal(s.open,  userOffset);
+      const closeL = utcMinsToLocal(s.close, userOffset);
+      const color = s.isBreak ? '#ffaa00' : '#c8dff5';
+      const icon  = s.isBreak ? '⏸' : '▶';
+      sessionsHtml += `<div style="font-size:11px;color:${color};font-family:'Space Mono',monospace;margin-top:3px;">
+        ${icon} ${s.label}: <strong style="color:${s.isBreak?'#ffaa00':'var(--bright)'};">${openL} – ${closeL}</strong>
+        <span style="font-size:10px;color:var(--muted);margin-left:6px;">(по вашему времени)</span>
+      </div>`;
+    });
+
+    // CME break times extra info
+    let cmeBreakHtml = '';
+    if (ex.id === 'chicago' && ex.breakStartLocal) {
+      cmeBreakHtml = `<div style="margin-top:6px;padding:6px 12px;background:#110d00;border:1px solid #3a2a00;border-radius:6px;font-size:11px;color:#ffaa00;">
+        ⏸ Ежедневный перерыв: <strong>${ex.breakStartLocal} – ${ex.breakEndLocal}</strong>
+        <span style="color:var(--muted);margin-left:6px;">(15:15–16:30 CT · ~1ч 15мин)</span>
+      </div>`;
+    }
+
+    // Progress bar
+    let progressHtml = '';
+    if (ex.isOpen && progressPct > 0) {
+      progressHtml = `<div style="margin-top:10px;height:4px;background:#1e2d42;border-radius:2px;overflow:hidden;">
+        <div style="height:100%;width:${progressPct}%;background:${statusColor};border-radius:2px;transition:width .5s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:var(--muted);">
+        <span>Открытие</span><span>${progressPct}% сессии</span><span>Закрытие</span>
+      </div>`;
+    }
+
+    html += `
+    <div style="background:${statusBg};border:1px solid ${statusBorder};border-left:3px solid ${statusColor};border-radius:10px;padding:16px 20px;transition:all .3s;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">${ex.flag}</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--bright);">${ex.name}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px;">${ex.note}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:${statusColor};font-family:'Space Mono',monospace;">${statusLabel}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:'Space Mono',monospace;">${ex.tzLabel}</div>
+        </div>
+      </div>
+      ${sessionsHtml}
+      ${cmeBreakHtml}
+      ${progressHtml}
+      ${timeHint ? `<div style="margin-top:8px;font-size:12px;color:#80e040;font-family:'Space Mono',monospace;">⏱ ${timeHint}</div>` : ''}
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Auto-refresh every second
+  if (!_exchInterval) {
+    _exchInterval = setInterval(() => {
+      const panel = document.getElementById('tab-exchanges');
+      if (panel && panel.classList.contains('active')) renderExchanges();
+    }, 1000);
+  }
+}
+
+
 function getZurichOffsetHours(){
   try {
     const now = new Date();
