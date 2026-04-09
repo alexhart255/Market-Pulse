@@ -21,6 +21,13 @@
     --bright:  #eaf4ff;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
+  /* Видимые стрелки у числовых полей */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{
+    opacity:1;
+    filter:invert(1);
+    cursor:pointer;
+  }
   body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
   .wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:24px 20px 60px;}
@@ -179,7 +186,24 @@
   .utc-controls{display:flex;align-items:center;gap:4px;}
   .utc-btn{font-size:12px;background:#111;color:#888;border:1px solid #2a2a2a;border-radius:5px;padding:2px 8px;cursor:pointer;line-height:1.4;font-family:'Space Mono',monospace;}
   .utc-btn:hover{color:#fff;border-color:#555;}
-  .utc-value{font-size:11px;color:#ccc;min-width:68px;text-align:center;letter-spacing:.04em;background:#111;border:1px solid #2a2a2a;border-radius:5px;padding:2px 6px;cursor:pointer;user-select:none;font-family:'Space Mono',monospace;}
+  /* ── РАСПИСАНИЕ БИРЖ 2 ── */
+  .ex2-card{background:var(--card);border-radius:10px;border:1px solid var(--border);padding:1rem 1.125rem;}
+  .ex2-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .ex2-card-title{font-size:15px;font-weight:600;color:var(--bright);}
+  .ex2-card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .ex2-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .ex2-badge.open{background:#0a2a0a;color:#80dd80;border:1px solid #1a5a1a;}
+  .ex2-badge.closed{background:#2a0a0a;color:#dd8080;border:1px solid #5a1a1a;}
+  .ex2-badge.holiday{background:#2a1800;color:#ddaa40;border:1px solid #5a3a00;}
+  .ex2-badge.weekend{background:#1a0a2a;color:#aa80dd;border:1px solid #3a1a5a;}
+  .ex2-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);gap:8px;}
+  .ex2-row-label{font-size:12px;color:var(--muted);}
+  .ex2-time-my{font-size:14px;font-weight:500;color:var(--bright);}
+  .ex2-time-utc{font-size:11px;color:var(--muted);margin-top:1px;}
+  .ex2-dst{font-size:11px;color:var(--muted);margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+  .ex2-holiday-note{font-size:11px;color:#ddaa40;margin-top:6px;border-top:1px solid var(--border);padding-top:8px;display:flex;align-items:center;gap:4px;}
+  .ex2-next-open{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);gap:8px;}
+
 </style>
 </head>
 <body>
@@ -279,12 +303,14 @@
   <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;">
     <button class="tab" onclick="switchTab('notes',this);loadNotes()">📓 Блокнот</button>
     <button class="tab" onclick="switchTab('links',this);renderLinks()">🔗 Ссылки</button>
-    <button class="tab" onclick="switchTab('exchanges',this);renderExchanges()">🕐 Расписание бирж</button>
+    <button class="tab" onclick="switchTab('exchanges',this);renderExchanges()">🕐 Расписание бирж 1</button>
+    <button class="tab" onclick="switchTab('exchanges2',this);renderExchanges2()">🕐 Расписание бирж 2</button>
     <button class="tab" onclick="openDashMenu(this)">🏦 Биржи</button>
     <button class="tab" onclick="openClockMenu(this)">🕐 Циферблат</button>
     <button class="tab" onclick="openCorr()">📊 Корреляции</button>
     <button class="tab" onclick="openRadioMenu(this)">🎵 Радио</button>
     <button class="tab" onclick="switchTab('utcconv',this)">🌐 UTC</button>
+    <button class="tab" onclick="switchTab('calc',this);calcInit()">🧮 Калькулятор</button>
   </div>
 
   <div class="tab-panel active" id="tab-today">
@@ -414,6 +440,218 @@
     </div>
   </div>
 
+  <!-- CALCULATOR TAB -->
+  <div class="tab-panel" id="tab-calc">
+    <div class="section-title">Калькулятор позиции</div>
+
+    <!-- Mode switcher -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button id="calcModeBtn1" onclick="setCalcMode(1)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--bg);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📐 Позиция (ATR / Стоп)</button>
+      <button id="calcModeBtn2" onclick="setCalcMode(2)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📦 Размер в Лотах</button>
+    </div>
+
+    <!-- ═══ MODE 1: Position Calculator ═══ -->
+    <div id="calcPanel1">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+        <!-- LEFT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+
+          <!-- Direction + ratio -->
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🎯 Стратегия</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <button id="dirLong" onclick="calcSetDir('long')" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--green);background:#061610;color:var(--green);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▲ ЛОНГ</button>
+              <button id="dirShort" onclick="calcSetDir('short')" style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▼ ШОРТ</button>
+            </div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Соотношение Тейк/Риск</label>
+            <input id="c1_ratio" type="number" value="3" min="0.5" max="20" step="0.5"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+          </div>
+
+          <!-- Entry level -->
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 Уровень входа</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена уровня</label>
+            <input id="c1_level" type="number" value="24.51" step="0.0001"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+          </div>
+
+          <!-- Stop mode -->
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🛑 Стоп-лосс</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <button id="stopModeATR" onclick="calcSetStopMode('atr')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По ATR</button>
+              <button id="stopModeTech" onclick="calcSetStopMode('tech')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">Технический</button>
+            </div>
+            <div id="atrInputs">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">ATR значение</label>
+              <input id="c1_atr" type="number" value="0.22" step="0.01"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:8px;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Стоп % от ATR</label>
+              <input id="c1_stopPct" type="number" value="15" min="1" max="100" step="1"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+            </div>
+            <div id="techStopInputs" style="display:none;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена стоп-лосса</label>
+              <input id="c1_techStop" type="number" value="24.40" step="0.0001"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+            </div>
+          </div>
+
+          <!-- Risk -->
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">💵 Риск</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Риск на сделку ($)</label>
+            <input id="c1_risk" type="number" value="10" min="0.01" step="0.5"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+          </div>
+
+          <!-- Options -->
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">⚙️ Опции</div>
+
+            <!-- Leverage -->
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+              <input type="checkbox" id="c1_useLev" onchange="calcMode1();document.getElementById('levRow').style.display=this.checked?'flex':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
+              <span style="font-size:12px;color:var(--text);">Использовать плечо</span>
+            </label>
+            <div id="levRow" style="display:none;align-items:center;gap:8px;margin-bottom:10px;">
+              <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Плечо x</label>
+              <input id="c1_lev" type="number" value="10" min="1" max="150" step="1"
+                style="width:80px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+            </div>
+
+            <!-- Binance commission -->
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+              <input type="checkbox" id="c1_useBin" onchange="calcMode1();document.getElementById('binRow').style.display=this.checked?'flex':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
+              <span style="font-size:12px;color:var(--text);">Комиссии Binance Futures</span>
+            </label>
+            <div id="binRow" style="display:none;align-items:center;gap:8px;margin-bottom:10px;">
+              <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Тип:</label>
+              <select id="c1_binType" onchange="calcMode1()" style="background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;outline:none;">
+                <option value="maker">Maker (0.02%)</option>
+                <option value="taker">Taker (0.05%)</option>
+              </select>
+            </div>
+
+            <!-- Partial close -->
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="c1_usePartial" onchange="calcMode1();document.getElementById('partialBlock').style.display=this.checked?'block':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
+              <span style="font-size:12px;color:var(--text);">Частичное закрытие</span>
+            </label>
+          </div>
+
+          <!-- Partial close config -->
+          <div id="partialBlock" style="display:none;background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 Частичное закрытие</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Количество ТП</label>
+            <select id="c1_numTP" onchange="calcMode1();renderPartialInputs()" style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;margin-bottom:12px;">
+              <option value="2">2 ТП</option>
+              <option value="3">3 ТП</option>
+              <option value="4" selected>4 ТП</option>
+              <option value="5">5 ТП</option>
+            </select>
+            <div id="partialInputsContainer"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Results -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div id="calcResult1" style="background:#060e1a;border:1px solid var(--border);border-radius:12px;padding:20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2;color:var(--text);min-height:300px;">
+            <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры слева →</div>
+          </div>
+          <button id="copyBtn1" onclick="calcCopy(1)" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,255,.07);color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;"
+            onmouseover="this.style.background='rgba(0,229,255,.18)'" onmouseout="this.style.background='rgba(0,229,255,.07)'">
+            📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MODE 2: Lot Size Calculator ═══ -->
+    <div id="calcPanel2" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+        <!-- LEFT -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">💰 Параметры риска</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Риск на сделку ($)</label>
+            <input id="c2_risk" type="number" value="5" min="0.01" step="0.5"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;margin-bottom:10px;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Единиц в 1 лоте</label>
+            <input id="c2_unitsPerLot" type="number" value="100" min="1" step="1"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;margin-bottom:10px;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Мин. шаг лота</label>
+            <input id="c2_lotStep" type="number" value="0.01" min="0.001" step="0.001"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+          </div>
+
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📍 Уровни входа</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена входа ТВХ ($)</label>
+            <input id="c2_entry" type="number" value="" min="0" step="0.01" placeholder="Например: 1.2450"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">Введите цену входа вручную</div>
+          </div>
+
+          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">⚙️ Режим расчёта СЛ</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <button id="slModePrice" onclick="calcSetSlMode('price')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По цене СЛ</button>
+              <button id="slModeDist" onclick="calcSetSlMode('dist')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По дистанции</button>
+            </div>
+            <div id="slPriceInputs">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена Stop Loss ($)</label>
+              <input id="c2_slPrice" type="number" value="" min="0" step="0.01" placeholder="Например: 1.2300"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+            </div>
+            <div id="slDistInputs" style="display:none;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Дистанция до СЛ ($)</label>
+              <input id="c2_slDist" type="number" value="5" min="0.01" step="0.01"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:8px;"
+                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Направление</label>
+              <div style="display:flex;gap:8px;">
+                <button id="c2dirLong" onclick="calcSetDir2('long')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--green);background:#061610;color:var(--green);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">▲ LONG</button>
+                <button id="c2dirShort" onclick="calcSetDir2('short')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">▼ SHORT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div id="calcResult2" style="background:#060e1a;border:1px solid var(--border);border-radius:12px;padding:20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2;color:var(--text);min-height:300px;">
+            <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры слева →</div>
+          </div>
+          <button id="copyBtn2" onclick="calcCopy(2)" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,255,.07);color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;"
+            onmouseover="this.style.background='rgba(0,229,255,.18)'" onmouseout="this.style.background='rgba(0,229,255,.07)'">
+            📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:#08111e;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:11px;color:var(--muted);line-height:1.7;">
+      ⚠️ <strong style="color:var(--accent);">Важно:</strong> Калькулятор не является финансовой рекомендацией. Используйте для расчёта позиций на свой страх и риск. Всегда проверяйте расчёты перед открытием сделки.
+    </div>
+  </div>
+
   <!-- EXCHANGE SCHEDULE TAB -->
   <div class="tab-panel" id="tab-exchanges">
     <div class="section-title">Расписание открытия мировых бирж</div>
@@ -455,6 +693,46 @@
       <strong style="color:var(--accent);">ℹ️ Примечание:</strong>
       Время отображается в вашем часовом поясе с учётом перехода на летнее/зимнее время.
       Биржи не работают в выходные и местные праздники. CME (Чикаго) делает ежедневный перерыв ~1 ч 15 мин (15:15–16:30 CT). Обновляется автоматически каждую секунду.
+    </div>
+  </div>
+
+  <!-- EXCHANGE SCHEDULE 2 TAB -->
+  <div class="tab-panel" id="tab-exchanges2">
+    <div class="section-title">Мировые биржи — расписание торгов</div>
+
+    <!-- Holiday data reminder banner (same as tab-exchanges) -->
+    <div id="exch2HolidayReminder" style="display:none;background:linear-gradient(135deg,#1a0a00,#221400);border:1px solid #cc6600;border-left:4px solid #ff8800;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span style="font-size:26px;flex-shrink:0;">⚠️</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:#ffaa00;letter-spacing:.5px;margin-bottom:5px;">ОБНОВИ БАЗУ ПРАЗДНИКОВ</div>
+          <div id="exch2HolidayReminderText" style="font-size:12px;color:#c8a060;line-height:1.6;margin-bottom:8px;"></div>
+          <div style="padding:8px 12px;background:#110800;border:1px solid #553300;border-radius:8px;font-size:11px;color:#ff9944;line-height:1.9;">
+            ⚡ <strong>Обновить нужно ОДНОВРЕМЕННО в двух местах:</strong><br>
+            1️⃣ <strong>Вкладка "Расписание бирж 1" 🕐</strong> — объект <code style="background:#1a0a00;padding:1px 5px;border-radius:3px;font-size:10px;">EXCH_HOLIDAYS</code><br>
+            2️⃣ <strong>Вкладка "Биржи" 🏦</strong> — объект <code style="background:#1a0a00;padding:1px 5px;border-radius:3px;font-size:10px;">HOLIDAYS</code> внутри файла<br>
+            3️⃣ <strong>Вкладка "Расписание бирж 2" 🕐</strong> — объект <code style="background:#1a0a00;padding:1px 5px;border-radius:3px;font-size:10px;">EX2_HOLIDAYS</code><br>
+            📋 Скинь файл Claude и напиши: <em>"Обнови праздники бирж на следующий год во всех местах"</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UTC selector -->
+    <div class="utc-bar2" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:#0d1421;border-radius:10px;border:1px solid var(--border);flex-wrap:wrap;">
+      <span style="font-size:13px;color:var(--muted);">Мой UTC:</span>
+      <input type="number" id="ex2UtcOffset" value="2" min="-12" max="14" step="0.5"
+        style="width:64px;font-size:14px;font-weight:500;text-align:center;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:#080c14;color:var(--bright);outline:none;"
+        oninput="renderExchanges2()">
+      <span style="font-size:13px;color:var(--muted);">ч</span>
+      <span id="ex2MyTime" style="font-size:13px;color:var(--muted);margin-left:auto;font-weight:500;font-family:'Space Mono',monospace;"></span>
+    </div>
+
+    <div id="ex2Grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;"></div>
+
+    <div style="margin-top:18px;background:#08111e;border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:11px;color:var(--muted);line-height:1.8;">
+      <strong style="color:var(--accent);">ℹ️ Примечание:</strong>
+      Время отображается в вашем часовом поясе. DST рассчитывается автоматически. Обновляется каждые 30 сек.
     </div>
   </div>
 
@@ -2517,7 +2795,7 @@ function buildClockHTML(){
     </div>
   </div>
 </div>
-<script>
+<scr\x69pt>
 let utcOffsetMin=parseInt(localStorage.getItem('clockUtcOffset')||'60');
 let stepMin=30;
 function clampOffset(v){return Math.max(-720,Math.min(840,v));}
@@ -3204,6 +3482,794 @@ function renderExchanges() {
   }
 }
 
+
+// ══════════════════════════════════════════════════════════
+// РАСПИСАНИЕ БИРЖ 2 — встроенная версия stock_exchange_clock
+// ══════════════════════════════════════════════════════════
+
+// ── Данные бирж ──────────────────────────────────────────
+const EX2 = [
+  { id:'asx',  name:'ASX',          city:'Сидней',   country:'Австралия',      tz:'Australia/Sydney',
+    sessions:[{name:'Основная сессия',open:[10,0],close:[16,0]}] },
+  { id:'tse',  name:'TSE',          city:'Токио',    country:'Япония',         tz:'Asia/Tokyo',
+    sessions:[{name:'Утренняя сессия',open:[9,0],close:[11,30]},{name:'Дневная сессия',open:[12,30],close:[15,30]}] },
+  { id:'lse',  name:'LSE',          city:'Лондон',   country:'Великобритания', tz:'Europe/London',
+    sessions:[{name:'Основная сессия',open:[8,0],close:[16,30]}] },
+  { id:'nyse', name:'NYSE / NASDAQ',city:'Нью-Йорк', country:'США',            tz:'America/New_York',
+    sessions:[{name:'Основная сессия',open:[9,30],close:[16,0]}] },
+  { id:'cme',  name:'CME Globex',   city:'Чикаго',  country:'США',            tz:'America/Chicago',
+    overnight:true, sessions:[{name:'Основная сессия',open:[17,0],close:[16,0]}] }
+];
+
+// ── Праздники (синхронизировано с EXCH_HOLIDAYS) ──────────
+// ⚠️ ОБНОВЛЯТЬ РАЗ В ГОД! Данные по: 2026
+const EX2_HOLIDAYS_LAST_YEAR = 2026;
+const EX2_HOLIDAYS = {
+  asx: {
+    '2025-01-01':'Новый год','2025-01-27':'День Австралии (перенос)','2025-04-18':'Страстная пятница',
+    '2025-04-21':'Пасхальный понедельник','2025-04-25':'День АНЗАК','2025-06-09':'День рождения королевы (NSW)',
+    '2025-08-11':'День банка (NSW)','2025-12-25':'Рождество','2025-12-26':'День подарков',
+    '2026-01-01':'Новый год','2026-01-26':'День Австралии','2026-04-03':'Страстная пятница',
+    '2026-04-06':'Пасхальный понедельник','2026-04-27':'День АНЗАК (перенос)','2026-06-08':'День рождения короля (NSW)',
+    '2026-12-25':'Рождество','2026-12-28':'День подарков (перенос)',
+    '2027-01-01':'Новый год','2027-01-26':'День Австралии','2027-03-26':'Страстная пятница',
+    '2027-03-29':'Пасхальный понедельник','2027-04-26':'День АНЗАК (перенос)','2027-06-14':'День рождения короля (NSW)',
+    '2027-08-02':'День банка (NSW)','2027-12-27':'Рождество (перенос)','2027-12-28':'День подарков (перенос)'
+  },
+  tse: {
+    '2025-01-01':'Новый год','2025-01-02':'Новый год (доп.)','2025-01-03':'Новый год (доп.)','2025-01-13':'День совершеннолетия',
+    '2025-02-11':'День основания государства','2025-02-24':'День императора','2025-03-21':'День весеннего равноденствия',
+    '2025-04-29':'День Сёва','2025-05-03':'День Конституции','2025-05-04':'День зелени','2025-05-05':'День детей',
+    '2025-05-06':'День детей (перенос)','2025-07-21':'День моря','2025-08-11':'День гор',
+    '2025-09-15':'День уважения к пожилым','2025-09-23':'День осеннего равноденствия','2025-10-13':'День спорта',
+    '2025-11-03':'День культуры','2025-11-24':'День благодарности труда (перенос)','2025-12-31':'Канун Нового года',
+    '2026-01-01':'Новый год','2026-01-02':'Новый год (доп.)','2026-01-03':'Новый год (доп.)','2026-01-12':'День совершеннолетия',
+    '2026-02-11':'День основания государства','2026-02-23':'День императора','2026-03-20':'День весеннего равноденствия',
+    '2026-04-29':'День Сёва','2026-05-03':'День Конституции','2026-05-04':'День зелени','2026-05-05':'День детей',
+    '2026-05-06':'День детей (перенос)','2026-07-20':'День моря','2026-08-11':'День гор',
+    '2026-09-21':'День уважения к пожилым','2026-09-22':'Мост (неторговый день)','2026-09-23':'День осеннего равноденствия',
+    '2026-10-12':'День спорта','2026-11-03':'День культуры','2026-11-23':'День благодарности труда','2026-12-31':'Канун Нового года',
+    '2027-01-01':'Новый год','2027-01-02':'Новый год (доп.)','2027-01-03':'Новый год (доп.)','2027-01-11':'День совершеннолетия',
+    '2027-02-11':'День основания государства','2027-02-23':'День императора','2027-03-22':'День весеннего равноденствия',
+    '2027-04-29':'День Сёва','2027-05-03':'День Конституции','2027-05-04':'День зелени','2027-05-05':'День детей',
+    '2027-07-19':'День моря','2027-09-20':'День уважения к пожилым','2027-09-23':'День осеннего равноденствия',
+    '2027-10-11':'День спорта','2027-11-03':'День культуры','2027-11-23':'День благодарности труда','2027-12-31':'Канун Нового года'
+  },
+  lse: {
+    '2025-01-01':'Новый год','2025-04-18':'Страстная пятница','2025-04-21':'Пасхальный понедельник',
+    '2025-05-05':'Ранний май (Bank Holiday)','2025-05-26':'Весенний Bank Holiday','2025-08-25':'Летний Bank Holiday',
+    '2025-12-25':'Рождество','2025-12-26':'День подарков',
+    '2026-01-01':'Новый год','2026-04-03':'Страстная пятница','2026-04-06':'Пасхальный понедельник',
+    '2026-05-04':'Ранний май (Bank Holiday)','2026-05-25':'Весенний Bank Holiday','2026-08-31':'Летний Bank Holiday',
+    '2026-12-25':'Рождество','2026-12-28':'День подарков (перенос)',
+    '2027-01-01':'Новый год','2027-03-26':'Страстная пятница','2027-03-29':'Пасхальный понедельник',
+    '2027-05-03':'Ранний май (Bank Holiday)','2027-05-31':'Весенний Bank Holiday','2027-08-30':'Летний Bank Holiday',
+    '2027-12-27':'Рождество (перенос)','2027-12-28':'День подарков (перенос)'
+  },
+  nyse: {
+    '2025-01-01':'Новый год','2025-01-20':'День Мартина Лютера Кинга','2025-02-17':'День президентов',
+    '2025-04-18':'Страстная пятница','2025-05-26':'День памяти','2025-06-19':'День Джунетинс',
+    '2025-07-04':'День независимости','2025-09-01':'День труда','2025-11-27':'День благодарения','2025-12-25':'Рождество',
+    '2026-01-01':'Новый год','2026-01-19':'День Мартина Лютера Кинга','2026-02-16':'День президентов',
+    '2026-04-03':'Страстная пятница','2026-05-25':'День памяти','2026-06-19':'День Джунетинс',
+    '2026-07-03':'День независимости (перенос)','2026-09-07':'День труда','2026-11-26':'День благодарения','2026-12-25':'Рождество',
+    '2027-01-01':'Новый год','2027-01-18':'День Мартина Лютера Кинга','2027-02-15':'День президентов',
+    '2027-03-26':'Страстная пятница','2027-05-31':'День памяти','2027-06-18':'День Джунетинс (перенос)',
+    '2027-07-05':'День независимости (перенос)','2027-09-06':'День труда','2027-11-25':'День благодарения','2027-12-24':'Рождество (перенос)'
+  },
+  cme: {
+    '2025-01-01':'Новый год','2025-01-20':'День Мартина Лютера Кинга','2025-02-17':'День президентов',
+    '2025-04-18':'Страстная пятница','2025-05-26':'День памяти','2025-06-19':'День Джунетинс',
+    '2025-07-04':'День независимости','2025-09-01':'День труда','2025-11-27':'День благодарения','2025-12-25':'Рождество',
+    '2026-01-01':'Новый год','2026-01-19':'День Мартина Лютера Кинга','2026-02-16':'День президентов',
+    '2026-04-03':'Страстная пятница','2026-05-25':'День памяти','2026-06-19':'День Джунетинс',
+    '2026-07-03':'День независимости (перенос)','2026-09-07':'День труда','2026-11-26':'День благодарения','2026-12-25':'Рождество',
+    '2027-01-01':'Новый год','2027-01-18':'День Мартина Лютера Кинга','2027-02-15':'День президентов',
+    '2027-03-26':'Страстная пятница','2027-05-31':'День памяти','2027-06-18':'День Джунетинс (перенос)',
+    '2027-07-05':'День независимости (перенос)','2027-09-06':'День труда','2027-11-25':'День благодарения','2027-12-24':'Рождество (перенос)'
+  }
+};
+
+function ex2GetOffMin(tz, date) {
+  const d = date || new Date();
+  const p = s => {
+    const [dp, tp] = s.split(', ');
+    const [mo, day, y] = dp.split('/');
+    const [h, mi, se] = tp.split(':');
+    return new Date(Date.UTC(+y, +mo-1, +day, +h, +mi, +se));
+  };
+  const u = d.toLocaleString('en-US',{timeZone:'UTC',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const t = d.toLocaleString('en-US',{timeZone:tz,  hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  return (p(t) - p(u)) / 60000;
+}
+
+function ex2Fmt(h, m) { return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
+
+function ex2Conv(lh, lm, exchOff, targetOff) {
+  let t = lh*60 + lm - exchOff + targetOff;
+  t = ((t % 1440) + 1440) % 1440;
+  return [Math.floor(t/60), t%60];
+}
+
+function ex2LocalDateStr(tz, date) {
+  const d = date || new Date();
+  const [mo, day, yr] = d.toLocaleString('en-US',{timeZone:tz,month:'2-digit',day:'2-digit',year:'numeric'}).split('/');
+  return `${yr}-${mo}-${day}`;
+}
+
+function ex2LocalDOW(tz, date) {
+  const d = date || new Date();
+  const s = d.toLocaleString('en-US',{timeZone:tz,weekday:'short'});
+  return {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[s];
+}
+
+function ex2GetHoliday(exch, date) {
+  const key = ex2LocalDateStr(exch.tz, date);
+  return (EX2_HOLIDAYS[exch.id] && EX2_HOLIDAYS[exch.id][key]) || null;
+}
+
+function ex2IsWeekend(exch, date) {
+  const dow = ex2LocalDOW(exch.tz, date);
+  return dow === 0 || dow === 6;
+}
+
+function ex2IsCMEOpen(now) {
+  const tz = 'America/Chicago';
+  const dow = ex2LocalDOW(tz, now);
+  const off = ex2GetOffMin(tz, now);
+  const cur = (now.getUTCHours()*60 + now.getUTCMinutes() + off + 1440) % 1440;
+  if (dow === 6) return false;
+  if (dow === 0) return cur >= 1020;
+  if (dow === 5) return cur < 960;
+  return cur < 960 || cur >= 1020;
+}
+
+function ex2IsOpen(exch, now) {
+  if (ex2GetHoliday(exch, now)) return false;
+  if (exch.overnight) {
+    if (ex2LocalDOW(exch.tz, now) === 6) return false;
+    return ex2IsCMEOpen(now);
+  }
+  if (ex2IsWeekend(exch, now)) return false;
+  const off = ex2GetOffMin(exch.tz, now);
+  const cur = (now.getUTCHours()*60 + now.getUTCMinutes() + off + 1440) % 1440;
+  return exch.sessions.some(s => {
+    const o = s.open[0]*60 + s.open[1], c = s.close[0]*60 + s.close[1];
+    return cur >= o && cur < c;
+  });
+}
+
+function ex2GetStatus(exch, now) {
+  if (ex2GetHoliday(exch, now)) return 'holiday';
+  if (exch.overnight) {
+    if (ex2LocalDOW(exch.tz, now) === 6) return 'weekend';
+    return ex2IsCMEOpen(now) ? 'open' : 'closed';
+  }
+  if (ex2IsWeekend(exch, now)) return 'weekend';
+  if (ex2IsOpen(exch, now)) return 'open';
+  return 'closed';
+}
+
+function ex2NextOpen(exch, now, myOff) {
+  const dowMap = {Sun:'Вс',Mon:'Пн',Tue:'Вт',Wed:'Ср',Thu:'Чт',Fri:'Пт',Sat:'Сб'};
+  for (let daysAhead = 0; daysAhead <= 14; daysAhead++) {
+    for (const s of exch.sessions) {
+      const candidate = new Date(now);
+      candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+      if (ex2IsWeekend(exch, candidate)) continue;
+      if (ex2GetHoliday(exch, candidate)) continue;
+      const exchOff = ex2GetOffMin(exch.tz, candidate);
+      const exchLocalStr = candidate.toLocaleString('en-US',{timeZone:exch.tz,hour12:false,year:'numeric',month:'2-digit',day:'2-digit'});
+      const [mo, day, yr] = exchLocalStr.split('/');
+      const openUTC = Date.UTC(+yr, +mo-1, +day, s.open[0] - Math.floor(exchOff/60), s.open[1] - (exchOff%60));
+      if (openUTC > now.getTime()) {
+        const openDate = new Date(openUTC);
+        const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+        const dowIdx = openDate.toLocaleString('en-US',{timeZone:exch.tz,weekday:'short'});
+        const dayNum   = String(openDate.toLocaleString('en-US',{timeZone:exch.tz,day:'numeric'})).padStart(2,'0');
+        const monthNum = String(openDate.toLocaleString('en-US',{timeZone:exch.tz,month:'numeric'})).padStart(2,'0');
+        const yearShort = openDate.toLocaleString('en-US',{timeZone:exch.tz,year:'2-digit'});
+        return { dayLabel:(dowMap[dowIdx]||dowIdx)+', '+dayNum+'.'+monthNum+'.'+yearShort, timeStr:ex2Fmt(Math.floor(userMin/60),userMin%60), sessionName:s.name };
+      }
+    }
+  }
+  return null;
+}
+
+function ex2NextOpenCME(exch, now, myOff) {
+  const dowMap = {Sun:'Вс',Mon:'Пн',Tue:'Вт',Wed:'Ср',Thu:'Чт',Fri:'Пт',Sat:'Сб'};
+  const tz = exch.tz;
+  const dow = ex2LocalDOW(tz, now);
+  if (dow >= 1 && dow <= 4 && !ex2GetHoliday(exch, now)) {
+    const off = ex2GetOffMin(tz, now);
+    const cur = (now.getUTCHours()*60 + now.getUTCMinutes() + off + 1440) % 1440;
+    if (cur >= 960 && cur < 1020) {
+      const todayStr = now.toLocaleString('en-US',{timeZone:tz,month:'2-digit',day:'2-digit',year:'numeric'});
+      const [mo, day, yr] = todayStr.split('/');
+      const openUTC = Date.UTC(+yr, +mo-1, +day, 17 - Math.floor(off/60), -(off%60));
+      const openDate = new Date(openUTC);
+      const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+      const dowIdx = openDate.toLocaleString('en-US',{timeZone:tz,weekday:'short'});
+      const dayNum   = String(openDate.toLocaleString('en-US',{timeZone:tz,day:'numeric'})).padStart(2,'0');
+      const monthNum = String(openDate.toLocaleString('en-US',{timeZone:tz,month:'numeric'})).padStart(2,'0');
+      const yearShort = openDate.toLocaleString('en-US',{timeZone:tz,year:'2-digit'});
+      return { dayLabel:(dowMap[dowIdx]||dowIdx)+', '+dayNum+'.'+monthNum+'.'+yearShort, timeStr:ex2Fmt(Math.floor(userMin/60),userMin%60), sessionName:'Globex' };
+    }
+  }
+  for (let daysAhead = 1; daysAhead <= 7; daysAhead++) {
+    const candidate = new Date(now);
+    candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+    const cdow = ex2LocalDOW(tz, candidate);
+    if (cdow === 6) continue;
+    if (ex2GetHoliday(exch, candidate)) continue;
+    let openHour = 0, openMin = 0;
+    if (cdow === 0) { openHour = 17; openMin = 0; }
+    const exchOff = ex2GetOffMin(tz, candidate);
+    const dateStr = candidate.toLocaleString('en-US',{timeZone:tz,month:'2-digit',day:'2-digit',year:'numeric'});
+    const [mo, day, yr] = dateStr.split('/');
+    const openUTC = Date.UTC(+yr, +mo-1, +day, openHour - Math.floor(exchOff/60), openMin - (exchOff%60));
+    if (openUTC <= now.getTime()) continue;
+    const openDate = new Date(openUTC);
+    const userMin = (openDate.getUTCHours()*60 + openDate.getUTCMinutes() + ((myOff%1440)+1440)) % 1440;
+    const dowIdx = openDate.toLocaleString('en-US',{timeZone:tz,weekday:'short'});
+    const dayNum   = String(openDate.toLocaleString('en-US',{timeZone:tz,day:'numeric'})).padStart(2,'0');
+    const monthNum = String(openDate.toLocaleString('en-US',{timeZone:tz,month:'numeric'})).padStart(2,'0');
+    const yearShort = openDate.toLocaleString('en-US',{timeZone:tz,year:'2-digit'});
+    return { dayLabel:(dowMap[dowIdx]||dowIdx)+', '+dayNum+'.'+monthNum+'.'+yearShort, timeStr:ex2Fmt(Math.floor(userMin/60),userMin%60), sessionName:'Globex' };
+  }
+  return null;
+}
+
+function ex2DstNote(tz, now) {
+  const jan = new Date(now.getFullYear(), 0, 15);
+  const jul = new Date(now.getFullYear(), 6, 15);
+  const oj = ex2GetOffMin(tz, jan), oji = ex2GetOffMin(tz, jul);
+  if (oj === oji) return 'Без летнего времени';
+  const on = ex2GetOffMin(tz, now);
+  const isDST = on === Math.max(oj, oji);
+  const h = on/60, sign = h >= 0 ? '+' : '';
+  return (isDST ? 'Летнее время (DST)' : 'Зимнее время') + ' · UTC' + sign + (h%1===0 ? h : h.toFixed(1));
+}
+
+function checkExch2HolidayReminder() {
+  const banner = document.getElementById('exch2HolidayReminder');
+  const txt    = document.getElementById('exch2HolidayReminderText');
+  if (!banner || !txt) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const mon  = now.getMonth() + 1;
+  const warnYear = EX2_HOLIDAYS_LAST_YEAR;
+  const shouldShow = (year === warnYear && mon >= 12) || (year > warnYear);
+  if (!shouldShow) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  if (year > warnYear) {
+    txt.innerHTML = `🔴 <strong>Данные праздников устарели!</strong> Прошиты только по <strong>${warnYear}</strong> год, сейчас <strong>${year}</strong>. Праздники не учитываются — биржи могут показываться как открытые!`;
+    banner.style.borderLeftColor = '#ff3333';
+    banner.style.animation = 'exchHolBlink 2s ease-in-out infinite';
+  } else {
+    txt.innerHTML = `🟡 Скоро заканчиваются данные о праздниках: прошиты по <strong>конец ${warnYear}</strong> года. Рекомендуем обновить до января ${warnYear+1}.`;
+    banner.style.animation = '';
+  }
+}
+
+let _ex2Interval = null;
+
+function renderExchanges2() {
+  const container = document.getElementById('ex2Grid');
+  if (!container) return;
+
+  checkExch2HolidayReminder();
+
+  const myOff = (parseFloat(document.getElementById('ex2UtcOffset').value) || 0) * 60;
+  const now = new Date();
+  const raw = (now.getUTCHours()*60 + now.getUTCMinutes() + ((myOff%1440)+1440)%1440) % 1440;
+  const myTimeEl = document.getElementById('ex2MyTime');
+  if (myTimeEl) myTimeEl.textContent = 'Сейчас: ' + ex2Fmt(Math.floor(raw/60), raw%60);
+
+  container.innerHTML = '';
+
+  for (const ex of EX2) {
+    const off    = ex2GetOffMin(ex.tz, now);
+    const status = ex2GetStatus(ex, now);
+    const note   = ex2DstNote(ex.tz, now);
+    const holiday= ex2GetHoliday(ex, now);
+
+    const badgeMap = {
+      open:    {cls:'open',    text:'● Открыта'},
+      closed:  {cls:'closed',  text:'● Закрыта'},
+      weekend: {cls:'weekend', text:'● Выходной'},
+      holiday: {cls:'holiday', text:'● Праздник'},
+    };
+    const badge = badgeMap[status];
+
+    let rows = '';
+    if (ex.overnight) {
+      const [sunOpenH,sunOpenM]      = ex2Conv(17, 0, off, myOff/60);
+      const [breakStartH,breakStartM]= ex2Conv(16, 0, off, myOff/60);
+      const [breakEndH,breakEndM]    = ex2Conv(17, 0, off, myOff/60);
+      const [friCloseH,friCloseM]    = ex2Conv(16, 0, off, myOff/60);
+      rows = `<div class="ex2-row"><span class="ex2-row-label">Вс открытие</span><div class="ex2-time-my">${ex2Fmt(sunOpenH,sunOpenM)}</div></div>
+      <div class="ex2-row"><span class="ex2-row-label">Пн–Чт перерыв</span><div class="ex2-time-my">${ex2Fmt(breakStartH,breakStartM)} – ${ex2Fmt(breakEndH,breakEndM)}</div></div>
+      <div class="ex2-row"><span class="ex2-row-label">Пт закрытие</span><div class="ex2-time-my">${ex2Fmt(friCloseH,friCloseM)}</div></div>`;
+    } else {
+      for (const s of ex.sessions) {
+        const [mh,mm] = ex2Conv(s.open[0],  s.open[1],  off, myOff/60);
+        const [ch,cm] = ex2Conv(s.close[0], s.close[1], off, myOff/60);
+        rows += `<div class="ex2-row"><span class="ex2-row-label">${s.name}</span><div class="ex2-time-my">${ex2Fmt(mh,mm)} – ${ex2Fmt(ch,cm)}</div></div>`;
+      }
+    }
+
+    let next = null;
+    if (status !== 'open') {
+      next = ex.overnight ? ex2NextOpenCME(ex, now, myOff) : ex2NextOpen(ex, now, myOff);
+    }
+    const nextRow = next
+      ? `<div class="ex2-next-open"><span class="ex2-row-label">Следующее открытие</span><div class="ex2-time-my">${next.dayLabel} · ${next.timeStr}</div></div>`
+      : '';
+
+    const holidayNote = holiday
+      ? `<div class="ex2-holiday-note">🎌 ${holiday}</div>`
+      : (status === 'weekend' ? `<div class="ex2-holiday-note">📅 Выходной день — биржа закрыта</div>` : '');
+
+    const card = document.createElement('div');
+    card.className = 'ex2-card';
+    card.innerHTML = `
+      <div class="ex2-card-head">
+        <div>
+          <div class="ex2-card-title">${ex.name}</div>
+          <div class="ex2-card-sub">${ex.city} · ${ex.country}</div>
+        </div>
+        <span class="ex2-badge ${badge.cls}">${badge.text}</span>
+      </div>
+      ${rows}
+      ${nextRow}
+      ${holidayNote}
+      <div class="ex2-dst">${note}</div>`;
+    container.appendChild(card);
+  }
+
+  if (!_ex2Interval) {
+    _ex2Interval = setInterval(() => {
+      const panel = document.getElementById('tab-exchanges2');
+      if (panel && panel.classList.contains('active')) renderExchanges2();
+    }, 30000);
+  }
+}
+
+
+// ════════════════════════════════════════════
+// 🧮 КАЛЬКУЛЯТОР ПОЗИЦИИ
+// ════════════════════════════════════════════
+
+let calcCurrentMode = 1;
+let calcCurrentDir = 'long';
+let calcCurrentStopMode = 'atr';
+let calcCurrentSlMode = 'price';
+let calcDir2 = 'long';
+let calcCopyText1 = '';
+let calcCopyText2 = '';
+
+function calcCopy(mode) {
+  const text = mode === 1 ? calcCopyText1 : calcCopyText2;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn' + mode);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ СКОПИРОВАНО!';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    btn.style.background = 'rgba(0,255,136,.08)';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+      btn.style.background = 'rgba(0,229,255,.07)';
+    }, 2000);
+  });
+}
+
+function calcInit() {
+  renderPartialInputs();
+  calcMode1();
+  calcMode2();
+}
+
+function setCalcMode(m) {
+  calcCurrentMode = m;
+  document.getElementById('calcPanel1').style.display = m === 1 ? 'block' : 'none';
+  document.getElementById('calcPanel2').style.display = m === 2 ? 'block' : 'none';
+  const b1 = document.getElementById('calcModeBtn1');
+  const b2 = document.getElementById('calcModeBtn2');
+  b1.style.background = m === 1 ? 'var(--accent)' : 'transparent';
+  b1.style.color = m === 1 ? 'var(--bg)' : 'var(--muted)';
+  b1.style.borderColor = m === 1 ? 'var(--accent)' : 'var(--border)';
+  b2.style.background = m === 2 ? 'var(--accent)' : 'transparent';
+  b2.style.color = m === 2 ? 'var(--bg)' : 'var(--muted)';
+  b2.style.borderColor = m === 2 ? 'var(--accent)' : 'var(--border)';
+}
+
+function calcSetDir(d) {
+  calcCurrentDir = d;
+  const bl = document.getElementById('dirLong');
+  const bs = document.getElementById('dirShort');
+  bl.style.borderWidth = d === 'long' ? '2px' : '1px';
+  bl.style.borderColor = d === 'long' ? 'var(--green)' : 'var(--border)';
+  bl.style.background = d === 'long' ? '#061610' : 'transparent';
+  bl.style.color = d === 'long' ? 'var(--green)' : 'var(--muted)';
+  bs.style.borderWidth = d === 'short' ? '2px' : '1px';
+  bs.style.borderColor = d === 'short' ? 'var(--red)' : 'var(--border)';
+  bs.style.background = d === 'short' ? '#160608' : 'transparent';
+  bs.style.color = d === 'short' ? 'var(--red)' : 'var(--muted)';
+  calcMode1();
+}
+
+function calcSetDir2(d) {
+  calcDir2 = d;
+  const bl = document.getElementById('c2dirLong');
+  const bs = document.getElementById('c2dirShort');
+  bl.style.borderWidth = d === 'long' ? '2px' : '1px';
+  bl.style.borderColor = d === 'long' ? 'var(--green)' : 'var(--border)';
+  bl.style.background = d === 'long' ? '#061610' : 'transparent';
+  bl.style.color = d === 'long' ? 'var(--green)' : 'var(--muted)';
+  bs.style.borderWidth = d === 'short' ? '2px' : '1px';
+  bs.style.borderColor = d === 'short' ? 'var(--red)' : 'var(--border)';
+  bs.style.background = d === 'short' ? '#160608' : 'transparent';
+  bs.style.color = d === 'short' ? 'var(--red)' : 'var(--muted)';
+  calcMode2();
+}
+
+function calcSetStopMode(m) {
+  calcCurrentStopMode = m;
+  const ba = document.getElementById('stopModeATR');
+  const bt = document.getElementById('stopModeTech');
+  ba.style.borderWidth = m === 'atr' ? '2px' : '1px';
+  ba.style.borderColor = m === 'atr' ? 'var(--accent)' : 'var(--border)';
+  ba.style.background = m === 'atr' ? 'rgba(0,229,255,.08)' : 'transparent';
+  ba.style.color = m === 'atr' ? 'var(--accent)' : 'var(--muted)';
+  bt.style.borderWidth = m === 'tech' ? '2px' : '1px';
+  bt.style.borderColor = m === 'tech' ? 'var(--orange)' : 'var(--border)';
+  bt.style.background = m === 'tech' ? 'rgba(255,170,0,.08)' : 'transparent';
+  bt.style.color = m === 'tech' ? 'var(--orange)' : 'var(--muted)';
+  document.getElementById('atrInputs').style.display = m === 'atr' ? 'block' : 'none';
+  document.getElementById('techStopInputs').style.display = m === 'tech' ? 'block' : 'none';
+  calcMode1();
+}
+
+function calcSetSlMode(m) {
+  calcCurrentSlMode = m;
+  const bp = document.getElementById('slModePrice');
+  const bd = document.getElementById('slModeDist');
+  bp.style.borderWidth = m === 'price' ? '2px' : '1px';
+  bp.style.borderColor = m === 'price' ? 'var(--accent)' : 'var(--border)';
+  bp.style.background = m === 'price' ? 'rgba(0,229,255,.08)' : 'transparent';
+  bp.style.color = m === 'price' ? 'var(--accent)' : 'var(--muted)';
+  bd.style.borderWidth = m === 'dist' ? '2px' : '1px';
+  bd.style.borderColor = m === 'dist' ? 'var(--orange)' : 'var(--border)';
+  bd.style.background = m === 'dist' ? 'rgba(255,170,0,.08)' : 'transparent';
+  bd.style.color = m === 'dist' ? 'var(--orange)' : 'var(--muted)';
+  document.getElementById('slPriceInputs').style.display = m === 'price' ? 'block' : 'none';
+  document.getElementById('slDistInputs').style.display = m === 'dist' ? 'block' : 'none';
+  calcMode2();
+}
+
+function renderPartialInputs() {
+  const n = parseInt(document.getElementById('c1_numTP').value) || 4;
+  const defaults = [
+    {r:3, p:25}, {r:4, p:25}, {r:5, p:25}, {r:6, p:25}, {r:7, p:0}
+  ];
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const d = defaults[i] || {r: i+3, p: Math.floor(100/n)};
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} соотн. 1:</div>
+        <input id="c1_r${i}" type="number" value="${d.r}" min="0.5" step="0.5"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--accent);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} доля %</div>
+        <input id="c1_p${i}" type="number" value="${d.p}" min="0" max="100" step="1"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--green);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+      </div>
+    </div>`;
+  }
+  document.getElementById('partialInputsContainer').innerHTML = html;
+}
+
+function calcFmt(v, d) {
+  if (isNaN(v) || !isFinite(v)) return '—';
+  const fixed = v.toFixed(d);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+}
+
+function calcRow(label, value, color) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1e30;">
+    <span style="color:#4a6080;">${label}</span>
+    <span style="color:${color || 'var(--bright)'};font-weight:700;">${value}</span>
+  </div>`;
+}
+
+function calcSection(title) {
+  return `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;border-top:1px solid var(--border);padding-top:10px;">${title}</div>`;
+}
+
+function calcMode1() {
+  const level    = parseFloat(document.getElementById('c1_level').value) || 0;
+  const ratio    = parseFloat(document.getElementById('c1_ratio').value) || 3;
+  const risk     = parseFloat(document.getElementById('c1_risk').value) || 10;
+  const useLev   = document.getElementById('c1_useLev').checked;
+  const lev      = parseInt(document.getElementById('c1_lev').value) || 10;
+  const useBin   = document.getElementById('c1_useBin').checked;
+  const binType  = document.getElementById('c1_binType').value;
+  const usePartial = document.getElementById('c1_usePartial').checked;
+  const dir      = calcCurrentDir;
+  const isLong   = dir === 'long';
+
+  // Stop calc
+  let tvh, stopLoss, actualStop;
+
+  if (calcCurrentStopMode === 'tech') {
+    const techStop = parseFloat(document.getElementById('c1_techStop').value) || 0;
+    tvh = level;
+    stopLoss = techStop;
+    actualStop = Math.abs(tvh - stopLoss);
+  } else {
+    const atr      = parseFloat(document.getElementById('c1_atr').value) || 0.22;
+    const stopPct  = (parseFloat(document.getElementById('c1_stopPct').value) || 15) / 100;
+    const stop     = atr * stopPct;
+    const buffer   = stop * 0.20;
+    tvh      = isLong ? level + buffer : level - buffer;
+    stopLoss = isLong ? tvh - stop : tvh + stop;
+    actualStop = Math.abs(tvh - stopLoss);
+  }
+
+  if (actualStop <= 0) {
+    document.getElementById('calcResult1').innerHTML = `<div style="color:var(--red);text-align:center;padding:40px 0;">⚠️ Стоп-лосс равен нулю — проверь параметры</div>`;
+    return;
+  }
+
+  const posSize  = risk / actualStop;
+  const volUSD   = posSize * tvh;
+  const takeVal  = actualStop * ratio;
+  const takeProfit = isLong ? tvh + takeVal : tvh - takeVal;
+  const profitBrutto = posSize * takeVal;
+
+  // Binance commission
+  const binRate = binType === 'maker' ? 0.0002 : 0.0005;
+  let entryComm = 0, exitComm = 0, stopComm = 0, tpWithComm = takeProfit;
+  if (useBin) {
+    entryComm = volUSD * binRate;
+    const targetNet = risk * ratio;
+    if (isLong) {
+      tpWithComm = (targetNet + posSize * tvh + entryComm) / (posSize * (1 - binRate));
+    } else {
+      tpWithComm = (posSize * tvh - targetNet - entryComm) / (posSize * (1 + binRate));
+    }
+    exitComm  = posSize * tpWithComm * binRate;
+    stopComm  = posSize * stopLoss * binRate;
+  }
+
+  // Partial close
+  let partialHTML = '';
+  if (usePartial) {
+    const n = parseInt(document.getElementById('c1_numTP').value) || 4;
+    let totalProfit = 0;
+    let partRows = '';
+    for (let i = 0; i < n; i++) {
+      const ri = parseFloat(document.getElementById('c1_r'+i)?.value) || (i+3);
+      const pi = parseFloat(document.getElementById('c1_p'+i)?.value) || 25;
+      const pct = pi / 100;
+      const partSize = posSize * pct;
+      const partTakeVal = actualStop * ri;
+      let partTP = isLong ? tvh + partTakeVal : tvh - partTakeVal;
+      if (useBin) {
+        const partNet = risk * ri * pct;
+        const partEntry = partSize * tvh * binRate;
+        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - binRate));
+        else partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + binRate));
+      }
+      const partProfit = partSize * Math.abs(partTP - tvh);
+      totalProfit += partProfit;
+      partRows += calcRow(`ТП${i+1} (1:${ri} | ${pi}%) → цена`, `${calcFmt(partTP,4)} | +$${calcFmt(partProfit,2)}`, 'var(--green)');
+    }
+    const partR = totalProfit / risk;
+    partialHTML = calcSection('📊 ЧАСТИЧНОЕ ЗАКРЫТИЕ') +
+      partRows +
+      calcRow('Итого профит', `$${calcFmt(totalProfit,2)}`, 'var(--green)') +
+      calcRow('Профит в рисках', `${calcFmt(partR,2)}R`, 'var(--accent)');
+  }
+
+  const dirEmoji = isLong ? '🟢 ЛОНГ' : '🔴 ШОРТ';
+  const profitR  = profitBrutto / risk;
+
+  let html = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:800;color:${isLong?'var(--green)':'var(--red)'};">${dirEmoji}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Соотношение 1:${ratio}</div>
+    </div>
+    ${calcSection('✅ ОБЪЁМ')}
+    ${calcRow('Количество монет/акций', calcFmt(posSize, 4))}
+    ${calcRow('Объём ($)', '$' + calcFmt(volUSD, 2))}
+    ${useLev ? calcRow(`Объём с плечом x${lev}`, '$' + calcFmt(volUSD/lev, 2)) : ''}
+    ${calcSection('✅ ВХОД И ВЫХОД')}
+    ${calcRow('ТВХ (вход)', calcFmt(tvh, 4), 'var(--accent)')}
+    ${calcRow(useBin ? 'ТП + комиссия' : 'ТП', calcFmt(useBin ? tpWithComm : takeProfit, 4), 'var(--green)')}
+    ${calcRow('СЛ', calcFmt(stopLoss, 4), 'var(--red)')}
+    ${calcRow('Размер стопа', calcFmt(actualStop, 6))}
+  `;
+
+  if (useBin) {
+    html += calcSection(`💰 КОМИССИИ BINANCE (${binType === 'maker' ? 'Maker 0.02%' : 'Taker 0.05%'})`) +
+      calcRow('Вход', '$' + calcFmt(entryComm, 4)) +
+      calcRow('Выход (по ТП)', '$' + calcFmt(exitComm, 4)) +
+      calcRow('Выход (по СЛ)', '$' + calcFmt(stopComm, 4)) +
+      calcRow('Всего (вход+ТП)', '$' + calcFmt(entryComm+exitComm, 4));
+  }
+
+  if (!usePartial) {
+    html += calcSection('✅ РЕЗУЛЬТАТ') +
+      calcRow('Профит', '$' + calcFmt(profitBrutto, 2), 'var(--green)') +
+      calcRow('Профит в рисках', calcFmt(profitR, 2) + 'R', 'var(--accent)') +
+      calcRow('Убыток (риск)', '$' + calcFmt(risk, 2), 'var(--red)');
+  } else {
+    html += partialHTML;
+  }
+
+  document.getElementById('calcResult1').innerHTML = html;
+
+  // Формируем текст для копирования
+  const dirLabel = isLong ? 'ЛОНГ' : 'ШОРТ';
+  const stopMode = calcCurrentStopMode === 'tech' ? 'Технический стоп' : 'ATR';
+  let txt = `═══ КАЛЬКУЛЯТОР ПОЗИЦИИ ═══\n`;
+  txt += `Направление : ${dirLabel}  |  Соотношение 1:${ratio}\n`;
+  txt += `Режим стопа : ${stopMode}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `ТВХ         : ${calcFmt(tvh, 4)}\n`;
+  txt += `ТП          : ${calcFmt(useBin ? tpWithComm : takeProfit, 4)}\n`;
+  txt += `СЛ          : ${calcFmt(stopLoss, 4)}\n`;
+  txt += `Размер стопа: ${calcFmt(actualStop, 6)}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `Количество  : ${calcFmt(posSize, 4)}\n`;
+  txt += `Объём ($)   : $${calcFmt(volUSD, 2)}\n`;
+  if (useLev) txt += `С плечом x${lev}: $${calcFmt(volUSD/lev, 2)}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `Риск        : $${calcFmt(risk, 2)}\n`;
+  txt += `Профит      : $${calcFmt(profitBrutto, 2)}\n`;
+  txt += `В рисках    : ${calcFmt(profitR, 2)}R\n`;
+  if (useBin) {
+    txt += `─────────────────────────────\n`;
+    txt += `Комиссия вход  : $${calcFmt(entryComm, 4)}\n`;
+    txt += `Комиссия выход : $${calcFmt(exitComm, 4)}\n`;
+    txt += `Комиссия СЛ    : $${calcFmt(stopComm, 4)}\n`;
+  }
+  if (usePartial) {
+    const n = parseInt(document.getElementById('c1_numTP').value) || 4;
+    txt += `─────────────────────────────\n`;
+    txt += `ЧАСТИЧНОЕ ЗАКРЫТИЕ (${n} ТП)\n`;
+    for (let i = 0; i < n; i++) {
+      const ri = parseFloat(document.getElementById('c1_r'+i)?.value) || (i+3);
+      const pi = parseFloat(document.getElementById('c1_p'+i)?.value) || 25;
+      const pct = pi / 100;
+      const partSize = posSize * pct;
+      const partTakeVal = actualStop * ri;
+      let partTP = isLong ? tvh + partTakeVal : tvh - partTakeVal;
+      if (useBin) {
+        const partNet = risk * ri * pct;
+        const partEntry = partSize * tvh * binRate;
+        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - binRate));
+        else partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + binRate));
+      }
+      const partProfit = partSize * Math.abs(partTP - tvh);
+      txt += `ТП${i+1} (1:${ri} | ${pi}%) → ${calcFmt(partTP, 4)} | +$${calcFmt(partProfit, 2)}\n`;
+    }
+  }
+  txt += `═════════════════════════════`;
+  calcCopyText1 = txt;
+  document.getElementById('copyBtn1').style.display = 'block';
+}
+
+function calcMode2() {
+  const risk        = parseFloat(document.getElementById('c2_risk').value) || 5;
+  const unitsPerLot = parseFloat(document.getElementById('c2_unitsPerLot').value) || 100;
+  const lotStep     = parseFloat(document.getElementById('c2_lotStep').value) || 0.01;
+  const entryRaw    = parseFloat(document.getElementById('c2_entry').value);
+  const tvh         = (entryRaw && entryRaw > 0) ? entryRaw : null;
+
+  let slDistance, slCalc, dirLabel;
+
+  if (calcCurrentSlMode === 'price') {
+    const slPrice = parseFloat(document.getElementById('c2_slPrice').value);
+    if (!tvh || tvh <= 0) {
+      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену входа (ТВХ) выше нуля</div>`;
+      return;
+    }
+    if (!slPrice || slPrice <= 0) {
+      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену стоп-лосса (СЛ) выше нуля</div>`;
+      return;
+    }
+    slDistance = Math.abs(tvh - slPrice);
+    slCalc = slPrice;
+    dirLabel = tvh > slPrice ? '📈 LONG' : '📉 SHORT';
+  } else {
+    const dist = parseFloat(document.getElementById('c2_slDist').value) || 5;
+    if (!tvh || tvh <= 0) {
+      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену входа (ТВХ) выше нуля</div>`;
+      return;
+    }
+    slDistance = dist;
+    slCalc = calcDir2 === 'long' ? tvh - dist : tvh + dist;
+    dirLabel = calcDir2 === 'long' ? '📈 LONG' : '📉 SHORT';
+  }
+
+  if (slDistance <= 0) {
+    document.getElementById('calcResult2').innerHTML = `<div style="color:var(--red);text-align:center;padding:40px 0;">⚠️ Дистанция до СЛ равна нулю</div>`;
+    return;
+  }
+
+  const riskPerLot = slDistance * unitsPerLot;
+  const rawLots    = riskPerLot > 0 ? risk / riskPerLot : 0;
+  const lots       = Math.floor(rawLots / lotStep) * lotStep;
+  const realRisk   = lots * riskPerLot;
+
+  const dirColor = (calcCurrentSlMode === 'price' ? (tvh > slCalc ? 'var(--green)' : 'var(--red)') : (calcDir2 === 'long' ? 'var(--green)' : 'var(--red)'));
+
+  // Убираем лишние нули в конце лотов
+  function fmtLots(v, d) {
+    if (isNaN(v) || !isFinite(v)) return '—';
+    let s = v.toFixed(d);
+    if (s.includes('.')) s = s.replace(/\.?0+$/, '');
+    return s || '0';
+  }
+
+  const html = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:800;color:${dirColor};">${dirLabel}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${calcCurrentSlMode === 'price' ? 'По цене СЛ' : 'По дистанции'}</div>
+    </div>
+    ${calcSection('📍 УРОВНИ')}
+    ${calcRow('ТВХ цена', '$' + calcFmt(tvh, 4), 'var(--accent)')}
+    ${calcRow('СЛ цена', '$' + calcFmt(slCalc, 4), 'var(--red)')}
+    ${calcSection('📊 РАСЧЁТ')}
+    ${calcRow('Дистанция до СЛ', '$' + calcFmt(slDistance, 4))}
+    ${calcRow('Единиц в лоте', calcFmt(unitsPerLot, 0))}
+    ${calcRow('Риск на 1 лот', '$' + calcFmt(riskPerLot, 2))}
+    ${calcRow('Риск на сделку', '$' + calcFmt(risk, 2))}
+    ${calcSection('💼 РЕЗУЛЬТАТ')}
+    <div style="text-align:center;padding:12px 0;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Размер позиции</div>
+      <div style="font-size:36px;font-weight:800;color:var(--accent);letter-spacing:2px;">${fmtLots(lots, 3)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px;">лот(а)</div>
+    </div>
+    ${calcRow('Реальный риск', '$' + calcFmt(realRisk, 2), realRisk > risk ? 'var(--orange)' : 'var(--green)')}
+    ${calcRow('Шаг лота', fmtLots(lotStep, 3))}
+  `;
+
+  document.getElementById('calcResult2').innerHTML = html;
+
+  // Текст для копирования
+  let txt = `═══ КАЛЬКУЛЯТОР ЛОТОВ ═══\n`;
+  txt += `Направление  : ${dirLabel}\n`;
+  txt += `Режим СЛ     : ${calcCurrentSlMode === 'price' ? 'По цене СЛ → $' + calcFmt(slCalc, 4) : 'По дистанции → $' + calcFmt(slDistance, 4)}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `ТВХ цена     : $${calcFmt(tvh, 4)}\n`;
+  txt += `СЛ цена      : $${calcFmt(slCalc, 4)}\n`;
+  txt += `Дистанция СЛ : $${calcFmt(slDistance, 4)}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `Единиц в лоте: ${calcFmt(unitsPerLot, 0)}\n`;
+  txt += `Риск на лот  : $${calcFmt(riskPerLot, 2)}\n`;
+  txt += `Риск сделка  : $${calcFmt(risk, 2)}\n`;
+  txt += `─────────────────────────────\n`;
+  txt += `▶ РАЗМЕР ПОЗИЦИИ: ${fmtLots(lots, 3)} лот(а)\n`;
+  txt += `Реальный риск: $${calcFmt(realRisk, 2)}\n`;
+  txt += `Шаг лота     : ${calcFmt(lotStep, 3)}\n`;
+  txt += `═════════════════════════════`;
+  calcCopyText2 = txt;
+  document.getElementById('copyBtn2').style.display = 'block';
+}
 
 function getZurichOffsetHours(){
   try {
