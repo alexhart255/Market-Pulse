@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мировые биржи — расписание торгов</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #efefec;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0efe8;
+      --text2: #9b9b96;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.12);
+      --border2: rgba(255,255,255,0.22);
+    }
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  h1 { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 1.25rem; }
+  .utc-bar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;
+    padding: 10px 14px; background: var(--bg); border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border); flex-wrap: wrap;
+  }
+  .utc-bar label { font-size: 13px; color: var(--text2); white-space: nowrap; }
+  .utc-bar input {
+    width: 64px; font-size: 14px; font-weight: 500; text-align: center;
+    padding: 4px 8px; border-radius: var(--radius-md); border: 0.5px solid var(--border2);
+    background: var(--bg2); color: var(--text); outline: none;
+  }
+  .utc-bar input:focus { border-color: #378ADD; box-shadow: 0 0 0 2px rgba(55,138,221,0.2); }
+  .mytime { font-size: 13px; color: var(--text2); margin-left: auto; font-weight: 500; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .card {
+    background: var(--bg); border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border); padding: 1rem 1.125rem;
+  }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .card-title { font-size: 15px; font-weight: 500; }
+  .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .badge.open { background: #EAF3DE; color: #3B6D11; }
+  .badge.closed { background: #FCEBEB; color: #A32D2D; }
+  @media (prefers-color-scheme: dark) {
+    .badge.open { background: #27500A; color: #C0DD97; }
+    .badge.closed { background: #791F1F; color: #F7C1C1; }
+  }
+  .row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-top: 0.5px solid var(--border); gap: 8px;
+  }
+  .row-label { font-size: 12px; color: var(--text2); }
+  .times { text-align: right; }
+  .t-my { font-size: 14px; font-weight: 500; }
+  .t-utc { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .dst {
+    font-size: 11px; color: var(--text3); margin-top: 8px;
+    border-top: 0.5px solid var(--border); padding-top: 8px;
+  }
+  .next-open {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-top: 0.5px solid var(--border); gap: 8px;
+  }
+  .next-open .t-my { font-size: 14px; font-weight: 500; }
+  footer { margin-top: 1.5rem; font-size: 11px; color: var(--text3); text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Мировые биржи — расписание торгов</h1>
+
+<div class="utc-bar">
+  <label>Мой UTC:</label>
+  <input type="number" id="utcOffset" value="2" min="-12" max="14" step="0.5" />
+  <span style="font-size:13px;color:var(--text2)">ч</span>
+  <span class="mytime" id="myTime"></span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<footer>Обновляется каждые 30 сек · DST рассчитывается автоматически</footer>
+
+<script>
+const EX = [
+  {
+    id: 'asx', name: 'ASX', city: 'Сидней', country: 'Австралия', tz: 'Australia/Sydney',
+    sessions: [{ name: 'Основная сессия', open: [10,0], close: [16,0] }]
+  },
+  {
+    id: 'tse', name: 'TSE', city: 'Токио', country: 'Япония', tz: 'Asia/Tokyo',
+    sessions: [
+      { name: 'Утренняя сессия', open: [9,0], close: [11,30] },
+      { name: 'Дневная сессия', open: [12,30], close: [15,30] }
+    ]
+  },
+  {
+    id: 'lse', name: 'LSE', city: 'Лондон', country: 'Великобритания', tz: 'Europe/London',
+    sessions: [{ name: 'Основная сессия', open: [8,0], close: [16,30] }]
+  },
+  {
+    id: 'nyse', name: 'NYSE / NASDAQ', city: 'Нью-Йорк', country: 'США', tz: 'America/New_York',
+    sessions: [{ name: 'Основная сессия', open: [9,30], close: [16,0] }]
+  }
+];
+
+function getOffMin(tz, date) {
+  const d = date || new Date();
+  const p = s => {
+    const [dp, tp] = s.split(', ');
+    const [mo, day, y] = dp.split('/');
+    const [h, mi, se] = tp.split(':');
+    return new Date(Date.UTC(+y, +mo-1, +day, +h, +mi, +se));
+  };
+  const u = d.toLocaleString('en-US', { timeZone: 'UTC', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const t = d.toLocaleString('en-US', { timeZone: tz,  hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return (p(t) - p(u)) / 60000;
+}
+
+function fmt(h, m) { return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
+
+function conv(lh, lm, exchOff, targetOff) {
+  let t = lh * 60 + lm - exchOff + targetOff;
+  t = ((t % 1440) + 1440) % 1440;
+  return [Math.floor(t / 60), t % 60];
+}
+
+function isOpen(exch, now) {
+  const off = getOffMin(exch.tz, now);
+  const cur = (now.getUTCHours() * 60 + now.getUTCMinutes() + off + 1440) % 1440;
+  return exch.sessions.some(s => {
+    const o = s.open[0] * 60 + s.open[1], c = s.close[0] * 60 + s.close[1];
+    return cur >= o && cur < c;
+  });
+}
+
+// Returns { dayLabel, timeStr } for the next opening of an exchange in the user's local offset
+function nextOpen(exch, now, myOff) {
+  const DAYS_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  // Search up to 7 days ahead, minute by minute is slow — iterate day by day
+  for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
+    // Try each session
+    for (const s of exch.sessions) {
+      // Build a Date for the candidate open moment (in exchange local time)
+      // We iterate: for daysAhead=0 we check if opening is still in the future today
+      const candidate = new Date(now);
+      candidate.setUTCDate(candidate.getUTCDate() + daysAhead);
+      // Get exchange offset for that candidate day
+      const exchOff = getOffMin(exch.tz, candidate);
+      // Exchange local midnight of candidate day (UTC ms)
+      const exchLocalStr = candidate.toLocaleString('en-US', {
+        timeZone: exch.tz, hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+      const [mo, day, yr] = exchLocalStr.split('/');
+      // Open time in UTC ms
+      const openUTC = Date.UTC(+yr, +mo - 1, +day, s.open[0] - Math.floor(exchOff/60), s.open[1] - (exchOff % 60));
+      if (openUTC > now.getTime()) {
+        // Compute open time in user's local offset
+        const openDate = new Date(openUTC);
+        const userMin = (openDate.getUTCHours() * 60 + openDate.getUTCMinutes() + ((myOff % 1440) + 1440)) % 1440;
+        const userH = Math.floor(userMin / 60), userM = userMin % 60;
+        // Day label: use exchange local date for day-of-week
+        const exchOpenDate = new Date(openUTC);
+        // Show exchange local day name + date number
+        const exchDayStr = exchOpenDate.toLocaleString('en-US', { timeZone: exch.tz, weekday: 'short', day: 'numeric' });
+        // Convert to Russian weekday using JS
+        const dowIdx = new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, weekday: 'short' });
+        const dowMap = { Sun: 'Вс', Mon: 'Пн', Tue: 'Вт', Wed: 'Ср', Thu: 'Чт', Fri: 'Пт', Sat: 'Сб' };
+        const dayNum = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, day: 'numeric' })).padStart(2,'0');
+        const monthNum = String(new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, month: 'numeric' })).padStart(2,'0');
+        const yearShort = new Date(openUTC).toLocaleString('en-US', { timeZone: exch.tz, year: '2-digit' });
+        const dayLabel = (dowMap[dowIdx] || dowIdx) + ', ' + dayNum + '.' + monthNum + '.' + yearShort;
+        return { dayLabel, timeStr: fmt(userH, userM), sessionName: s.name };
+      }
+    }
+  }
+  return null;
+}
+
+function dstNote(tz, now) {
+  const jan = new Date(now.getFullYear(), 0, 15);
+  const jul = new Date(now.getFullYear(), 6, 15);
+  const oj = getOffMin(tz, jan), oji = getOffMin(tz, jul);
+  if (oj === oji) return 'Без летнего времени';
+  const on = getOffMin(tz, now);
+  const isDST = on === Math.max(oj, oji);
+  const h = on / 60, sign = h >= 0 ? '+' : '';
+  return (isDST ? 'Летнее время (DST)' : 'Зимнее время') + ' · UTC' + sign + (h % 1 === 0 ? h : h.toFixed(1));
+}
+
+function render() {
+  const myOff = (parseFloat(document.getElementById('utcOffset').value) || 0) * 60;
+  const now = new Date();
+  const raw = (now.getUTCHours() * 60 + now.getUTCMinutes() + ((myOff % 1440) + 1440) % 1440) % 1440;
+  document.getElementById('myTime').textContent = 'Сейчас: ' + fmt(Math.floor(raw / 60), raw % 60);
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  for (const ex of EX) {
+    const off = getOffMin(ex.tz, now);
+    const open = isOpen(ex, now);
+    const note = dstNote(ex.tz, now);
+    let rows = '';
+    for (const s of ex.sessions) {
+      const [mh, mm]   = conv(s.open[0],  s.open[1],  off, myOff);
+      const [ch, cm]   = conv(s.close[0], s.close[1], off, myOff);
+      const [uh, um]   = conv(s.open[0],  s.open[1],  off, 0);
+      const [uch, ucm] = conv(s.close[0], s.close[1], off, 0);
+      rows += `<div class="row">
+        <span class="row-label">${s.name}</span>
+        <div class="times">
+          <div class="t-my">${fmt(mh,mm)} – ${fmt(ch,cm)}</div>
+        </div>
+      </div>`;
+    }
+    const next = nextOpen(ex, now, myOff);
+    const nextRow = next
+      ? `<div class="next-open">
+          <span class="row-label">Следующее открытие</span>
+          <div class="times">
+            <div class="t-my">${next.dayLabel} · ${next.timeStr}</div>
+          </div>
+        </div>`
+      : '';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="card-head">
+      <div><div class="card-title">${ex.name}</div><div class="card-sub">${ex.city} · ${ex.country}</div></div>
+      <span class="badge ${open ? 'open' : 'closed'}">${open ? '● Открыта' : '● Закрыта'}</span>
+    </div>${rows}${nextRow}<div class="dst">${note}</div>`;
+    grid.appendChild(card);
+  }
+}
+
+document.getElementById('utcOffset').addEventListener('input', render);
+render();
+setInterval(render, 30000);
+</script>
+</body>
+</html>
