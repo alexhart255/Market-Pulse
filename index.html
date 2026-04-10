@@ -670,18 +670,11 @@
       </div>
     </div>
 
-    <!-- UTC timezone selector -->
-    <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <!-- UTC timezone info (uses global UTC from top bar) -->
+    <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:12px 20px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:12px;color:var(--muted);letter-spacing:1px;">📍 МОЙ ЧАСОВОЙ ПОЯС:</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;color:var(--muted);">UTC</span>
-        <input id="exchUtcInput" type="number" min="-12" max="14" step="0.5" placeholder="авто"
-          style="width:70px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="renderExchanges()">
-        <button onclick="exchAutoUtc()" style="background:#0d2018;border:1px solid #1a5a28;border-radius:6px;padding:5px 12px;color:#60cc80;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">⟳ Авто (Цюрих)</button>
-        <span id="exchUtcLabel" style="font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;"></span>
-      </div>
+      <span id="exchUtcLabel" style="font-size:13px;font-weight:700;color:var(--accent);font-family:'Space Mono',monospace;"></span>
+      <span style="font-size:11px;color:var(--muted);">(задаётся глобально вверху страницы)</span>
     </div>
 
     <div id="exchangeCards" style="display:flex;flex-direction:column;gap:14px;"></div>
@@ -715,13 +708,11 @@
       </div>
     </div>
 
-    <!-- UTC selector -->
+    <!-- UTC info (uses global UTC from top bar) -->
     <div class="utc-bar2" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:#0d1421;border-radius:10px;border:1px solid var(--border);flex-wrap:wrap;">
       <span style="font-size:13px;color:var(--muted);">Мой UTC:</span>
-      <input type="number" id="ex2UtcOffset" value="2" min="-12" max="14" step="0.5"
-        style="width:64px;font-size:14px;font-weight:500;text-align:center;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:#080c14;color:var(--bright);outline:none;"
-        oninput="renderExchanges2()">
-      <span style="font-size:13px;color:var(--muted);">ч</span>
+      <span id="ex2UtcLabel" style="font-size:14px;font-weight:700;color:var(--accent);font-family:'Space Mono',monospace;"></span>
+      <span style="font-size:11px;color:var(--muted);">(задаётся глобально вверху страницы)</span>
       <span id="ex2MyTime" style="font-size:13px;color:var(--muted);margin-left:auto;font-weight:500;font-family:'Space Mono',monospace;"></span>
     </div>
 
@@ -988,11 +979,15 @@ function applyMyUtc(){
   inp.style.borderColor='var(--green)';
   setTimeout(()=>inp.style.borderColor='var(--border)',1000);
   render();
+  renderExchanges();
+  renderExchanges2();
 }
 function resetMyUtc(){
   localStorage.removeItem(MY_UTC_KEY);
   updateUtcLabel();
   render();
+  renderExchanges();
+  renderExchanges2();
 }
 function applyAutoUtc(){
   // Определяем смещение браузера — работает для любого часового пояса автоматически
@@ -1006,6 +1001,8 @@ function applyAutoUtc(){
   const btn = document.getElementById('autoUtcBtn');
   if(btn){ btn.textContent='✓ Применено'; btn.style.borderColor='var(--green)'; setTimeout(()=>{btn.textContent='⟳ Авто';btn.style.borderColor='#1a5a28';},1500); }
   render();
+  renderExchanges();
+  renderExchanges2();
 }
 function updateUtcLabel(isAuto){
   const v=getMyUtc();
@@ -2893,33 +2890,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // Get user's UTC offset for exchange tab (auto = Zurich)
 function getExchUtcOffset() {
-  const inp = document.getElementById('exchUtcInput');
-  if (inp && inp.value !== '') return parseFloat(inp.value);
-  // Auto: use Zurich timezone
-  try {
-    const now = new Date();
-    const zurichStr = now.toLocaleString('en-US', {timeZone:'Europe/Zurich', hour12:false, hour:'2-digit', minute:'2-digit'});
-    const utcStr    = now.toLocaleString('en-US', {timeZone:'UTC',            hour12:false, hour:'2-digit', minute:'2-digit'});
-    const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
-    let d = toM(zurichStr) - toM(utcStr);
-    if(d>720) d-=1440; if(d<-720) d+=1440;
-    return d/60;
-  } catch(e) { return 1; }
+  // Single source of truth — global UTC from top bar
+  const v = getMyUtc();
+  if (v !== null) return v;
+  // Fallback: browser timezone
+  return -new Date().getTimezoneOffset() / 60;
 }
 
 function exchAutoUtc() {
-  const inp = document.getElementById('exchUtcInput');
-  // Detect Zurich offset automatically
-  try {
-    const now = new Date();
-    const zurichStr = now.toLocaleString('en-US', {timeZone:'Europe/Zurich', hour12:false, hour:'2-digit', minute:'2-digit'});
-    const utcStr    = now.toLocaleString('en-US', {timeZone:'UTC',            hour12:false, hour:'2-digit', minute:'2-digit'});
-    const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
-    let d = toM(zurichStr) - toM(utcStr);
-    if(d>720) d-=1440; if(d<-720) d+=1440;
-    if(inp) inp.value = '';
-    renderExchanges();
-  } catch(e) {}
+  // Deprecated — kept for compatibility, does nothing
 }
 
 // Convert UTC minutes of day → user local time string
@@ -2943,7 +2922,9 @@ function isNowBetweenUtc(startUtcMins, endUtcMins, nowUtcMins) {
 // Get UTC offset for a named timezone right now (handles DST correctly)
 function getNamedTzOffset(tzName) {
   try {
+    // Truncate seconds to avoid sub-minute rounding artifacts
     const now = new Date();
+    now.setSeconds(0, 0);
     const tzStr  = now.toLocaleString('en-US', {timeZone: tzName, hour12:false, hour:'2-digit', minute:'2-digit'});
     const utcStr = now.toLocaleString('en-US', {timeZone:'UTC',   hour12:false, hour:'2-digit', minute:'2-digit'});
     const toM = s => { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); };
@@ -3277,11 +3258,7 @@ function renderExchanges() {
   const userOffset = getExchUtcOffset();
   const userOffStr = 'UTC' + (userOffset >= 0 ? '+' : '') + userOffset;
   const lbl = document.getElementById('exchUtcLabel');
-  if (lbl) {
-    const inp = document.getElementById('exchUtcInput');
-    const isAuto = !inp || inp.value === '';
-    lbl.textContent = userOffStr + (isAuto ? ' · Цюрих (авто)' : '');
-  }
+  if (lbl) lbl.textContent = userOffStr + ' · глобальный';
 
   const now = new Date();
   const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes() + now.getUTCSeconds()/60;
@@ -3569,20 +3546,25 @@ const EX2_HOLIDAYS = {
 
 function ex2GetOffMin(tz, date) {
   const d = date || new Date();
-  const p = s => {
-    const [dp, tp] = s.split(', ');
-    const [mo, day, y] = dp.split('/');
-    const [h, mi, se] = tp.split(':');
-    return new Date(Date.UTC(+y, +mo-1, +day, +h, +mi, +se));
+  // Truncate seconds to avoid sub-minute rounding artifacts
+  const dTrunc = new Date(d);
+  dTrunc.setSeconds(0, 0);
+  const toM = s => {
+    const [h, mi] = s.split(':');
+    return parseInt(h)*60 + parseInt(mi);
   };
-  const u = d.toLocaleString('en-US',{timeZone:'UTC',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const t = d.toLocaleString('en-US',{timeZone:tz,  hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  return (p(t) - p(u)) / 60000;
+  const uStr = dTrunc.toLocaleString('en-US',{timeZone:'UTC', hour12:false, hour:'2-digit', minute:'2-digit'});
+  const tStr = dTrunc.toLocaleString('en-US',{timeZone:tz,   hour12:false, hour:'2-digit', minute:'2-digit'});
+  let diff = toM(tStr) - toM(uStr);
+  if (diff > 720) diff -= 1440;
+  if (diff < -720) diff += 1440;
+  return diff;
 }
 
 function ex2Fmt(h, m) { return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
 
 function ex2Conv(lh, lm, exchOff, targetOff) {
+  // exchOff and targetOff must both be in MINUTES
   let t = lh*60 + lm - exchOff + targetOff;
   t = ((t % 1440) + 1440) % 1440;
   return [Math.floor(t/60), t%60];
@@ -3757,7 +3739,17 @@ function renderExchanges2() {
 
   checkExch2HolidayReminder();
 
-  const myOff = (parseFloat(document.getElementById('ex2UtcOffset').value) || 0) * 60;
+  // Use global UTC — single source of truth
+  const globalUtcH = getExchUtcOffset();
+  const myOff = globalUtcH * 60;
+
+  // Update UTC label in tab header
+  const utcLabelEl = document.getElementById('ex2UtcLabel');
+  if (utcLabelEl) {
+    const s = globalUtcH >= 0 ? '+' : '';
+    utcLabelEl.textContent = 'UTC' + s + globalUtcH;
+  }
+
   const now = new Date();
   const raw = (now.getUTCHours()*60 + now.getUTCMinutes() + ((myOff%1440)+1440)%1440) % 1440;
   const myTimeEl = document.getElementById('ex2MyTime');
@@ -3781,17 +3773,17 @@ function renderExchanges2() {
 
     let rows = '';
     if (ex.overnight) {
-      const [sunOpenH,sunOpenM]      = ex2Conv(17, 0, off, myOff/60);
-      const [breakStartH,breakStartM]= ex2Conv(16, 0, off, myOff/60);
-      const [breakEndH,breakEndM]    = ex2Conv(17, 0, off, myOff/60);
-      const [friCloseH,friCloseM]    = ex2Conv(16, 0, off, myOff/60);
+      const [sunOpenH,sunOpenM]      = ex2Conv(17, 0, off, myOff);
+      const [breakStartH,breakStartM]= ex2Conv(16, 0, off, myOff);
+      const [breakEndH,breakEndM]    = ex2Conv(17, 0, off, myOff);
+      const [friCloseH,friCloseM]    = ex2Conv(16, 0, off, myOff);
       rows = `<div class="ex2-row"><span class="ex2-row-label">Вс открытие</span><div class="ex2-time-my">${ex2Fmt(sunOpenH,sunOpenM)}</div></div>
       <div class="ex2-row"><span class="ex2-row-label">Пн–Чт перерыв</span><div class="ex2-time-my">${ex2Fmt(breakStartH,breakStartM)} – ${ex2Fmt(breakEndH,breakEndM)}</div></div>
       <div class="ex2-row"><span class="ex2-row-label">Пт закрытие</span><div class="ex2-time-my">${ex2Fmt(friCloseH,friCloseM)}</div></div>`;
     } else {
       for (const s of ex.sessions) {
-        const [mh,mm] = ex2Conv(s.open[0],  s.open[1],  off, myOff/60);
-        const [ch,cm] = ex2Conv(s.close[0], s.close[1], off, myOff/60);
+        const [mh,mm] = ex2Conv(s.open[0],  s.open[1],  off, myOff);
+        const [ch,cm] = ex2Conv(s.close[0], s.close[1], off, myOff);
         rows += `<div class="ex2-row"><span class="ex2-row-label">${s.name}</span><div class="ex2-time-my">${ex2Fmt(mh,mm)} – ${ex2Fmt(ch,cm)}</div></div>`;
       }
     }
@@ -4271,6 +4263,7 @@ function calcMode2() {
 function getZurichOffsetHours(){
   try {
     const now = new Date();
+    now.setSeconds(0, 0);
     const zurichStr = now.toLocaleString('en-US', {timeZone: 'Europe/Zurich', hour12: false, hour:'2-digit', minute:'2-digit'});
     const utcStr   = now.toLocaleString('en-US', {timeZone: 'UTC',            hour12: false, hour:'2-digit', minute:'2-digit'});
     const toMins = s => { const p = s.split(':'); return parseInt(p[0])*60 + parseInt(p[1]); };
