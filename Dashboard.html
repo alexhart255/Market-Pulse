@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Биржи · Zürich</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --num-color: #1D9E75; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: var(--num-color); min-height: 100vh; padding: 2rem 1.5rem; }
+  .topbar { display: flex; align-items: center; gap: 20px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .header-left { display: flex; flex-direction: column; }
+  .header-label { font-size: 11px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .clock-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; animation: pulse 2s infinite; flex-shrink: 0; transition: background 0.4s; cursor: default; }
+  .clock-dot.offline { background: #E24B4A; animation: pulseRed 0.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes pulseRed { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .net-status-text { font-size: 10px; letter-spacing: 0.08em; transition: color 0.4s; }
+  .zurich-time { font-size: 36px; font-weight: 600; color: var(--num-color); font-family: 'SF Mono','Fira Code',monospace; letter-spacing: -0.01em; }
+  .zurich-date { font-size: 12px; color: #666; margin-top: 2px; }
+
+  /* Entry clock — аналоговый циферблат */
+  .entry-clock { display: flex; flex-direction: column; align-items: center; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 10px 18px; transition: border-color 0.5s, background 0.5s, box-shadow 0.5s; min-width: 160px; }
+  .entry-clock.green { border-color: #1D9E75; background: #0d2018; box-shadow: 0 0 18px 2px rgba(29,158,117,0.13); }
+  .entry-clock.red   { border-color: #E24B4A; background: #1e0d0d; box-shadow: 0 0 18px 2px rgba(226,75,74,0.13); animation: entryClockBlink 1.5s ease-in-out infinite; }
+
+  @keyframes entryClockBlink {
+    0%, 100% { background: #1e0d0d; box-shadow: 0 0 18px 2px rgba(226,75,74,0.13); border-color: #E24B4A; }
+    50%       { background: #3a1010; box-shadow: 0 0 28px 6px rgba(226,75,74,0.45); border-color: #ff6b6b; }
+  }
+  .entry-clock.red { animation-duration: 1s; }
+  .entry-clock-label { font-size: 9px; letter-spacing: 0.08em; color: #555; margin-bottom: 6px; }
+  .entry-clock-label.green { color: #1D9E75; }
+  .entry-clock-label.red   { color: #E24B4A; }
+  .entry-mins { font-size: 10px; margin-top: 5px; color: #555; transition: color 0.5s; }
+  .entry-mins.green { color: #1D9E75; }
+  .entry-mins.red   { color: #E24B4A; }
+  #entry-canvas-wrap { position: relative; width: 100px; height: 100px; }
+  #entry-canvas-wrap canvas { border-radius: 50%; display: block; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 1.1rem 1.3rem; position: relative; transition: border-color 0.3s, background 0.5s, box-shadow 0.5s; }
+  .card.open   { border-color: #1D9E75; background: #0d2018; box-shadow: 0 0 18px 2px rgba(29,158,117,0.13); }
+  .card.closed { border-color: #E24B4A; background: #1e0d0d; box-shadow: 0 0 18px 2px rgba(226,75,74,0.13); }
+  .card.soon   { border-color: #F5C518; background: #1a1900; box-shadow: 0 0 18px 2px rgba(245,197,24,0.13); }
+  .card-flag { font-size: 20px; margin-bottom: 6px; }
+  .card-name { font-size: 14px; font-weight: 600; color: var(--num-color); margin-bottom: 2px; }
+  .card-sub { font-size: 11px; color: #555; margin-bottom: 10px; }
+  .open-time-label { font-size: 11px; color: #555; margin-bottom: 3px; }
+  .open-time-value { font-size: 24px; font-weight: 600; color: #1D9E75; color: var(--num-color); font-family: 'SF Mono','Fira Code',monospace; }
+  .tz-info { font-size: 10px; color: #444; margin-top: 4px; }
+  .divider { height: 1px; background: #222; margin: 10px 0; }
+  .countdown-row { display: grid; grid-template-columns: 1fr 10px 1fr 10px 1fr 10px 1fr; align-items: end; }
+  .countdown-block { text-align: center; }
+  .countdown-num { font-size: 22px; font-weight: 600; font-family: 'SF Mono','Fira Code',monospace; color: #1D9E75; color: var(--num-color); line-height: 1; }
+  .countdown-unit { font-size: 9px; color: #444; letter-spacing: 0.07em; margin-top: 3px; }
+  .colon { text-align: center; color: #333; font-size: 18px; padding-bottom: 14px; font-family: 'SF Mono','Fira Code',monospace; }
+  .next-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid #222; }
+  .next-label { font-size: 10px; color: #555; letter-spacing: 0.07em; margin-bottom: 3px; }
+  .next-val { font-size: 16px; font-weight: 600; font-family: 'SF Mono','Fira Code',monospace; color: #1D9E75; color: var(--num-color); }
+  .next-date { font-size: 11px; color: #555; margin-top: 2px; }
+  .status-badge { position: absolute; top: 12px; right: 12px; font-size: 10px; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 600; }
+  .badge-open { background: #0a2e20; color: #1D9E75; border: 1px solid #1D9E75; }
+  .badge-closed { background: #2e0a0a; color: #E24B4A; border: 1px solid #E24B4A; }
+  .badge-soon { background: #2a2200; color: #F5C518; border: 1px solid #F5C518; }
+  .holiday-note { font-size: 10px; color: #E24B4A; margin-bottom: 6px; }
+  .trading-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 1.1rem 1.3rem; margin-top: 12px; }
+  .trading-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+  .trading-sub { font-size: 11px; color: #555; margin-bottom: 14px; }
+  .phase-status { display: flex; align-items: center; gap: 10px; padding: 5px 14px; border-radius: 10px; margin-bottom: 12px; transition: background 0.5s; }
+  .phase-status.trading   { background: #0a2e20; border: 1px solid #1D9E75; }
+  .phase-status.warn30    { background: #2a1f05; border: 1px solid #EF9F27; }
+  .phase-status.warn15    { background: #2e0a0a; border: 1px solid #E24B4A; }
+  .phase-status.forbidden { background: #2e1005; border: 1px solid #D85A30; }
+  .phase-status.closed    { background: #141414; border: 1px solid #2a2a2a; animation: closedBlink 1s ease-in-out infinite; }
+
+  @keyframes closedBlink {
+    0%, 100% { background: #141414; border-color: #2a2a2a; }
+    50%       { background: #2e0a0a; border-color: #E24B4A; }
+  }
+  .phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green  { background: #1D9E75; animation: pulse 2s infinite; }
+  .dot-yellow { background: #EF9F27; animation: pulse 1s infinite; }
+  .dot-red2   { background: #E24B4A; animation: pulse 0.6s infinite; }
+  .dot-orange { background: #D85A30; animation: pulse 1s infinite; }
+  .dot-closed { background: #444; }
+  .phase-text { font-size: 17px; font-weight: 600; }
+  .phase-text.trading   { color: #1D9E75; }
+  .phase-text.warn30    { color: #EF9F27; }
+  .phase-text.warn15    { color: #E24B4A; }
+  .phase-text.forbidden { color: #D85A30; }
+  .phase-text.closed    { color: #555; }
+  .phase-bar-wrap { height: 40px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 5px; position: relative; }
+  .phase-bar-fill { position: absolute; top: 0; height: 100%; border-radius: 10px; transition: width 1s linear, background 1s; }
+  .phase-label-row { display: flex; justify-content: space-between; font-size: 14px; color: #ffffff; margin-bottom: 14px; font-family: 'SF Mono','Fira Code',monospace; }
+  .times-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .time-block { background: #141414; border: 1px solid #222; border-radius: 10px; padding: 9px 12px; }
+  .time-block.right { text-align: right; }
+  .time-block-label { font-size: 10px; color: #555; letter-spacing: 0.06em; margin-bottom: 4px; }
+  /* ИЗМЕНЕНИЕ 2: крупный Цюрих, мелкий Чикаго */
+  .time-block-zh  { font-size: 24px; font-weight: 700; font-family: 'SF Mono','Fira Code',monospace; color: #1D9E75; color: var(--num-color); line-height: 1.1; }
+  .time-block-chi { font-size: 11px; color: #555; font-family: 'SF Mono','Fira Code',monospace; margin-top: 4px; }
+  .cd-section { border-top: 1px solid #222; padding-top: 10px; }
+  .cd-section-label { font-size: 10px; color: #555; letter-spacing: 0.07em; margin-bottom: 7px; }
+  .cd-row { display: grid; grid-template-columns: 1fr 8px 1fr 8px 1fr 8px 1fr; align-items: end; }
+  .cd-block { text-align: center; }
+  .cd-num { font-size: 20px; font-weight: 600; font-family: 'SF Mono','Fira Code',monospace; color: #1D9E75; color: var(--num-color); line-height: 1; }
+  .cd-unit { font-size: 9px; color: #444; letter-spacing: 0.07em; margin-top: 3px; }
+  .cd-colon { text-align: center; color: #333; font-size: 16px; padding-bottom: 12px; font-family: 'SF Mono','Fira Code',monospace; }
+
+  /* ИЗМЕНЕНИЕ 1: панель настроек цвета */
+  .settings-bar { display: flex; align-items: center; gap: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 8px 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  .settings-bar label { font-size: 11px; color: #666; letter-spacing: 0.07em; }
+  .settings-bar input[type=color] { width: 32px; height: 28px; border: 1px solid #333; border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
+  .settings-bar button { font-size: 10px; color: #555; background: #111; border: 1px solid #2a2a2a; border-radius: 6px; padding: 4px 10px; cursor: pointer; letter-spacing: 0.05em; }
+  .settings-bar button:hover { color: #fff; border-color: #555; }
+  .eyedropper-btn { font-size: 16px !important; padding: 2px 8px !important; letter-spacing: 0 !important; }
+  .eyedropper-btn:hover { background: #1a1a2e !important; border-color: #378ADD !important; }
+  .eyedropper-btn.active { color: #378ADD !important; border-color: #378ADD !important; animation: pulse 0.8s infinite; }
+
+  @keyframes blinkRed {
+    0%, 100% { background: #2e0a0a; border-color: #E24B4A; }
+    50%       { background: #5a1010; border-color: #ff6b6b; }
+  }
+  .phase-status.warn15 { animation: blinkRed 2.5s ease-in-out infinite; }
+
+  /* Сессионные предупреждения */
+  .session-alert {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #E24B4A;
+    background: #2e0a0a;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600; color: #E24B4A;
+  }
+  .session-alert.blink { animation: blinkRed 2.5s ease-in-out infinite; }
+  .session-alert-dot { width: 8px; height: 8px; border-radius: 50%; background: #E24B4A; animation: pulse 0.6s infinite; flex-shrink: 0; }
+  .sa-text { flex: 1; }
+  .sa-time-val { font-size: 15px; font-weight: 700; color: #ff7070; white-space: nowrap; margin-left: 12px; }
+
+  /* OFF toggle button */
+  .tw-off-btn { font-size: 11px; color: #555; background: #111; border: 1px solid #2a2a2a; border-radius: 6px; padding: 4px 12px; cursor: pointer; letter-spacing: 0.05em; margin-left: auto; }
+  .tw-off-btn:hover { color: #fff; border-color: #555; }
+  .tw-off-btn.active { color: #E24B4A; border-color: #E24B4A; }
+  .trading-card.disabled { opacity: 0.18; pointer-events: none; filter: grayscale(1); }
+  .trading-card-header { display: flex; align-items: center; margin-bottom: 3px; }
+
+  @media (max-width: 600px) { body { padding: 1rem; } .zurich-time { font-size: 28px; } }
+</style>
+</head>
+<body>
+
+<!-- ИЗМЕНЕНИЕ 1: панель выбора цвета цифр -->
+<div class="settings-bar">
+  <label>ЦВЕТ ЦИФР</label>
+  <input type="color" id="numColorPicker" value="#1D9E75" title="Выбрать цвет цифр">
+  <button class="eyedropper-btn" id="eyedropperBtn" title="Подхватить цвет с экрана">🔍</button>
+  <button id="numColorReset">сбросить</button>
+  <div style="width:1px;height:20px;background:#2a2a2a;margin:0 4px"></div>
+  <label>МОЙ ЧАСОВОЙ ПОЯС</label>
+  <select id="tzSelect" style="font-size:11px;background:#111;color:#ccc;border:1px solid #333;border-radius:6px;padding:4px 8px;cursor:pointer;font-family:inherit">
+    <option value="Europe/Zurich">Zürich (по умолчанию)</option>
+    <option value="Europe/London">London</option>
+    <option value="Europe/Paris">Paris / Berlin / Rome</option>
+    <option value="Europe/Moscow">Moscow</option>
+    <option value="America/New_York">New York</option>
+    <option value="America/Chicago">Chicago</option>
+    <option value="America/Los_Angeles">Los Angeles</option>
+    <option value="America/Sao_Paulo">São Paulo</option>
+    <option value="Asia/Dubai">Dubai</option>
+    <option value="Asia/Singapore">Singapore</option>
+    <option value="Asia/Tokyo">Tokyo</option>
+    <option value="Asia/Shanghai">Shanghai / Hong Kong</option>
+    <option value="Australia/Sydney">Sydney</option>
+  </select>
+  <label style="margin-left:4px">или UTC</label>
+  <input type="text" id="utcInput" placeholder="+2" maxlength="6"
+    style="font-size:12px;font-family:'SF Mono','Fira Code',monospace;background:#111;color:#fff;border:1px solid #333;border-radius:6px;padding:4px 8px;width:68px;outline:none"
+    title="Введите смещение UTC, например +2, -5, +5:30">
+  <button id="utcApply" style="font-size:10px;color:#1D9E75;background:#0a2e20;border:1px solid #1D9E75;border-radius:6px;padding:4px 10px;cursor:pointer;letter-spacing:0.05em">ОК</button>
+</div>
+
+<div class="topbar">
+  <div class="header-left">
+    <div class="header-label"><span class="clock-dot" id="net-dot"></span><span class="net-status-text" id="net-text" style="color:#666">Zürich</span></div>
+    <div class="zurich-time" id="zt">--:--:--</div>
+    <div class="zurich-date" id="zd">--</div>
+  </div>
+
+  <!-- ИЗМЕНЕНИЕ 3: аналоговый циферблат вместо цифрового -->
+  <div class="entry-clock" id="ec">
+    <div class="entry-clock-label" id="ec-label">ВХОД В СДЕЛКУ</div>
+    <div id="entry-canvas-wrap">
+      <canvas id="entryCanvas" width="100" height="100"></canvas>
+    </div>
+    <div class="entry-mins" id="ec-mins">--</div>
+    <!-- Панель управления тиканьем -->
+    <div id="tick-controls" style="margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:5px;width:100%;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:#666;letter-spacing:0.07em;user-select:none;">
+          <input type="checkbox" id="tickEnabled" checked style="accent-color:#E24B4A;width:13px;height:13px;cursor:pointer;">
+          ТИКАНЬЕ
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <button id="tickPrev" style="font-size:11px;background:#111;color:#888;border:1px solid #2a2a2a;border-radius:5px;padding:2px 7px;cursor:pointer;line-height:1.4;">◀</button>
+        <span id="tickStyleLabel" style="font-size:10px;color:#ccc;min-width:105px;text-align:center;letter-spacing:0.04em;">🕐 Механические</span>
+        <button id="tickNext" style="font-size:11px;background:#111;color:#888;border:1px solid #2a2a2a;border-radius:5px;padding:2px 7px;cursor:pointer;line-height:1.4;">▶</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;width:100%;justify-content:center;">
+        <span style="font-size:9px;color:#555;">🔈</span>
+        <input type="range" id="tickVolume" min="0" max="100" value="30"
+          style="width:90px;accent-color:#E24B4A;cursor:pointer;height:3px;">
+        <span style="font-size:9px;color:#555;">🔊</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" id="grid" style="margin-top: 160px;"></div>
+<div id="session-alert-wrap"></div>
+<div id="trading-window"></div>
+
+<script>
+// Позиционируем циферблат над зазором между 2-й и 3-й карточкой
+function positionEntryClock() {
+  const ec    = document.getElementById('ec');
+  const grid  = document.getElementById('grid');
+  const cards = grid.querySelectorAll('.card');
+  if (cards.length < 3) return;
+
+  const c2 = cards[1].getBoundingClientRect();
+  const c3 = cards[2].getBoundingClientRect();
+
+  // Только если карточки в одной строке
+  if (Math.abs(c2.top - c3.top) > 40) return;
+
+  const gapCenterX = (c2.right + c3.left) / 2;
+  const ecW = ec.offsetWidth;
+
+  // Вертикаль — оставляем как есть, меняем только горизонталь
+  const ecRect = ec.getBoundingClientRect();
+  ec.style.position = 'fixed';
+  ec.style.top  = ecRect.top + 'px';
+  ec.style.left = (gapCenterX - ecW / 2) + 'px';
+  ec.style.margin = '0';
+}
+
+window.addEventListener('load',   () => requestAnimationFrame(positionEntryClock));
+window.addEventListener('resize', () => requestAnimationFrame(positionEntryClock));
+</script>
+
+<script>
+// ── ИЗМЕНЕНИЕ 1: цвет цифр ──────────────────────────────────────────────────
+let numColor = '#1D9E75';
+const picker = document.getElementById('numColorPicker');
+const resetBtn = document.getElementById('numColorReset');
+
+function applyNumColor(color) {
+  numColor = color;
+  document.documentElement.style.setProperty('--num-color', color);
+}
+
+picker.addEventListener('input', e => applyNumColor(e.target.value));
+picker.addEventListener('change', e => applyNumColor(e.target.value));
+applyNumColor('#1D9E75'); // применяем зелёный сразу при загрузке
+resetBtn.addEventListener('click', () => {
+  picker.value = '#1D9E75';
+  applyNumColor('#1D9E75');
+});
+
+// Пипетка — EyeDropper API (Chrome/Edge)
+const eyeBtn = document.getElementById('eyedropperBtn');
+if (window.EyeDropper) {
+  eyeBtn.addEventListener('click', async () => {
+    const eyeDropper = new EyeDropper();
+    eyeBtn.classList.add('active');
+    try {
+      const result = await eyeDropper.open();
+      picker.value = result.sRGBHex;
+      applyNumColor(result.sRGBHex);
+    } catch(e) {
+      // пользователь отменил — ничего не делаем
+    } finally {
+      eyeBtn.classList.remove('active');
+    }
+  });
+} else {
+  eyeBtn.title = 'Пипетка не поддерживается в этом браузере';
+  eyeBtn.style.opacity = '0.3';
+  eyeBtn.style.cursor = 'not-allowed';
+}
+applyNumColor('#ffffff');
+
+// ── ДАННЫЕ БИРЖ ─────────────────────────────────────────────────────────────
+const markets=[
+  {id:'nyse',flag:'🇺🇸',name:'NYSE / NASDAQ',sub:'New York · Regular session',tz:'America/New_York',openH:9,openM:30,closeH:16,closeM:0},
+  {id:'cme', flag:'🇺🇸',name:'CME Chicago',  sub:'Chicago · Globex (электронная сессия)',tz:'America/Chicago',openH:17,openM:0,closeH:15,closeM:15,globex:true},
+  {id:'tse', flag:'🇯🇵',name:'TSE Tokyo',    sub:'Tokyo · Asian session',       tz:'Asia/Tokyo',     openH:9,openM:0, closeH:15,closeM:30},
+  {id:'lse', flag:'🇬🇧',name:'LSE London',   sub:'London · European session',   tz:'Europe/London',  openH:8,openM:0, closeH:16,closeM:30}
+];
+const HOLIDAYS={
+  nyse:new Set(['2025-01-01','2025-01-20','2025-02-17','2025-04-18','2025-05-26','2025-07-04','2025-09-01','2025-11-27','2025-12-25','2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-07-03','2026-09-07','2026-11-26','2026-12-25']),
+  cme: new Set(['2025-01-01','2025-01-20','2025-02-17','2025-04-18','2025-05-26','2025-07-04','2025-09-01','2025-11-27','2025-12-25','2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-07-03','2026-09-07','2026-11-26','2026-12-25']),
+  tse: new Set(['2025-01-01','2025-01-02','2025-01-03','2025-01-13','2025-02-11','2025-02-24','2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05','2025-07-21','2025-09-15','2025-09-23','2025-10-13','2025-11-03','2025-11-24','2025-12-31','2026-01-01','2026-01-02','2026-01-03','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-07-20','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23','2026-12-31']),
+  lse: new Set(['2025-01-01','2025-04-18','2025-04-21','2025-05-05','2025-05-26','2025-08-25','2025-12-25','2025-12-26','2026-01-01','2026-04-03','2026-04-06','2026-05-04','2026-05-25','2026-08-31','2026-12-25','2026-12-28'])
+};
+
+function pad(n){return String(n).padStart(2,'0');}
+function getNow(tz){return new Date(new Date().toLocaleString('en-US',{timeZone:tz}));}
+function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function isMarketDay(id,d){if(d.getDay()===0||d.getDay()===6)return false;return!HOLIDAYS[id].has(dateKey(d));}
+
+// Текущий выбранный пояс пользователя
+// userTz — строка IANA ('Europe/Zurich') ИЛИ число минут смещения от UTC (например +120, -300, +330)
+let userTz = 'Europe/Zurich';
+let userUtcOffsetMin = null; // null = используем userTz как IANA; число = фиксированный UTC offset
+let userTzLabel = 'Zürich';
+
+// Получить текущее время в пользовательском поясе
+function getUserNow() {
+  if (userUtcOffsetMin !== null) {
+    const utc = Date.now() + (new Date().getTimezoneOffset() * 60000);
+    return new Date(utc + userUtcOffsetMin * 60000);
+  }
+  return getNow(userTz);
+}
+
+// Получить смещение пользовательского пояса от реального UTC в мс
+function getUserOffsetMs() {
+  if (userUtcOffsetMin !== null) {
+    return userUtcOffsetMin * 60000;
+  }
+  return getNow(userTz).getTime() - new Date().getTime();
+}
+
+function mktDateToZH(mktDate, mktTz) {
+  const snapped = new Date(mktDate); snapped.setSeconds(0,0);
+  const realNow = new Date();
+  const mktOff  = getNow(mktTz).getTime() - realNow.getTime();
+  const utcMs   = snapped.getTime() - mktOff;
+  if (userUtcOffsetMin !== null) {
+    const local = new Date(utcMs + userUtcOffsetMin * 60000);
+    return pad(local.getUTCHours()) + ':' + pad(local.getUTCMinutes());
+  }
+  const userOff = getNow(userTz).getTime() - realNow.getTime();
+  const zh = new Date((new Date(utcMs + userOff)).toLocaleString('en-US', {timeZone: userTz}));
+  return pad(zh.getHours()) + ':' + pad(zh.getMinutes());
+}
+
+function mktDateToZHDate(mktDate, mktTz) {
+  const snapped = new Date(mktDate); snapped.setSeconds(0,0);
+  const realNow = new Date();
+  const mktOff  = getNow(mktTz).getTime() - realNow.getTime();
+  const utcMs   = snapped.getTime() - mktOff;
+  if (userUtcOffsetMin !== null) {
+    return new Date(utcMs + userUtcOffsetMin * 60000);
+  }
+  const userOff = getNow(userTz).getTime() - realNow.getTime();
+  return new Date((new Date(utcMs + userOff)).toLocaleString('en-US', {timeZone: userTz}));
+}
+function msToComp(ms){if(ms<0)ms=0;const t=Math.floor(ms/1000);return{days:Math.floor(t/86400),h:Math.floor((t%86400)/3600),m:Math.floor((t%3600)/60),s:t%60};}
+const DAY_FULL=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+function fmtZHDate(d){return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(-2)+' · '+DAY_FULL[d.getDay()];}
+function getStatus(market){
+  const mktNow=getNow(market.tz);
+
+  // Специальная логика для Globex CME (сессия через полночь: 17:00 → 15:15 следующего дня)
+  if(market.globex){
+    const hm=mktNow.getHours()*60+mktNow.getMinutes();
+    const CLOSE=915; // 15:15
+    const OPEN=1020; // 17:00
+    const yest=new Date(mktNow);yest.setDate(yest.getDate()-1);
+    const tomorrow=new Date(mktNow);tomorrow.setDate(tomorrow.getDate()+1);
+    const todayOk=isMarketDay('cme',mktNow);
+    const yesterdayOk=isMarketDay('cme',yest);
+    const tomorrowOk=isMarketDay('cme',tomorrow);
+
+    // Суббота — всегда закрыта (сессия закрывается в пятницу 16:00 CT)
+    if(mktNow.getDay()===6){
+      for(let d=0;d<=10;d++){
+        const c=new Date(mktNow);c.setDate(c.getDate()+d);c.setHours(17,0,0,0);
+        if(c<=mktNow)continue;
+        const nextDay=new Date(c);nextDay.setDate(nextDay.getDate()+1);
+        if(isMarketDay('cme',nextDay))return{isOpen:false,ms:c-mktNow,nextOpenMkt:c};
+      }
+      return{isOpen:false,ms:0};
+    }
+    // Открыта: до 15:15 если вчера или сегодня торговый день
+    if(hm<CLOSE&&(yesterdayOk||todayOk)){
+      const tC=new Date(mktNow);tC.setHours(15,15,0,0);
+      return{isOpen:true,ms:tC-mktNow};
+    }
+    // Открыта: после 17:00 если завтра торговый день (включая воскресенье!)
+    if(hm>=OPEN&&tomorrowOk){
+      // Ищем закрытие 15:15 следующего торгового дня
+      for(let d=1;d<=7;d++){const c=new Date(mktNow);c.setDate(c.getDate()+d);c.setHours(15,15,0,0);if(isMarketDay('cme',c)){return{isOpen:true,ms:c-mktNow};}}
+    }
+    // Закрыта — ищем следующее открытие 17:00 перед торговым днём
+    for(let d=0;d<=10;d++){
+      const c=new Date(mktNow);c.setDate(c.getDate()+d);c.setHours(17,0,0,0);
+      if(c<=mktNow)continue;
+      const nextDay=new Date(c);nextDay.setDate(nextDay.getDate()+1);
+      if(isMarketDay('cme',nextDay))return{isOpen:false,ms:c-mktNow,nextOpenMkt:c};
+    }
+    return{isOpen:false,ms:0};
+  }
+
+  // Стандартная логика для остальных бирж
+  const tO=new Date(mktNow);tO.setHours(market.openH,market.openM,0,0);
+  const tC=new Date(mktNow);tC.setHours(market.closeH,market.closeM,0,0);
+  if(isMarketDay(market.id,mktNow)&&mktNow>=tO&&mktNow<tC)return{isOpen:true,ms:tC-mktNow};
+  const start=(isMarketDay(market.id,mktNow)&&mktNow<tO)?0:1;
+  for(let d=start;d<=14;d++){const c=new Date(mktNow);c.setDate(c.getDate()+d);if(!isMarketDay(market.id,c))continue;const co=new Date(c);co.setHours(market.openH,market.openM,0,0);return{isOpen:false,ms:co-mktNow,nextOpenMkt:co};}
+  return{isOpen:false,ms:0};
+}
+function getNextWorkdayAfter(market,afterMktDate){
+  for(let d=1;d<=14;d++){const c=new Date(afterMktDate);c.setDate(c.getDate()+d);c.setHours(0,0,0,0);if(!isMarketDay(market.id,c))continue;const o=new Date(c);o.setHours(market.openH,market.openM,0,0);return o;}
+  return null;
+}
+
+function buildCard(market){
+  const mktNow=getNow(market.tz);const status=getStatus(market);const{days,h,m,s}=msToComp(status.ms);
+  let tO,tC,dispLabel,dispTime,nom;
+  if(market.globex){
+    tC=new Date(mktNow);tC.setHours(15,15,0,0);
+    tO=new Date(mktNow);tO.setHours(17,0,0,0);
+    dispLabel=status.isOpen?`закрытие · ${getTzLabel()}`:`открытие · ${getTzLabel()}`;
+    dispTime=status.isOpen?mktDateToZH(tC,market.tz):mktDateToZH(tO,market.tz);
+    nom=status.isOpen?null:status.nextOpenMkt;
+  } else {
+    tO=new Date(mktNow);tO.setHours(market.openH,market.openM,0,0);
+    tC=new Date(mktNow);tC.setHours(market.closeH,market.closeM,0,0);
+    dispLabel=status.isOpen?`закрытие · ${getTzLabel()}`:`открытие · ${getTzLabel()}`;
+    dispTime=status.isOpen?mktDateToZH(tC,market.tz):mktDateToZH(tO,market.tz);
+    nom=status.isOpen?getNextWorkdayAfter(market,mktNow):status.nextOpenMkt;
+  }
+  let nTime='--:--',nDate='';
+  if(nom){nTime=mktDateToZH(nom,market.tz);nDate=fmtZHDate(mktDateToZHDate(nom,market.tz));}
+  let isWE=false,isHol=false;
+  if(market.globex){
+    isWE=!status.isOpen&&(mktNow.getDay()===6||(mktNow.getDay()===0&&mktNow.getHours()<17));
+  } else {
+    isWE=mktNow.getDay()===0||mktNow.getDay()===6;
+    isHol=!isWE&&!isMarketDay(market.id,mktNow);
+  }
+  const soon=!status.isOpen&&days===0&&h<1;
+  const cc=status.isOpen?'open':(soon?'soon':'closed');
+  const bt=status.isOpen?'ОТКРЫТА':(soon?'СКОРО':'ЗАКРЫТА');
+  const bc=status.isOpen?'badge-open':(soon?'badge-soon':'badge-closed');
+  let hnText='';if(isWE)hnText='выходной день';else if(isHol)hnText='праздничный день';
+  const hn=`<div class="holiday-note" style="visibility:${hnText?'visible':'hidden'}">${hnText||'выходной день'}</div>`;
+  const tzLocal=market.globex?'Вс 23:00 — Пт 21:15 · Zürich':`${pad(market.openH)}:${pad(market.openM)} · ${market.tz.split('/')[1]}`;
+  return`<div class="card ${cc}" id="card-${market.id}">
+    <span class="status-badge ${bc}" id="badge-${market.id}">${bt}</span>
+    <div class="card-flag">${market.flag}</div><div class="card-name">${market.name}</div>
+    <div class="card-sub">${market.sub}</div>${hn}
+    <div class="open-time-label" id="olab-${market.id}">${dispLabel}</div>
+    <div class="open-time-value" id="otime-${market.id}">${dispTime}</div>
+    <div class="tz-info">${tzLocal}</div>
+    <div class="divider"></div>
+    <div class="countdown-row">
+      <div class="countdown-block"><div class="countdown-num days" id="cdd-${market.id}">${days}</div><div class="countdown-unit" id="cddu-${market.id}">${status.isOpen?'ДО ЗАК.':'ДНИ'}</div></div>
+      <div class="colon">:</div>
+      <div class="countdown-block"><div class="countdown-num" id="cdh-${market.id}">${pad(h)}</div><div class="countdown-unit">ЧАСЫ</div></div>
+      <div class="colon">:</div>
+      <div class="countdown-block"><div class="countdown-num" id="cdm-${market.id}">${pad(m)}</div><div class="countdown-unit">МИНУТЫ</div></div>
+      <div class="colon">:</div>
+      <div class="countdown-block"><div class="countdown-num" id="cds-${market.id}">${pad(s)}</div><div class="countdown-unit">СЕКУНДЫ</div></div>
+    </div>
+    <div class="next-row">
+      <div class="next-label">СЛЕДУЮЩЕЕ ОТКРЫТИЕ</div>
+      <div class="next-val" id="nxtval-${market.id}">${nTime}</div>
+      <div class="next-date" id="nxtdate-${market.id}">${nDate}</div>
+    </div>
+  </div>`;
+}
+
+const PHASE_CONF={
+  trading:     {cls:'trading',   dotCls:'dot-green',  label:'Торговля разрешена',                       barColor:'#1D9E75'},
+  warn30:      {cls:'warn30',    dotCls:'dot-yellow', label:'Осторожно — < 30 мин до закрытия!',         barColor:'#EF9F27'},
+  warn15:      {cls:'warn15',    dotCls:'dot-red2',   label:'Срочно закрыть позиции! Осталось < 15 мин', barColor:'#E24B4A'},
+  forbidden:   {cls:'warn15',    dotCls:'dot-red2',   label:'Новые позиции ЗАПРЕЩЕНЫ',                  barColor:'#E24B4A'},
+  forbidden15: {cls:'forbidden', dotCls:'dot-orange', label:'Новые позиции ЗАПРЕЩЕНЫ',                  barColor:'#D85A30'},
+  closed:      {cls:'closed',    dotCls:'dot-closed', label:'Сессия закрыта',                           barColor:'#444'}
+};
+
+function getNextSessionOpen(fromChi) {
+  // Находим ближайший торговый день и возвращаем дату открытия 17:00 предыдущего вечера
+  // CME открывается в 17:00 накануне торгового дня
+  for (let d = 0; d <= 10; d++) {
+    const c = new Date(fromChi);
+    c.setDate(c.getDate() + d);
+    c.setHours(17, 0, 0, 0);
+    if (c <= fromChi) continue;
+    // Проверяем: день c.date — это вечер перед торговым днём
+    // Торговый день = следующий день после c
+    const nextDay = new Date(c);
+    nextDay.setDate(nextDay.getDate() + 1);
+    if (isMarketDay('cme', nextDay)) return c;
+  }
+  return null;
+}
+
+function getTradingPhase(){
+  const chi = getNow('America/Chicago');
+  const hm  = chi.getHours() * 60 + chi.getMinutes();
+  const CLOSE = 915;  // 15:15
+  const OPEN  = 1020; // 17:00
+
+  const todayOk     = isMarketDay('cme', chi);
+  const yest        = new Date(chi); yest.setDate(yest.getDate() - 1);
+  const yesterdayOk = isMarketDay('cme', yest);
+
+  // Завтра торговый день?
+  const tomorrow = new Date(chi); tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowOk = isMarketDay('cme', tomorrow);
+
+  let phase, msUntilNext = 0, nextEventLabel = '';
+
+  // ── Активная торговая сессия (17:00 вчера → 15:15 сегодня) ──
+  // Условие: мы до 15:15, и либо вчера был торговый день, либо сегодня торговый день
+  // НО: суббота всегда закрыта (сессия закрывается в пятницу 16:00 CT)
+  if (hm < CLOSE && (yesterdayOk || todayOk) && chi.getDay() !== 6) {
+    const closeT   = new Date(chi); closeT.setHours(15, 15, 0, 0);
+    const msLeft   = closeT - chi;
+    const minsLeft = msLeft / 60000;
+    phase          = minsLeft <= 15 ? 'warn15' : minsLeft <= 30 ? 'warn30' : 'trading';
+    window._warn13reached = minsLeft <= 13;
+    msUntilNext    = msLeft;
+    nextEventLabel = 'до закрытия (закрыть все позиции)';
+
+  // ── После 17:00 — торговля, если завтра торговый день (включая воскресенье вечер!) ──
+  } else if (hm >= OPEN && tomorrowOk) {
+    // Торгуем — ищем закрытие следующего торгового дня
+    for (let d = 1; d <= 7; d++) {
+      const c = new Date(chi); c.setDate(c.getDate() + d); c.setHours(15, 15, 0, 0);
+      if (isMarketDay('cme', c)) { msUntilNext = c - chi; break; }
+    }
+    phase          = 'trading';
+    nextEventLabel = 'до закрытия (закрыть все позиции)';
+
+  // ── Запрет 15:15–17:00 — только если сегодня торговый день И завтра тоже ──
+  } else if (hm >= CLOSE && hm < OPEN && todayOk && tomorrowOk) {
+    const openT = new Date(chi); openT.setHours(17, 0, 0, 0);
+    const msLeft = openT - chi;
+    phase = (msLeft / 60000) <= 15 ? 'forbidden15' : 'forbidden';
+    msUntilNext    = msLeft;
+    nextEventLabel = 'до открытия торговой сессии';
+
+  // ── Всё остальное — выходные (до 17:00 вс), праздники, пятница вечер ──
+  } else {
+    phase = 'closed';
+    window._warn13reached = false;
+    // Ищем следующее открытие 17:00 перед ближайшим торговым днём
+    const next = getNextSessionOpen(chi);
+    msUntilNext    = next ? next - chi : 0;
+    nextEventLabel = 'до открытия следующей сессии';
+  }
+
+  return { phase, msUntilNext, nextEventLabel };
+}
+
+function getPhaseProgress(phase){
+  const chi=getNow('America/Chicago');
+  const hm=chi.getHours()*60+chi.getMinutes()+chi.getSeconds()/60;
+  if(['trading','warn30','warn15'].includes(phase)){
+    // Полная сессия: 17:00 вчера → 15:15 сегодня = 1335 минут
+    const SESSION_TOTAL = 1335;
+    const elapsed = hm >= 1020 ? (hm - 1020) : (24*60 - 1020 + hm);
+    return Math.min(1, elapsed / SESSION_TOTAL);
+  }
+  if(phase==='forbidden'||phase==='forbidden15')return Math.min(1,(hm-915)/105);
+  return 0;
+}
+
+// ИЗМЕНЕНИЕ 2: крупный Цюрих, мелкий Чикаго
+function getTradingTimes(){
+  const n=getNow('America/Chicago');
+  const o=new Date(n);o.setHours(17,0,0,0);
+  const c=new Date(n);c.setHours(15,15,0,0);
+  return{
+    open:  {zh: mktDateToZH(o,'America/Chicago'), chi:'17:00'},
+    close: {zh: mktDateToZH(c,'America/Chicago'), chi:'15:15'}
+  };
+}
+
+let tradingWindowOff = false;
+function toggleTradingWindow() {
+  tradingWindowOff = !tradingWindowOff;
+  const card = document.getElementById('trading-card-main');
+  const btn  = document.getElementById('tw-off-btn');
+  if (card) {
+    card.style.opacity   = tradingWindowOff ? '0.15' : '';
+    card.style.filter    = tradingWindowOff ? 'grayscale(1)' : '';
+    card.style.pointerEvents = tradingWindowOff ? 'none' : '';
+  }
+  if (btn) { btn.textContent = tradingWindowOff ? '○ ВКЛ' : '● ВЫКЛ'; btn.classList.toggle('active', tradingWindowOff); }
+}
+
+function buildTradingWindow(){
+  const tp=getTradingPhase(),times=getTradingTimes();
+  const pct=Math.round(getPhaseProgress(tp.phase)*100);
+  const pc=PHASE_CONF[tp.phase];
+  let phaseLabel = pc.label;
+  if (tp.phase === 'forbidden' || tp.phase === 'forbidden15') {
+    phaseLabel = `Новые позиции ЗАПРЕЩЕНЫ (${times.close.zh}–${times.open.zh})`;
+  }
+  return`<div style="position:relative">
+    <button class="tw-off-btn" id="tw-off-btn" onclick="toggleTradingWindow()" style="position:absolute;top:14px;right:14px;z-index:10">● ВЫКЛ</button>
+    <div class="trading-card" id="trading-card-main">
+      <div class="trading-title">Торговое окно · CME Chicago</div>
+      <div class="trading-sub">Сессия 17:00 пред. день → 15:15 след. день · Запрет 15:15–17:00</div>
+      <div class="phase-status ${pc.cls}" id="tw-ps"><span class="phase-dot ${pc.dotCls}" id="tw-dot"></span><span class="phase-text ${pc.cls}" id="tw-label">${phaseLabel}</span></div>
+
+      <div class="times-grid">
+        <div class="time-block">
+          <div class="time-block-label">ОТКРЫТИЕ СЕССИИ</div>
+          <div class="time-block-zh" id="tw-open-zh">${times.open.zh}</div>
+          <div class="time-block-chi">Chicago: ${times.open.chi}</div>
+        </div>
+        <div class="time-block right">
+          <div class="time-block-label">ЗАКРЫТЬ ПОЗИЦИИ ДО</div>
+          <div class="time-block-zh" id="tw-close-zh">${times.close.zh}</div>
+          <div class="time-block-chi">Chicago: ${times.close.chi}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+document.getElementById('grid').innerHTML=markets.map(buildCard).join('');
+document.getElementById('trading-window').innerHTML=buildTradingWindow();
+
+// ── ЗВУКИ ───────────────────────────────────────────────────────────────────
+let audioCtx = null;
+function getACtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// Звук C — колокол (переход на красный)
+function soundBell() {
+  const ctx = getACtx();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = 880;
+  g.gain.setValueAtTime(0.4, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + 0.8);
+}
+
+// Звук H — журчание (переход на зелёный)
+function soundTrill() {
+  const ctx = getACtx();
+  [440, 523, 659, 784, 1047].forEach((freq, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = ctx.currentTime + i * 0.07;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + 0.18);
+  });
+}
+
+// Звук D дважды — CME 15 мин до закрытия
+function soundBeepDouble() {
+  const ctx = getACtx();
+  [0, 0.7].forEach(base => {
+    [0, 0.15, 0.30].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = 660;
+      g.gain.setValueAtTime(0.2, ctx.currentTime + base + t);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + base + t + 0.1);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + base + t);
+      o.stop(ctx.currentTime + base + t + 0.12);
+    });
+  });
+}
+
+// Состояние для отслеживания переходов
+let prevClockRed = null;
+let prevCmeWarn13 = false;
+
+// ── ИЗМЕНЕНИЕ 3: аналоговый циферблат ─────────────────────────────────────
+const entryCanvas = document.getElementById('entryCanvas');
+const entryCtx = entryCanvas.getContext('2d');
+const EC = 50, ER = 48; // центр и радиус
+
+function drawEntryClock() {
+  const zh = getNow('Europe/Zurich');
+  const hours   = zh.getHours();
+  const minutes = zh.getMinutes();
+  const seconds = zh.getSeconds();
+  const isRed   = minutes >= 50 || minutes < 5;
+  const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
+  const handColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const borderColor = isRed ? '#E24B4A' : '#1D9E75';
+
+  // Мигание циферблата в красном режиме: ~1.5 сек цикл
+  const blinkAlpha = isRed
+    ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(Date.now() / (1000 / (2 * Math.PI))))
+    : 1;
+
+  entryCtx.clearRect(0, 0, 100, 100);
+  entryCtx.globalAlpha = blinkAlpha;
+
+  // Фон
+  entryCtx.beginPath();
+  entryCtx.arc(EC, EC, ER, 0, 2*Math.PI);
+  entryCtx.fillStyle = faceColor;
+  entryCtx.fill();
+  entryCtx.strokeStyle = borderColor;
+  entryCtx.lineWidth = 2;
+  entryCtx.stroke();
+
+  // Метки минут
+  for (let i = 0; i < 60; i++) {
+    const ang = (i * 6 - 90) * Math.PI / 180;
+    const isMajor = i % 5 === 0;
+    const r1 = isMajor ? ER - 8 : ER - 5;
+    entryCtx.beginPath();
+    entryCtx.moveTo(EC + r1*Math.cos(ang), EC + r1*Math.sin(ang));
+    entryCtx.lineTo(EC + (ER-2)*Math.cos(ang), EC + (ER-2)*Math.sin(ang));
+    entryCtx.strokeStyle = tickColor;
+    entryCtx.lineWidth = isMajor ? 2 : 0.8;
+    entryCtx.globalAlpha = isMajor ? 0.9 : 0.4;
+    entryCtx.stroke();
+    entryCtx.globalAlpha = 1;
+  }
+
+  // Часовая стрелка
+  const hAng = ((hours % 12) * 30 + minutes * 0.5 - 90) * Math.PI / 180;
+  entryCtx.beginPath();
+  entryCtx.moveTo(EC, EC);
+  entryCtx.lineTo(EC + 26*Math.cos(hAng), EC + 26*Math.sin(hAng));
+  entryCtx.strokeStyle = '#fff';
+  entryCtx.lineWidth = 3;
+  entryCtx.lineCap = 'round';
+  entryCtx.stroke();
+
+  // Минутная стрелка
+  const mAng = (minutes * 6 - 90) * Math.PI / 180;
+  entryCtx.beginPath();
+  entryCtx.moveTo(EC, EC);
+  entryCtx.lineTo(EC + 36*Math.cos(mAng), EC + 36*Math.sin(mAng));
+  entryCtx.strokeStyle = '#fff';
+  entryCtx.lineWidth = 2;
+  entryCtx.lineCap = 'round';
+  entryCtx.stroke();
+
+  // Секундная стрелка
+  const sAng = (seconds * 6 - 90) * Math.PI / 180;
+  entryCtx.beginPath();
+  entryCtx.moveTo(EC, EC);
+  entryCtx.lineTo(EC + 40*Math.cos(sAng), EC + 40*Math.sin(sAng));
+  entryCtx.strokeStyle = handColor;
+  entryCtx.lineWidth = 1;
+  entryCtx.lineCap = 'round';
+  entryCtx.stroke();
+
+  // Центральная точка
+  entryCtx.beginPath();
+  entryCtx.arc(EC, EC, 3, 0, 2*Math.PI);
+  entryCtx.fillStyle = '#fff';
+  entryCtx.fill();
+
+  // Сбрасываем прозрачность
+  entryCtx.globalAlpha = 1;
+
+  // Обновляем метку и подпись
+  const cls = isRed ? 'red' : 'green';
+  const ecEl  = document.getElementById('ec');
+  const ecLab = document.getElementById('ec-label');
+  const ecMin = document.getElementById('ec-mins');
+  if (ecEl)  ecEl.className  = 'entry-clock ' + cls;
+  if (ecLab) { ecLab.className = 'entry-clock-label ' + cls; ecLab.textContent = isRed ? 'ВХОД ЗАПРЕЩЁН' : 'ВХОД В СДЕЛКУ'; }
+  if (ecMin) {
+    let minsText;
+    if (minutes >= 50) minsText = 'последние ' + (60 - minutes) + ' мин часа';
+    else if (minutes < 5) minsText = 'первые ' + (5 - minutes) + ' мин · ещё запрещён';
+    else minsText = 'до конца часа: ' + (60 - minutes) + ' мин';
+    ecMin.className = 'entry-mins ' + cls;
+    ecMin.textContent = minsText;
+  }
+
+  // Звуки при смене цвета циферблата
+  if (prevClockRed !== null) {
+    if (isRed && !prevClockRed) soundBell();   // стал красным
+    if (!isRed && prevClockRed) soundTrill();  // стал зелёным
+  }
+  prevClockRed = isRed;
+}
+
+// ── ОБНОВЛЕНИЕ ВСЕГО ────────────────────────────────────────────────────────
+function getTzLabel() { return userTzLabel; }
+
+function updateAll(){
+  const zh = getUserNow();
+  const zt=document.getElementById('zt'),zd=document.getElementById('zd');
+  if(zt)zt.textContent=pad(zh.getHours())+':'+pad(zh.getMinutes())+':'+pad(zh.getSeconds());
+  if(zd){const dn=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];const mn=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];zd.textContent=dn[zh.getDay()]+', '+zh.getDate()+' '+mn[zh.getMonth()]+' '+zh.getFullYear()+' · '+getTzLabel();}
+  // Обновляем метку пояса рядом с лампочкой (если онлайн)
+  const netText = document.getElementById('net-text');
+  if(netText && !netText.classList.contains('offline-text')) netText.textContent = getTzLabel();
+
+  // Циферблат
+  drawEntryClock();
+
+  markets.forEach(market=>{
+    const status=getStatus(market);const{days,h,m,s}=msToComp(status.ms);
+    const el=id=>document.getElementById(id+'-'+market.id);
+    if(el('cdd'))el('cdd').textContent=days;if(el('cdh'))el('cdh').textContent=pad(h);if(el('cdm'))el('cdm').textContent=pad(m);if(el('cds'))el('cds').textContent=pad(s);
+    if(el('cddu'))el('cddu').textContent=status.isOpen?'ДО ЗАК.':'ДНИ';
+    const soon=!status.isOpen&&days===0&&h<1;
+    if(el('badge')){el('badge').textContent=status.isOpen?'ОТКРЫТА':(soon?'СКОРО':'ЗАКРЫТА');el('badge').className='status-badge '+(status.isOpen?'badge-open':(soon?'badge-soon':'badge-closed'));}
+    const card=document.getElementById('card-'+market.id);if(card)card.className='card '+(status.isOpen?'open':(soon?'soon':'closed'));
+    const mktNow=getNow(market.tz);
+    if(el('olab'))el('olab').textContent=status.isOpen?`закрытие · ${getTzLabel()}`:`открытие · ${getTzLabel()}`;
+    if(el('otime')&&status.isOpen){const c=new Date(mktNow);c.setHours(market.closeH,market.closeM,0,0);el('otime').textContent=mktDateToZH(c,market.tz);}
+    const nom=status.isOpen?getNextWorkdayAfter(market,mktNow):status.nextOpenMkt;
+    if(nom){if(el('nxtval'))el('nxtval').textContent=mktDateToZH(nom,market.tz);if(el('nxtdate'))el('nxtdate').textContent=fmtZHDate(mktDateToZHDate(nom,market.tz));}
+  });
+
+  const tp=getTradingPhase();const pct=Math.round(getPhaseProgress(tp.phase)*100);
+  const pc=PHASE_CONF[tp.phase];
+  const twPs=document.getElementById('tw-ps');const twDot=document.getElementById('tw-dot');const twLab=document.getElementById('tw-label');
+  if(twPs)twPs.className='phase-status '+pc.cls;
+  if(twDot)twDot.className='phase-dot '+pc.dotCls;
+  if(twLab){
+    let lbl = pc.label;
+    twLab.style.color = '';
+    const DAY_RU = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+    const MON_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+    if(tp.phase === 'trading' || tp.phase === 'warn30' || tp.phase === 'warn15'){
+      // Находим дату закрытия текущей сессии (15:15 следующего торгового дня по Chicago)
+      const chi2 = getNow('America/Chicago');
+      const hm2 = chi2.getHours()*60 + chi2.getMinutes();
+      let closeDate;
+      if(hm2 < 915) {
+        // До 15:15 — закрытие сегодня
+        closeDate = new Date(chi2); closeDate.setHours(15,15,0,0);
+      } else {
+        // После 17:00 — ищем закрытие ближайшего торгового дня
+        for(let d=1;d<=7;d++){
+          const c=new Date(chi2); c.setDate(c.getDate()+d); c.setHours(15,15,0,0);
+          if(isMarketDay('cme',c)){closeDate=c;break;}
+        }
+      }
+      if(closeDate){
+        const closeZH = mktDateToZH(closeDate,'America/Chicago');
+        const closeDateZH = mktDateToZHDate(closeDate,'America/Chicago');
+        const dayName = DAY_RU[closeDateZH.getDay()];
+        const dateStr = closeDateZH.getDate()+' '+MON_RU[closeDateZH.getMonth()];
+        if(tp.phase==='trading') lbl = `Биржа открыта · закроется в ${dayName} ${dateStr} в ${closeZH}`;
+        else if(tp.phase==='warn30') lbl = `⚠ Закрытие в ${dayName} ${dateStr} в ${closeZH} · осталось < 30 мин`;
+        else if(tp.phase==='warn15') lbl = `⚠ Закрытие в ${dayName} ${dateStr} в ${closeZH} · осталось < 15 мин`;
+      }
+    } else if(tp.phase === 'forbidden' || tp.phase === 'forbidden15'){
+      const times2 = getTradingTimes();
+      lbl = `Новые позиции ЗАПРЕЩЕНЫ (${times2.close.zh}–${times2.open.zh})`;
+    } else if(tp.phase === 'closed'){
+      const chi2 = getNow('America/Chicago');
+      const nextOpen = getNextSessionOpen(chi2);
+      if (nextOpen) {
+        const nextOpenZH = mktDateToZH(nextOpen, 'America/Chicago');
+        const nextOpenDate = mktDateToZHDate(nextOpen, 'America/Chicago');
+        const dayName = DAY_RU[nextOpenDate.getDay()];
+        const dateStr = nextOpenDate.getDate() + ' ' + MON_RU[nextOpenDate.getMonth()];
+        lbl = `Биржа закрыта · откроется в ${dayName} ${dateStr} в ${nextOpenZH}`;
+      } else {
+        lbl = 'Биржа закрыта';
+      }
+      twLab.style.color = '#E24B4A';
+    }
+    twLab.textContent=lbl;twLab.className='phase-text '+pc.cls;
+  }
+
+
+
+  // Звук CME: при переходе в warn13 (13 мин до закрытия)
+  const isCmeWarn13 = !!window._warn13reached;
+  if (isCmeWarn13 && !prevCmeWarn13) soundBeepDouble();
+  prevCmeWarn13 = isCmeWarn13;
+
+  // Предупреждения о сессиях
+  updateSessionAlerts();
+
+  // Обновляем времена CME (Zürich крупно)
+  const times=getTradingTimes();
+  const twOZ=document.getElementById('tw-open-zh');
+  const twCZ=document.getElementById('tw-close-zh');
+  if(twOZ)twOZ.textContent=times.open.zh;
+  if(twCZ)twCZ.textContent=times.close.zh;
+}
+
+updateAll();
+setInterval(updateAll, 1000);
+
+// ── МОНИТОРИНГ ИНТЕРНЕТА ─────────────────────────────────────────────────────
+function setNetStatus(online) {
+  const dot  = document.getElementById('net-dot');
+  const text = document.getElementById('net-text');
+  if (!dot || !text) return;
+  if (online) {
+    dot.classList.remove('offline');
+    text.textContent = getTzLabel();
+    text.style.color = '#666';
+  } else {
+    dot.classList.add('offline');
+    text.textContent = 'НЕТ СЕТИ';
+    text.style.color = '#E24B4A';
+  }
+}
+
+// Браузерные события (быстрая реакция)
+window.addEventListener('online',  () => { setNetStatus(true); checkNet(); });
+window.addEventListener('offline', () => setNetStatus(false));
+
+// Активная проверка через Image — обходит CORS полностью
+function checkNet() {
+  const img = new Image();
+  const timer = setTimeout(() => { img.src = ''; setNetStatus(false); }, 5000);
+  img.onload  = () => { clearTimeout(timer); setNetStatus(true); };
+  img.onerror = () => {
+    clearTimeout(timer);
+    setNetStatus(navigator.onLine);
+  };
+  img.src = 'https://www.google.com/favicon.ico?_=' + Date.now();
+}
+
+checkNet();
+setInterval(checkNet, 10000);
+
+// ── ВЫБОР ЧАСОВОГО ПОЯСА ────────────────────────────────────────────────────
+const TZ_LABELS = {
+  'Europe/Zurich':'Zürich','Europe/London':'London','Europe/Paris':'Paris / Berlin',
+  'Europe/Moscow':'Moscow','America/New_York':'New York','America/Chicago':'Chicago',
+  'America/Los_Angeles':'Los Angeles','America/Sao_Paulo':'São Paulo',
+  'Asia/Dubai':'Dubai','Asia/Singapore':'Singapore','Asia/Tokyo':'Tokyo',
+  'Asia/Shanghai':'Shanghai','Australia/Sydney':'Sydney'
+};
+
+function applyNamedTz(tz) {
+  userTz = tz;
+  userUtcOffsetMin = null;
+  userTzLabel = TZ_LABELS[tz] || tz.split('/')[1].replace('_',' ');
+  updateUtcField();
+  refreshAll();
+}
+
+function applyUtcOffset(raw) {
+  // Принимаем: +2, -5, +5:30, 3, -3.5 и т.д.
+  const str = raw.trim().replace(',', '.');
+  const match = str.match(/^([+-]?)(\d{1,2})(?:[:\.](\d{1,2}))?$/);
+  if (!match) return false;
+  const sign   = match[1] === '-' ? -1 : 1;
+  const hours  = parseInt(match[2], 10);
+  const mins   = match[3] ? parseInt(match[3], 10) : 0;
+  if (hours > 14 || mins > 59) return false;
+  userUtcOffsetMin = sign * (hours * 60 + mins);
+  const label = 'UTC' + (sign >= 0 ? '+' : '-') + hours + (mins ? ':' + pad(mins) : '');
+  userTzLabel = label;
+  const tzSelect = document.getElementById('tzSelect');
+  if (tzSelect) tzSelect.value = '';
+  refreshAll();
+  return true;
+}
+
+function refreshAll() {
+  document.getElementById('grid').innerHTML = markets.map(buildCard).join('');
+  document.getElementById('trading-window').innerHTML = buildTradingWindow();
+  updateAll();
+  setNetStatus(navigator.onLine);
+  localStorage.setItem('userTz', userTz);
+  localStorage.setItem('userUtcOffsetMin', userUtcOffsetMin !== null ? userUtcOffsetMin : '');
+  localStorage.setItem('userTzLabel', userTzLabel);
+}
+
+const tzSelect = document.getElementById('tzSelect');
+const utcInput = document.getElementById('utcInput');
+const utcApply = document.getElementById('utcApply');
+
+// Восстанавливаем сохранённый пояс
+const savedOffset = localStorage.getItem('userUtcOffsetMin');
+const savedLabel  = localStorage.getItem('userTzLabel');
+const savedTz     = localStorage.getItem('userTz');
+if (savedOffset !== null && savedOffset !== '') {
+  userUtcOffsetMin = parseInt(savedOffset, 10);
+  userTzLabel = savedLabel || 'UTC';
+  if (utcInput) {
+    const h = Math.floor(Math.abs(userUtcOffsetMin) / 60);
+    const m = Math.abs(userUtcOffsetMin) % 60;
+    utcInput.value = (userUtcOffsetMin >= 0 ? '+' : '-') + h + (m ? ':' + pad(m) : '');
+  }
+} else if (savedTz) {
+  userTz = savedTz;
+  userTzLabel = TZ_LABELS[savedTz] || savedLabel || 'Zürich';
+  if (tzSelect) tzSelect.value = savedTz;
+  updateUtcField();
+} else {
+  updateUtcField(); // показать UTC по умолчанию для Zürich
+}
+
+if (tzSelect) {
+  tzSelect.addEventListener('change', () => {
+    if (tzSelect.value) applyNamedTz(tzSelect.value);
+  });
+}
+
+if (utcApply) {
+  utcApply.addEventListener('click', () => {
+    const val = utcInput ? utcInput.value : '';
+    if (!val.trim()) return;
+    const ok = applyUtcOffset(val);
+    if (!ok && utcInput) {
+      utcInput.style.borderColor = '#E24B4A';
+      setTimeout(() => utcInput.style.borderColor = '#333', 1500);
+    }
+  });
+}
+
+if (utcInput) {
+  utcInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') utcApply && utcApply.click();
+  });
+}function getUtcOffsetStr(tz) {
+  try {
+    // Правильный способ: форматируем дату с timeZoneName и парсим offset
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'shortOffset'
+    });
+    const parts = formatter.formatToParts(now);
+    const tzPart = parts.find(p => p.type === 'timeZoneName');
+    if (tzPart) {
+      // Например "GMT+1" → "+1", "GMT-5" → "-5", "GMT+5:30" → "+5:30"
+      const match = tzPart.value.match(/GMT([+-]\d{1,2}(?::\d{2})?)/);
+      if (match) return match[1];
+      if (tzPart.value === 'GMT') return '+0';
+    }
+    return '';
+  } catch(e) { return ''; }
+}
+
+function updateUtcField() {
+  const utcInput = document.getElementById('utcInput');
+  if (!utcInput) return;
+  if (userUtcOffsetMin !== null) {
+    const h = Math.floor(Math.abs(userUtcOffsetMin) / 60);
+    const m = Math.abs(userUtcOffsetMin) % 60;
+    utcInput.value = (userUtcOffsetMin >= 0 ? '+' : '-') + h + (m ? ':' + pad(m) : '');
+  } else {
+    utcInput.value = getUtcOffsetStr(userTz);
+  }
+}
+// ── ПРЕДУПРЕЖДЕНИЯ О СЕССИЯХ ────────────────────────────────────────────────
+function isUsDst(date) {
+  const year = date.getUTCFullYear();
+  const marchFirst = new Date(Date.UTC(year, 2, 1));
+  const dstStart = new Date(Date.UTC(year, 2, 8 + (7 - marchFirst.getUTCDay()) % 7, 7));
+  const novFirst = new Date(Date.UTC(year, 10, 1));
+  const dstEnd = new Date(Date.UTC(year, 10, 1 + (7 - novFirst.getUTCDay()) % 7, 6));
+  return date >= dstStart && date < dstEnd;
+}
+
+function getSessionAlerts() {
+  const now = new Date();
+  const alerts = [];
+
+  const usDst = isUsDst(now);
+  const nyOpenUtc   = usDst ? 13*60+30 : 14*60+30;
+  const nyCloseUtc  = usDst ? 20*60    : 21*60;
+  const tseOpenUtc  = 0;
+  const tseCloseUtc = 6*60+30;
+  const ukDst = isUkDst(now);
+  const lseOpenUtc  = ukDst ? 7*60    : 8*60;
+  const lseCloseUtc = ukDst ? 15*60+30: 16*60+30;
+
+  const nowUtcMin = now.getUTCHours()*60 + now.getUTCMinutes() + now.getUTCSeconds()/60;
+
+  const events = [
+    { name: 'открытие NYSE / NASDAQ', utc: nyOpenUtc,   mktId: 'nyse', isOpen: false },
+    { name: 'закрытие NYSE / NASDAQ', utc: nyCloseUtc,  mktId: 'nyse', isOpen: true  },
+    { name: 'открытие TSE Tokyo',     utc: tseOpenUtc,  mktId: 'tse',  isOpen: false },
+    { name: 'закрытие TSE Tokyo',     utc: tseCloseUtc, mktId: 'tse',  isOpen: true  },
+    { name: 'открытие LSE London',    utc: lseOpenUtc,  mktId: 'lse',  isOpen: false },
+    { name: 'закрытие LSE London',    utc: lseCloseUtc, mktId: 'lse',  isOpen: true  },
+  ];
+
+  for (const ev of events) {
+    let diff = ev.utc - nowUtcMin;
+    if (diff < -60) diff += 24*60;
+    if (diff > 23*60) diff -= 24*60;
+    if (diff > 0 && diff <= 15) {
+      // Вычисляем дату когда наступит это событие (UTC)
+      const eventDate = new Date(now.getTime() + diff * 60000);
+
+      // Для открытия — проверяем что день события является торговым
+      // Для закрытия — проверяем что сегодня торговый день (биржа уже открыта)
+      if (ev.isOpen) {
+        // Закрытие: биржа должна быть сейчас открыта
+        const mktNow = getNow(
+          ev.mktId === 'nyse' ? 'America/New_York' :
+          ev.mktId === 'tse'  ? 'Asia/Tokyo' : 'Europe/London'
+        );
+        if (!isMarketDay(ev.mktId, mktNow)) continue;
+      } else {
+        // Открытие: день события должен быть торговым
+        // Конвертируем UTC дату события в локальный день биржи
+        const mktTz = ev.mktId === 'nyse' ? 'America/New_York' :
+                      ev.mktId === 'tse'  ? 'Asia/Tokyo' : 'Europe/London';
+        const mktEventDate = getNow(mktTz);
+        // Добавляем diff минут к текущему времени биржи
+        const mktEventTime = new Date(mktEventDate.getTime() + diff * 60000);
+        if (!isMarketDay(ev.mktId, mktEventTime)) continue;
+      }
+
+      const mins = Math.floor(diff);
+      const secs = Math.floor((diff - mins) * 60);
+      alerts.push({ name: ev.name, mins, secs, blink: diff <= 3 });
+    }
+  }
+  return alerts;
+}
+
+function isUkDst(date) {
+  const year = date.getUTCFullYear();
+  // Последнее воскресенье марта
+  const march31 = new Date(Date.UTC(year, 2, 31));
+  const dstStart = new Date(Date.UTC(year, 2, 31 - march31.getUTCDay(), 1));
+  // Последнее воскресенье октября
+  const oct31 = new Date(Date.UTC(year, 9, 31));
+  const dstEnd = new Date(Date.UTC(year, 9, 31 - oct31.getUTCDay(), 1));
+  return date >= dstStart && date < dstEnd;
+}
+
+function updateSessionAlerts() {
+  const wrap = document.getElementById('session-alert-wrap');
+  if (!wrap) return;
+  const alerts = getSessionAlerts();
+
+  // Если нет предупреждений — очищаем
+  if (!alerts.length) { wrap.innerHTML = ''; return; }
+
+  // Создаём или обновляем блоки без пересоздания DOM
+  // Сначала убираем лишние блоки
+  while (wrap.children.length > alerts.length) wrap.removeChild(wrap.lastChild);
+
+  alerts.forEach((a, i) => {
+    const timeStr = a.mins > 0
+      ? `${a.mins} мин ${String(a.secs).padStart(2,'0')} сек`
+      : `${String(a.secs).padStart(2,'0')} сек`;
+
+    let el = wrap.children[i];
+    if (!el) {
+      // Создаём новый блок только если его нет
+      el = document.createElement('div');
+      el.className = 'session-alert';
+      el.innerHTML = `<span class="session-alert-dot"></span><span class="sa-text"></span><span class="sa-time-val"></span>`;
+      wrap.appendChild(el);
+    }
+
+    // Обновляем только класс и текст — без пересоздания
+    el.className = 'session-alert' + (a.blink ? ' blink' : '');
+    el.querySelector('.sa-text').textContent = `⚠️ До ${a.name} — осталось `;
+    el.querySelector('.sa-time-val').textContent = timeStr;
+  });
+}
+
+// ── ТИКАНЬЕ ЧАСОВ ───────────────────────────────────────────────────────────
+let tickIntervalId = null;
+let tickLastSec = -1;
+
+const tickStyleList = [
+  { key: 'classic', label: '🕐 Механические' },
+  { key: 'soft',    label: '🔔 Мягкий клик'  },
+  { key: 'metro',   label: '⏱ Метроном'      },
+  { key: 'vintage', label: '🕰 Старинные'     },
+  { key: 'elec',    label: '💧 Электронный'   },
+];
+let tickStyleIdx = 1;
+
+function updateTickStyleLabel() {
+  const el = document.getElementById('tickStyleLabel');
+  if (el) el.textContent = tickStyleList[tickStyleIdx].label;
+}
+
+document.getElementById('tickPrev').addEventListener('click', () => {
+  tickStyleIdx = (tickStyleIdx - 1 + tickStyleList.length) % tickStyleList.length;
+  updateTickStyleLabel();
+  // Предпрослушивание при смене
+  const cb = document.getElementById('tickEnabled');
+  if (cb && cb.checked) playTick();
+});
+document.getElementById('tickNext').addEventListener('click', () => {
+  tickStyleIdx = (tickStyleIdx + 1) % tickStyleList.length;
+  updateTickStyleLabel();
+  if (document.getElementById('tickEnabled')?.checked) playTick();
+});
+
+// 5 вариантов тиканья
+const tickSounds = {
+
+  // 1. Механические часы — тик (высокий) / так (низкий) попеременно
+  classic: (ctx, vol, beat) => {
+    const freq = beat % 2 === 0 ? 1800 : 1200;
+    const g = ctx.createGain();
+    const o = ctx.createOscillator();
+    const dist = ctx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) curve[i] = (i < 128 ? i / 128 : (i - 256) / 128) * 3;
+    dist.curve = curve;
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol * 0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
+    o.connect(dist); dist.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.05);
+  },
+
+  // 2. Мягкий клик — тихий бархатный щелчок
+  soft: (ctx, vol) => {
+    const g = ctx.createGain();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 900; filter.Q.value = 0.8;
+    g.gain.setValueAtTime(vol * 0.55, ctx.currentTime);
+    src.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    src.start();
+  },
+
+  // 3. Метроном — чёткий деревянный стук
+  metro: (ctx, vol) => {
+    const g = ctx.createGain();
+    const o1 = ctx.createOscillator();
+    const o2 = ctx.createOscillator();
+    o1.type = 'triangle'; o1.frequency.value = 1500;
+    o2.type = 'triangle'; o2.frequency.value = 800;
+    g.gain.setValueAtTime(vol * 0.25, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.06);
+    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+    o1.start(); o1.stop(ctx.currentTime + 0.07);
+    o2.start(); o2.stop(ctx.currentTime + 0.07);
+  },
+
+  // 4. Старинные часы — глубокий тёплый «тонк» с резонансом
+  vintage: (ctx, vol, beat) => {
+    const freq = beat % 2 === 0 ? 420 : 320;
+    const g = ctx.createGain();
+    const o = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 600; filter.Q.value = 4;
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol * 0.4, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+    o.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.2);
+  },
+
+  // 5. Электронный пульс — лёгкий синт-бип
+  elec: (ctx, vol) => {
+    const g = ctx.createGain();
+    const o = ctx.createOscillator();
+    o.type = 'sine'; o.frequency.value = 2200;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(vol * 0.15, ctx.currentTime + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.045);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.05);
+  }
+};
+
+let tickBeat = 0;
+
+function playTick() {
+  const ctx = getACtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const style = tickStyleList[tickStyleIdx].key;
+  const volRaw = parseInt(document.getElementById('tickVolume')?.value || '30');
+  const vol = volRaw / 100;
+  const fn = tickSounds[style];
+  if (fn) fn(ctx, vol, tickBeat);
+  tickBeat++;
+}
+
+function startTickInterval() {
+  if (tickIntervalId) return;
+  // Синхронизируем с секундами
+  tickIntervalId = setInterval(() => {
+    const enabled = document.getElementById('tickEnabled')?.checked;
+    if (!enabled) return;
+    const zh = getNow('Europe/Zurich');
+    const min = zh.getMinutes();
+    const sec = zh.getSeconds();
+    const isRed = min >= 50 || min < 5;
+    if (!isRed) return;
+    // Избегаем двойного тика в одну секунду
+    if (sec === tickLastSec) return;
+    tickLastSec = sec;
+    playTick();
+  }, 200); // проверяем каждые 200мс для точной синхронизации
+}
+
+// Запускаем после первого взаимодействия пользователя (требование браузера)
+document.addEventListener('click', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  startTickInterval();
+}, { once: false });
+
+// Также запускаем при изменении чекбокса
+document.addEventListener('DOMContentLoaded', () => {
+  const cb = document.getElementById('tickEnabled');
+  if (cb) cb.addEventListener('change', () => {
+    if (cb.checked) { getACtx(); startTickInterval(); }
+  });
+});
+
+// Запустить сразу
+startTickInterval();
+
+</script>
+</body>
+</html>
