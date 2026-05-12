@@ -300,6 +300,7 @@
   <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;">
     <button class="tab" onclick="switchTab('notes',this);loadNotes()">📓 Блокнот</button>
     <button class="tab" onclick="switchTab('links',this);renderLinks()">🔗 Ссылки</button>
+    <button class="tab" onclick="switchTab('telegram',this);renderTelegram()">✈️ Telegram</button>
     <button class="tab" onclick="switchTab('exchanges',this);renderExchanges()">🕐 Расписание бирж 1</button>
     <button class="tab" onclick="switchTab('exchanges2',this);renderExchanges2()">🕐 Расписание бирж 2</button>
     <button class="tab" onclick="openDashMenu(this)">🏦 Биржи</button>
@@ -722,6 +723,12 @@
       <strong style="color:var(--accent);">ℹ️ Примечание:</strong>
       Время отображается в вашем часовом поясе. DST рассчитывается автоматически. Обновляется каждые 30 сек.
     </div>
+  </div>
+
+  <!-- TELEGRAM TAB -->
+  <div class="tab-panel" id="tab-telegram">
+    <div class="section-title">Telegram — каналы</div>
+    <div id="telegramList"></div>
   </div>
 
   <!-- LINKS TAB -->
@@ -4317,6 +4324,35 @@ function calcMode2() {
   txt += `═════════════════════════════`;
   calcCopyText2 = txt;
   document.getElementById('copyBtn2').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// TELEGRAM CHANNELS
+// ═══════════════════════════════════════════
+const TELEGRAM_CHANNELS = [
+  { id:'tg_1', url:'https://t.me/gte_investments',    title:'GTE Investments',      desc:'@gte_investments' },
+  { id:'tg_2', url:'https://t.me/CryptoCove',         title:'Crypto Cove',          desc:'@CryptoCove' },
+  { id:'tg_3', url:'https://t.me/thecryptoexpress',   title:'The Crypto Express',   desc:'@thecryptoexpress' },
+  { id:'tg_4', url:'https://t.me/thebull_crypto',     title:'The Bull Crypto',      desc:'@thebull_crypto' },
+  { id:'tg_5', url:'https://t.me/dnevniki_crypto',    title:'Дневники Крипто',      desc:'@dnevniki_crypto' },
+  { id:'tg_6', url:'https://t.me/yivashchenko',       title:'Yuriy Ivashchenko',    desc:'@yivashchenko' },
+  { id:'tg_7', url:'https://t.me/uiartemzvezdin',     title:'Артём Звездин',        desc:'@uiartemzvezdin' },
+  { id:'tg_8', url:'https://t.me/gen_m',              title:'Gennady M',            desc:'@gen_m' },
+];
+
+function renderTelegram() {
+  const container = document.getElementById('telegramList');
+  if (!container) return;
+  container.innerHTML = TELEGRAM_CHANNELS.map(ch => `
+    <div style="background:#0d1421;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(0,229,255,.4)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0088cc,#005f99);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">✈️</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--bright);margin-bottom:2px;">${ch.title}</div>
+        <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;">${ch.desc}</div>
+      </div>
+      <a href="${ch.url}" target="_blank" style="flex-shrink:0;padding:7px 16px;background:#0a1e30;border:1px solid #0088cc;border-radius:7px;color:#40aaff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='#0088cc';this.style.color='#fff'" onmouseout="this.style.background='#0a1e30';this.style.color='#40aaff'">Открыть →</a>
+    </div>
+  `).join('');
 }
 
 function getZurichOffsetHours(){
