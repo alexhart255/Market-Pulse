@@ -2274,7 +2274,8 @@ const DEFAULT_LINKS=[
   {id:'default_2',url:'https://www.benzinga.com/news',title:'Benzinga — Новости',openMode:'tab'},
   {id:'default_3',url:'https://www.marketwatch.com/latest-news',title:'MarketWatch — Новости',openMode:'tab'},
   {id:'default_4',url:'https://www.forexfactory.com/calendar',title:'ForexFactory — Календарь',openMode:'tab'},
-  {id:'default_5',url:'https://www.youtube.com/@primevoltrade',title:'PrimoVola Trade — YouTube',openMode:'tab'}
+  {id:'default_5',url:'https://www.youtube.com/@primevoltrade',title:'PrimoVola Trade — YouTube',openMode:'tab'},
+  {id:'default_6',url:'https://www.youtube.com/@AlexanderGerchik',title:'Alexander Gerchik — YouTube',openMode:'tab'}
 ];
 function getLinks(){try{const saved=JSON.parse(localStorage.getItem(LINKS_KEY)||'[]');const savedIds=new Set(saved.map(l=>l.id));const defs=DEFAULT_LINKS.filter(d=>!savedIds.has(d.id));return[...saved,...defs];}catch(e){return DEFAULT_LINKS;}}
 function setLinks(l){ localStorage.setItem(LINKS_KEY,JSON.stringify(l)); }
