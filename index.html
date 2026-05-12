@@ -2312,8 +2312,7 @@ function renderLinks(){
         <div style="font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.title)}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.url)}</div>
       </div>
-      <span style="font-size:10px;color:var(--muted);flex-shrink:0;">${l.openMode==='window'?'⧉':'🗂'}</span>
-      <button onclick="deleteLink(${l.id})" style="background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 9px;color:var(--muted);font-size:12px;cursor:pointer;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🗑</button>
+      ${typeof l.id==='number'?`<button onclick="deleteLink(${l.id})" style="background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 9px;color:var(--muted);font-size:12px;cursor:pointer;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">🗑</button>`:'<div style="width:34px;flex-shrink:0;"></div>'}
     </div>`;
   }).join('');
 }
