@@ -306,7 +306,7 @@
     <button class="tab" onclick="openDashMenu(this)">🏦 Биржи</button>
     <button class="tab" onclick="openClockMenu(this)">🕐 Циферблат</button>
     <button class="tab" onclick="openCorrMenu(this)">📊 Корреляции</button>
-    <button class="tab" onclick="openRadioMenu(this)">🎵 Радио</button>
+    <button class="tab" onclick="openRadioMenu(this)">🎵 Музыка</button>
     <button class="tab" onclick="switchTab('utcconv',this)">🌐 UTC</button>
     <button class="tab" onclick="switchTab('calc',this);calcInit()">🧮 Калькулятор</button>
   </div>
@@ -808,30 +808,12 @@
 <div id="radioMenuOverlay" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:2000;">
   <div id="radioMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:300px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
     <div id="radioStep1">
-      <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🎵 Выбери радиостанцию</div>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/us/chilltrax','Chilltrax')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🌊</span><div><div style="font-weight:700;">Chilltrax</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/gb/chill','Chill GB')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🇬🇧</span><div><div style="font-weight:700;">Chill (GB)</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
+      <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🎵 Выбери музыку</div>
       <button onclick="selectRadio('https://www.internetradio-schweiz.ch/us/101-smooth-jazz','101 Smooth Jazz')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
         <span style="font-size:18px;">🎷</span><div><div style="font-weight:700;">101 Smooth Jazz</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
       </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/au/sbs-chill','SBS Chill')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🇦🇺</span><div><div style="font-weight:700;">SBS Chill (AU)</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/1fm-chillout-lounge','1FM Chillout Lounge')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">☁️</span><div><div style="font-weight:700;">1FM Chillout Lounge</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/ca/ultra-quiet-radio','Ultra Quiet Radio')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🤫</span><div><div style="font-weight:700;">Ultra Quiet Radio</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/de/epic-piano-romantic-piano','Romantic Piano')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🎹</span><div><div style="font-weight:700;">Romantic Piano</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
-      </button>
-      <button onclick="selectRadio('https://www.internetradio-schweiz.ch/de/epic-piano-chillout-piano','Chillout Piano')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:18px;">🎵</span><div><div style="font-weight:700;">Chillout Piano</div><div style="font-size:11px;color:#4a6080;">internetradio-schweiz.ch</div></div>
+      <button onclick="selectRadio('https://drive.google.com/file/d/15H9LhxzW4uxp9rQB2UksohHrlZ-g6DgI/view?usp=sharing','Luxury Sunset Chill Lounge')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:11px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0d1e30'" onmouseout="this.style.background='transparent'">
+        <span style="font-size:18px;">🌅</span><div><div style="font-weight:700;">Luxury Sunset Chill Lounge</div><div style="font-size:11px;color:#4a6080;">Google Drive</div></div>
       </button>
     </div>
     <div id="radioStep2" style="display:none;">
