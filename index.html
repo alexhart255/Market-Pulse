@@ -2464,8 +2464,8 @@ function openInvesting(mode){
 // ═══════════════════════════════════════════
 // FINVIZ MENU
 // ═══════════════════════════════════════════
-const FINVIZ_LONG  = 'https://finviz.com/screener.ashx?v=111&f=exch_nasd,cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pa,ta_sma50_pa,ta_rsi_nos&o=-marketcap';
-const FINVIZ_SHORT = 'https://finviz.com/screener.ashx?v=111&f=exch_nasd,cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pb,ta_sma50_pb,ta_rsi_oos,sh_short_high&o=-marketcap';
+const FINVIZ_LONG  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pa,ta_sma50_pa,ta_rsi_nos&o=-marketcap';
+const FINVIZ_SHORT = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pb,ta_sma50_pb,ta_rsi_oos,sh_short_high&o=-marketcap';
 
 function openFinvizMenu(btn){
   const overlay=document.getElementById('finvizMenuOverlay');
