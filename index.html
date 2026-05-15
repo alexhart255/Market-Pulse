@@ -440,208 +440,220 @@
 
   <!-- CALCULATOR TAB -->
   <div class="tab-panel" id="tab-calc">
-    <div class="section-title">Калькулятор позиции</div>
+    <div class="section-title">Калькулятор позиции v2</div>
 
-    <!-- Mode switcher -->
-    <div style="display:flex;gap:8px;margin-bottom:20px;">
-      <button id="calcModeBtn1" onclick="setCalcMode(1)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--bg);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📐 Позиция (ATR / Стоп)</button>
-      <button id="calcModeBtn2" onclick="setCalcMode(2)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📦 Размер в Лотах</button>
-    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
 
-    <!-- ═══ MODE 1: Position Calculator ═══ -->
-    <div id="calcPanel1">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <!-- ══════════════ LEFT COLUMN ══════════════ -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
 
-        <!-- LEFT COLUMN -->
-        <div style="display:flex;flex-direction:column;gap:12px;">
-
-          <!-- Direction + ratio -->
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🎯 Стратегия</div>
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-              <button id="dirLong" onclick="calcSetDir('long')" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--green);background:#061610;color:var(--green);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▲ ЛОНГ</button>
-              <button id="dirShort" onclick="calcSetDir('short')" style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▼ ШОРТ</button>
-            </div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Соотношение Тейк/Риск</label>
-            <input id="c1_ratio" type="number" value="3" min="0.5" max="20" step="0.5"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
+        <!-- НАПРАВЛЕНИЕ -->
+        <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🎯 Направление и соотношение</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="cv_dirLong" onclick="cvSetDir('long')" style="flex:1;padding:9px;border-radius:7px;border:2px solid var(--green);background:#061610;color:var(--green);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▲ ЛОНГ</button>
+            <button id="cv_dirShort" onclick="cvSetDir('short')" style="flex:1;padding:9px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">▼ ШОРТ</button>
           </div>
-
-          <!-- Entry level -->
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 Уровень входа</div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена уровня</label>
-            <input id="c1_level" type="number" value="24.51" step="0.0001"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-          </div>
-
-          <!-- Stop mode -->
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🛑 Стоп-лосс</div>
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-              <button id="stopModeATR" onclick="calcSetStopMode('atr')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По ATR</button>
-              <button id="stopModeTech" onclick="calcSetStopMode('tech')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">Технический</button>
-            </div>
-            <div id="atrInputs">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">ATR значение</label>
-              <input id="c1_atr" type="number" value="0.22" step="0.01"
-                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:8px;"
-                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Стоп % от ATR</label>
-              <input id="c1_stopPct" type="number" value="15" min="1" max="100" step="1"
-                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
-                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-            </div>
-            <div id="techStopInputs" style="display:none;">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена стоп-лосса</label>
-              <input id="c1_techStop" type="number" value="24.40" step="0.0001"
-                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-            </div>
-          </div>
-
-          <!-- Risk -->
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">💵 Риск</div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Риск на сделку ($)</label>
-            <input id="c1_risk" type="number" value="10" min="0.01" step="0.5"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-          </div>
-
-          <!-- Options -->
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">⚙️ Опции</div>
-
-            <!-- Leverage -->
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
-              <input type="checkbox" id="c1_useLev" onchange="calcMode1();document.getElementById('levRow').style.display=this.checked?'flex':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
-              <span style="font-size:12px;color:var(--text);">Использовать плечо</span>
-            </label>
-            <div id="levRow" style="display:none;align-items:center;gap:8px;margin-bottom:10px;">
-              <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Плечо x</label>
-              <input id="c1_lev" type="number" value="10" min="1" max="150" step="1"
-                style="width:80px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
-                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-            </div>
-
-            <!-- Binance commission -->
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
-              <input type="checkbox" id="c1_useBin" onchange="calcMode1();document.getElementById('binRow').style.display=this.checked?'flex':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
-              <span style="font-size:12px;color:var(--text);">Комиссии Binance Futures</span>
-            </label>
-            <div id="binRow" style="display:none;align-items:center;gap:8px;margin-bottom:10px;">
-              <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Тип:</label>
-              <select id="c1_binType" onchange="calcMode1()" style="background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;outline:none;">
-                <option value="maker">Maker (0.02%)</option>
-                <option value="taker">Taker (0.05%)</option>
-              </select>
-            </div>
-
-            <!-- Partial close -->
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" id="c1_usePartial" onchange="calcMode1();document.getElementById('partialBlock').style.display=this.checked?'block':'none'" style="accent-color:var(--accent);width:14px;height:14px;">
-              <span style="font-size:12px;color:var(--text);">Частичное закрытие</span>
-            </label>
-          </div>
-
-          <!-- Partial close config -->
-          <div id="partialBlock" style="display:none;background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 Частичное закрытие</div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Количество ТП</label>
-            <select id="c1_numTP" onchange="calcMode1();renderPartialInputs()" style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;margin-bottom:12px;">
-              <option value="2">2 ТП</option>
-              <option value="3">3 ТП</option>
-              <option value="4" selected>4 ТП</option>
-              <option value="5">5 ТП</option>
-            </select>
-            <div id="partialInputsContainer"></div>
-          </div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Соотношение Тейк / Риск (1:X)</label>
+          <input id="cv_ratio" type="number" value="3" min="0.5" max="20" step="0.5"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
         </div>
 
-        <!-- RIGHT COLUMN: Results -->
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div id="calcResult1" style="background:#060e1a;border:1px solid var(--border);border-radius:12px;padding:20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2;color:var(--text);min-height:300px;">
-            <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры слева →</div>
-          </div>
-          <button id="copyBtn1" onclick="calcCopy(1)" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,255,.07);color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;"
-            onmouseover="this.style.background='rgba(0,229,255,.18)'" onmouseout="this.style.background='rgba(0,229,255,.07)'">
-            📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
-          </button>
+        <!-- ПАРАМЕТРЫ -->
+        <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📍 Параметры</div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Инструмент (тикер)</label>
+          <input id="cv_instrument" type="text" placeholder="BTC, LIN, ES..." maxlength="20"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--accent);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:10px;text-transform:uppercase;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="this.value=this.value.toUpperCase();cvCalc()">
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена уровня ($)</label>
+          <input id="cv_level" type="number" value="24.51" step="0.0001"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          <div id="cv_tvxHint" style="font-size:10px;color:var(--muted);margin-top:5px;">ТВХ = уровень + люфт</div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;margin-top:10px;">ATR значение</label>
+          <input id="cv_globalAtr" type="number" value="0.22" step="0.01" min="0.0001"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--accent);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;margin-top:10px;">Люфт % от стопа</label>
+          <input id="cv_lyuftPct" type="number" value="20" min="1" max="100" step="1"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
         </div>
-      </div>
-    </div>
 
-    <!-- ═══ MODE 2: Lot Size Calculator ═══ -->
-    <div id="calcPanel2" style="display:none;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-
-        <!-- LEFT -->
-        <div style="display:flex;flex-direction:column;gap:12px;">
-
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">💰 Параметры риска</div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Риск на сделку ($)</label>
-            <input id="c2_risk" type="number" value="5" min="0.01" step="0.5"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;margin-bottom:10px;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Единиц в 1 лоте</label>
-            <input id="c2_unitsPerLot" type="number" value="100" min="1" step="1"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;margin-bottom:10px;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Мин. шаг лота</label>
-            <input id="c2_lotStep" type="number" value="0.01" min="0.001" step="0.001"
-              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+        <!-- СТОП -->
+        <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">🛑 Режим стоп-лосса</div>
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <button id="cv_stopATR" onclick="cvSetStop('atr')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">ATR</button>
+            <button id="cv_stopTech" onclick="cvSetStop('tech')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Технический</button>
+            <button id="cv_stopDist" onclick="cvSetStop('dist')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Дистанция</button>
           </div>
 
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📍 Уровни входа</div>
-            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена входа ТВХ ($)</label>
-            <input id="c2_entry" type="number" value="" min="0" step="0.01" placeholder="Например: 1.2450"
+          <!-- ATR inputs -->
+          <div id="cv_atrBlock">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">ATR берётся из блока «Параметры»</div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Стоп % от ATR</label>
+            <input id="cv_stopPct" type="number" value="20" min="1" max="100" step="1"
               style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;">Введите цену входа вручную</div>
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
           </div>
 
-          <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
-            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">⚙️ Режим расчёта СЛ</div>
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-              <button id="slModePrice" onclick="calcSetSlMode('price')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По цене СЛ</button>
-              <button id="slModeDist" onclick="calcSetSlMode('dist')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">По дистанции</button>
+          <!-- Технический стоп -->
+          <div id="cv_techBlock" style="display:none;">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена стоп-лосса ($)</label>
+            <input id="cv_techStop" type="number" value="24.00" step="0.0001"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          </div>
+
+          <!-- Дистанция -->
+          <div id="cv_distBlock" style="display:none;">
+            <div style="display:flex;gap:6px;margin-bottom:10px;">
+              <button id="cv_distModePoints" onclick="cvSetDistMode('points')" style="flex:1;padding:6px;border-radius:6px;border:2px solid var(--red);background:rgba(255,59,92,.08);color:var(--red);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Пункты ($)</button>
+              <button id="cv_distModeTicks" onclick="cvSetDistMode('ticks')" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Тики</button>
             </div>
-            <div id="slPriceInputs">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Цена Stop Loss ($)</label>
-              <input id="c2_slPrice" type="number" value="" min="0" step="0.01" placeholder="Например: 1.2300"
+            <div id="cv_distPointsBlock">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Дистанция стопа ($)</label>
+              <input id="cv_stopDistVal" type="number" value="0.5" min="0.0001" step="0.0001"
                 style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
-                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
+                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
             </div>
-            <div id="slDistInputs" style="display:none;">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Дистанция до СЛ ($)</label>
-              <input id="c2_slDist" type="number" value="5" min="0.01" step="0.01"
-                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:8px;"
-                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode2()">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Направление</label>
-              <div style="display:flex;gap:8px;">
-                <button id="c2dirLong" onclick="calcSetDir2('long')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--green);background:#061610;color:var(--green);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">▲ LONG</button>
-                <button id="c2dirShort" onclick="calcSetDir2('short')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">▼ SHORT</button>
+            <div id="cv_distTicksBlock" style="display:none;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Количество тиков</label>
+              <input id="cv_stopTicks" type="number" value="10" min="1" step="1"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:#ff7090;font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;margin-bottom:8px;"
+                onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Размер тика ($)</label>
+              <input id="cv_tickSize" type="number" value="0.01" min="0.00001" step="0.00001"
+                style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+            </div>
+          </div>
+        </div>
+
+        <!-- РИСК -->
+        <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">💵 Риск на сделку</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button id="cv_riskDirect" onclick="cvSetRisk('direct')" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--accent);background:rgba(0,229,255,.08);color:var(--accent);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Прямая сумма ($)</button>
+            <button id="cv_riskPct" onclick="cvSetRisk('pct')" style="flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Депозит + %</button>
+          </div>
+          <div id="cv_riskDirectBlock">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Риск ($)</label>
+            <input id="cv_riskAmt" type="number" value="10" min="0.01" step="0.5"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:16px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          </div>
+          <div id="cv_riskPctBlock" style="display:none;">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Депозит ($)</label>
+            <input id="cv_deposit" type="number" value="1000" min="1" step="10"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;margin-bottom:8px;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">% риска от депозита</label>
+            <input id="cv_riskPctVal" type="number" value="1" min="0.01" max="100" step="0.1"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:15px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════════ RIGHT COLUMN ══════════════ -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- ОПЦИИ -->
+        <div style="background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">⚙️ Опции</div>
+
+          <!-- Лоты -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+            <input type="checkbox" id="cv_useLots" onchange="cvToggleLots()" style="accent-color:var(--accent);width:14px;height:14px;">
+            <span style="font-size:12px;color:var(--text);">Показать расчёт в лотах</span>
+          </label>
+          <div id="cv_lotsBlock" style="display:none;background:#060e1a;border-radius:8px;padding:12px;margin-bottom:10px;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Единиц в 1 лоте</div>
+                <input id="cv_unitsPerLot" type="number" value="100" min="1" step="1"
+                  style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Мин. шаг лота</div>
+                <input id="cv_lotStep" type="number" value="0.01" min="0.001" step="0.001"
+                  style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+                  onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
               </div>
             </div>
           </div>
+
+          <!-- Плечо -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+            <input type="checkbox" id="cv_useLev" onchange="document.getElementById('cv_levBlock').style.display=this.checked?'flex':'none';cvCalc()" style="accent-color:var(--accent);width:14px;height:14px;">
+            <span style="font-size:12px;color:var(--text);">Использовать плечо</span>
+          </label>
+          <div id="cv_levBlock" style="display:none;align-items:center;gap:8px;margin-bottom:10px;">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Плечо x</label>
+            <input id="cv_lev" type="number" value="10" min="1" max="150" step="1"
+              style="width:80px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+          </div>
+
+          <!-- Комиссия Binance -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+            <input type="checkbox" id="cv_useBin" onchange="cvToggleCommission()" style="accent-color:var(--accent);width:14px;height:14px;">
+            <span style="font-size:12px;color:var(--text);">Комиссии Binance Futures</span>
+          </label>
+          <div id="cv_binBlock" style="display:none;margin-bottom:10px;">
+            <select id="cv_binType" onchange="cvCalc()" style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;outline:none;">
+              <option value="maker">Maker — 0.02%</option>
+              <option value="taker">Taker — 0.05%</option>
+            </select>
+          </div>
+
+          <!-- Ручная комиссия -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+            <input type="checkbox" id="cv_useManualComm" onchange="cvToggleManualComm()" style="accent-color:var(--accent);width:14px;height:14px;">
+            <span style="font-size:12px;color:var(--text);">Ручная комиссия (%)</span>
+          </label>
+          <div id="cv_manualCommBlock" style="display:none;margin-bottom:10px;">
+            <input id="cv_commPct" type="number" value="0.02" min="0" max="10" step="0.01"
+              style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;">% за одну сторону (вход или выход)</div>
+          </div>
+
+          <!-- Частичное закрытие -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="cv_usePartial" onchange="cvTogglePartial()" style="accent-color:var(--accent);width:14px;height:14px;">
+            <span style="font-size:12px;color:var(--text);">Частичное закрытие позиции</span>
+          </label>
         </div>
 
-        <!-- RIGHT: Results -->
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div id="calcResult2" style="background:#060e1a;border:1px solid var(--border);border-radius:12px;padding:20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2;color:var(--text);min-height:300px;">
-            <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры слева →</div>
-          </div>
-          <button id="copyBtn2" onclick="calcCopy(2)" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,255,.07);color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;"
-            onmouseover="this.style.background='rgba(0,229,255,.18)'" onmouseout="this.style.background='rgba(0,229,255,.07)'">
-            📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
-          </button>
+        <!-- Частичное закрытие конфиг -->
+        <div id="cv_partialBlock" style="display:none;background:#0d1e30;border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 Частичное закрытие</div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Количество ТП</label>
+          <select id="cv_numTP" onchange="cvRenderPartial();cvCalc()" style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;margin-bottom:12px;">
+            <option value="2">2 ТП</option>
+            <option value="3">3 ТП</option>
+            <option value="4" selected>4 ТП</option>
+            <option value="5">5 ТП</option>
+          </select>
+          <div id="cv_partialInputs"></div>
         </div>
+
+        <!-- РЕЗУЛЬТАТ -->
+        <div id="cv_result" style="background:#060e1a;border:1px solid var(--border);border-radius:12px;padding:20px;font-family:'Space Mono',monospace;font-size:12px;line-height:2;color:var(--text);min-height:300px;flex:1;">
+          <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры слева ←</div>
+        </div>
+        <button id="cv_copyBtn" onclick="cvCopy()" style="display:none;width:100%;padding:11px;border-radius:8px;border:1px solid var(--accent);background:rgba(0,229,255,.07);color:var(--accent);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;"
+          onmouseover="this.style.background='rgba(0,229,255,.18)'" onmouseout="this.style.background='rgba(0,229,255,.07)'">
+          📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
+        </button>
+
       </div>
     </div>
 
@@ -649,6 +661,7 @@
       ⚠️ <strong style="color:var(--accent);">Важно:</strong> Калькулятор не является финансовой рекомендацией. Используйте для расчёта позиций на свой страх и риск. Всегда проверяйте расчёты перед открытием сделки.
     </div>
   </div>
+
 
   <!-- EXCHANGE SCHEDULE TAB -->
   <div class="tab-panel" id="tab-exchanges">
@@ -3896,19 +3909,179 @@ function renderExchanges2() {
 // 🧮 КАЛЬКУЛЯТОР ПОЗИЦИИ
 // ════════════════════════════════════════════
 
-let calcCurrentMode = 1;
-let calcCurrentDir = 'long';
-let calcCurrentStopMode = 'atr';
-let calcCurrentSlMode = 'price';
-let calcDir2 = 'long';
-let calcCopyText1 = '';
-let calcCopyText2 = '';
+// ═══════════════════════════════════════════════════════
+// КАЛЬКУЛЯТОР v2 — по логике TradingView
+// ═══════════════════════════════════════════════════════
+let cvDir       = 'long';
+let cvStopMode  = 'atr';
+let cvRiskMode  = 'direct';
+let cvDistMode  = 'points';
+let cvCopyText  = '';
 
-function calcCopy(mode) {
-  const text = mode === 1 ? calcCopyText1 : calcCopyText2;
-  if (!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copyBtn' + mode);
+function calcInit() {
+  cvRenderPartial();
+  cvCalc();
+}
+
+// ── Направление ──
+function cvSetDir(d) {
+  cvDir = d;
+  const bl = document.getElementById('cv_dirLong');
+  const bs = document.getElementById('cv_dirShort');
+  bl.style.borderWidth  = d === 'long' ? '2px' : '1px';
+  bl.style.borderColor  = d === 'long' ? 'var(--green)' : 'var(--border)';
+  bl.style.background   = d === 'long' ? '#061610' : 'transparent';
+  bl.style.color        = d === 'long' ? 'var(--green)' : 'var(--muted)';
+  bs.style.borderWidth  = d === 'short' ? '2px' : '1px';
+  bs.style.borderColor  = d === 'short' ? 'var(--red)' : 'var(--border)';
+  bs.style.background   = d === 'short' ? '#160608' : 'transparent';
+  bs.style.color        = d === 'short' ? 'var(--red)' : 'var(--muted)';
+  const hint = document.getElementById('cv_tvxHint');
+  if (hint) hint.textContent = d === 'long' ? 'ТВХ = уровень + люфт' : 'ТВХ = уровень − люфт';
+  cvCalc();
+}
+
+// ── Режим стопа ──
+function cvSetStop(m) {
+  cvStopMode = m;
+  const ids    = ['cv_stopATR','cv_stopTech','cv_stopDist'];
+  const modes  = ['atr','tech','dist'];
+  const colors = ['var(--accent)','var(--orange)','var(--red)'];
+  const bgs    = ['rgba(0,229,255,.08)','rgba(255,170,0,.08)','rgba(255,59,92,.08)'];
+  ids.forEach((id, i) => {
+    const btn = document.getElementById(id);
+    const active = modes[i] === m;
+    btn.style.borderWidth = active ? '2px' : '1px';
+    btn.style.borderColor = active ? colors[i] : 'var(--border)';
+    btn.style.background  = active ? bgs[i] : 'transparent';
+    btn.style.color       = active ? colors[i] : 'var(--muted)';
+  });
+  document.getElementById('cv_atrBlock').style.display  = m === 'atr'  ? 'block' : 'none';
+  document.getElementById('cv_techBlock').style.display = m === 'tech' ? 'block' : 'none';
+  document.getElementById('cv_distBlock').style.display = m === 'dist' ? 'block' : 'none';
+  cvCalc();
+}
+
+// ── Режим дистанции ──
+function cvSetDistMode(m) {
+  cvDistMode = m;
+  const bp = document.getElementById('cv_distModePoints');
+  const bt = document.getElementById('cv_distModeTicks');
+  bp.style.borderWidth = m === 'points' ? '2px' : '1px';
+  bp.style.borderColor = m === 'points' ? 'var(--red)' : 'var(--border)';
+  bp.style.background  = m === 'points' ? 'rgba(255,59,92,.08)' : 'transparent';
+  bp.style.color       = m === 'points' ? 'var(--red)' : 'var(--muted)';
+  bt.style.borderWidth = m === 'ticks' ? '2px' : '1px';
+  bt.style.borderColor = m === 'ticks' ? 'var(--orange)' : 'var(--border)';
+  bt.style.background  = m === 'ticks' ? 'rgba(255,170,0,.08)' : 'transparent';
+  bt.style.color       = m === 'ticks' ? 'var(--orange)' : 'var(--muted)';
+  document.getElementById('cv_distPointsBlock').style.display = m === 'points' ? 'block' : 'none';
+  document.getElementById('cv_distTicksBlock').style.display  = m === 'ticks'  ? 'block' : 'none';
+  cvCalc();
+}
+
+
+function cvSetRisk(m) {
+  cvRiskMode = m;
+  const bd = document.getElementById('cv_riskDirect');
+  const bp = document.getElementById('cv_riskPct');
+  bd.style.borderWidth = m === 'direct' ? '2px' : '1px';
+  bd.style.borderColor = m === 'direct' ? 'var(--accent)' : 'var(--border)';
+  bd.style.background  = m === 'direct' ? 'rgba(0,229,255,.08)' : 'transparent';
+  bd.style.color       = m === 'direct' ? 'var(--accent)' : 'var(--muted)';
+  bp.style.borderWidth = m === 'pct' ? '2px' : '1px';
+  bp.style.borderColor = m === 'pct' ? 'var(--green)' : 'var(--border)';
+  bp.style.background  = m === 'pct' ? 'rgba(0,255,136,.08)' : 'transparent';
+  bp.style.color       = m === 'pct' ? 'var(--green)' : 'var(--muted)';
+  document.getElementById('cv_riskDirectBlock').style.display = m === 'direct' ? 'block' : 'none';
+  document.getElementById('cv_riskPctBlock').style.display    = m === 'pct'    ? 'block' : 'none';
+  cvCalc();
+}
+
+function cvToggleLots() {
+  document.getElementById('cv_lotsBlock').style.display =
+    document.getElementById('cv_useLots').checked ? 'block' : 'none';
+  cvCalc();
+}
+
+function cvToggleCommission() {
+  const on = document.getElementById('cv_useBin').checked;
+  document.getElementById('cv_binBlock').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('cv_useManualComm').checked = false;
+    document.getElementById('cv_manualCommBlock').style.display = 'none';
+  }
+  cvCalc();
+}
+
+function cvToggleManualComm() {
+  const on = document.getElementById('cv_useManualComm').checked;
+  document.getElementById('cv_manualCommBlock').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('cv_useBin').checked = false;
+    document.getElementById('cv_binBlock').style.display = 'none';
+  }
+  cvCalc();
+}
+
+function cvTogglePartial() {
+  document.getElementById('cv_partialBlock').style.display =
+    document.getElementById('cv_usePartial').checked ? 'block' : 'none';
+  cvCalc();
+}
+
+function cvRenderPartial() {
+  const n = parseInt(document.getElementById('cv_numTP').value) || 4;
+  const defaults = [{r:3,p:25},{r:4,p:25},{r:5,p:25},{r:6,p:25},{r:7,p:0}];
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const d = defaults[i] || {r: i+3, p: Math.floor(100/n)};
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} соотн. 1:</div>
+        <input id="cv_r${i}" type="number" value="${d.r}" min="0.5" step="0.5"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--accent);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} доля %</div>
+        <input id="cv_p${i}" type="number" value="${d.p}" min="0" max="100" step="1"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--green);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+      </div>
+    </div>`;
+  }
+  document.getElementById('cv_partialInputs').innerHTML = html;
+}
+
+function cvFmt(v, d) {
+  if (isNaN(v) || !isFinite(v)) return '—';
+  const fixed = v.toFixed(d);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+}
+
+function cvRow(label, value, color) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1e30;">
+    <span style="color:#4a6080;">${label}</span>
+    <span style="color:${color || 'var(--bright)'};font-weight:700;">${value}</span>
+  </div>`;
+}
+
+function cvSec(title) {
+  return `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;border-top:1px solid var(--border);padding-top:10px;">${title}</div>`;
+}
+
+function cvErr(msg) {
+  document.getElementById('cv_result').innerHTML =
+    `<div style="color:var(--red);text-align:center;padding:40px 20px;font-size:13px;">⚠️ ${msg}</div>`;
+}
+
+function cvCopy() {
+  if (!cvCopyText) return;
+  navigator.clipboard.writeText(cvCopyText).then(() => {
+    const btn = document.getElementById('cv_copyBtn');
     const orig = btn.innerHTML;
     btn.innerHTML = '✅ СКОПИРОВАНО!';
     btn.style.borderColor = 'var(--green)';
@@ -3923,410 +4096,299 @@ function calcCopy(mode) {
   });
 }
 
-function calcInit() {
-  renderPartialInputs();
-  calcMode1();
-  calcMode2();
-}
+function cvCalc() {
+  const isLong = cvDir === 'long';
+  const ratio  = parseFloat(document.getElementById('cv_ratio').value) || 3;
+  const level  = parseFloat(document.getElementById('cv_level').value) || 0;
 
-function setCalcMode(m) {
-  calcCurrentMode = m;
-  document.getElementById('calcPanel1').style.display = m === 1 ? 'block' : 'none';
-  document.getElementById('calcPanel2').style.display = m === 2 ? 'block' : 'none';
-  const b1 = document.getElementById('calcModeBtn1');
-  const b2 = document.getElementById('calcModeBtn2');
-  b1.style.background = m === 1 ? 'var(--accent)' : 'transparent';
-  b1.style.color = m === 1 ? 'var(--bg)' : 'var(--muted)';
-  b1.style.borderColor = m === 1 ? 'var(--accent)' : 'var(--border)';
-  b2.style.background = m === 2 ? 'var(--accent)' : 'transparent';
-  b2.style.color = m === 2 ? 'var(--bg)' : 'var(--muted)';
-  b2.style.borderColor = m === 2 ? 'var(--accent)' : 'var(--border)';
-}
-
-function calcSetDir(d) {
-  calcCurrentDir = d;
-  const bl = document.getElementById('dirLong');
-  const bs = document.getElementById('dirShort');
-  bl.style.borderWidth = d === 'long' ? '2px' : '1px';
-  bl.style.borderColor = d === 'long' ? 'var(--green)' : 'var(--border)';
-  bl.style.background = d === 'long' ? '#061610' : 'transparent';
-  bl.style.color = d === 'long' ? 'var(--green)' : 'var(--muted)';
-  bs.style.borderWidth = d === 'short' ? '2px' : '1px';
-  bs.style.borderColor = d === 'short' ? 'var(--red)' : 'var(--border)';
-  bs.style.background = d === 'short' ? '#160608' : 'transparent';
-  bs.style.color = d === 'short' ? 'var(--red)' : 'var(--muted)';
-  calcMode1();
-}
-
-function calcSetDir2(d) {
-  calcDir2 = d;
-  const bl = document.getElementById('c2dirLong');
-  const bs = document.getElementById('c2dirShort');
-  bl.style.borderWidth = d === 'long' ? '2px' : '1px';
-  bl.style.borderColor = d === 'long' ? 'var(--green)' : 'var(--border)';
-  bl.style.background = d === 'long' ? '#061610' : 'transparent';
-  bl.style.color = d === 'long' ? 'var(--green)' : 'var(--muted)';
-  bs.style.borderWidth = d === 'short' ? '2px' : '1px';
-  bs.style.borderColor = d === 'short' ? 'var(--red)' : 'var(--border)';
-  bs.style.background = d === 'short' ? '#160608' : 'transparent';
-  bs.style.color = d === 'short' ? 'var(--red)' : 'var(--muted)';
-  calcMode2();
-}
-
-function calcSetStopMode(m) {
-  calcCurrentStopMode = m;
-  const ba = document.getElementById('stopModeATR');
-  const bt = document.getElementById('stopModeTech');
-  ba.style.borderWidth = m === 'atr' ? '2px' : '1px';
-  ba.style.borderColor = m === 'atr' ? 'var(--accent)' : 'var(--border)';
-  ba.style.background = m === 'atr' ? 'rgba(0,229,255,.08)' : 'transparent';
-  ba.style.color = m === 'atr' ? 'var(--accent)' : 'var(--muted)';
-  bt.style.borderWidth = m === 'tech' ? '2px' : '1px';
-  bt.style.borderColor = m === 'tech' ? 'var(--orange)' : 'var(--border)';
-  bt.style.background = m === 'tech' ? 'rgba(255,170,0,.08)' : 'transparent';
-  bt.style.color = m === 'tech' ? 'var(--orange)' : 'var(--muted)';
-  document.getElementById('atrInputs').style.display = m === 'atr' ? 'block' : 'none';
-  document.getElementById('techStopInputs').style.display = m === 'tech' ? 'block' : 'none';
-  calcMode1();
-}
-
-function calcSetSlMode(m) {
-  calcCurrentSlMode = m;
-  const bp = document.getElementById('slModePrice');
-  const bd = document.getElementById('slModeDist');
-  bp.style.borderWidth = m === 'price' ? '2px' : '1px';
-  bp.style.borderColor = m === 'price' ? 'var(--accent)' : 'var(--border)';
-  bp.style.background = m === 'price' ? 'rgba(0,229,255,.08)' : 'transparent';
-  bp.style.color = m === 'price' ? 'var(--accent)' : 'var(--muted)';
-  bd.style.borderWidth = m === 'dist' ? '2px' : '1px';
-  bd.style.borderColor = m === 'dist' ? 'var(--orange)' : 'var(--border)';
-  bd.style.background = m === 'dist' ? 'rgba(255,170,0,.08)' : 'transparent';
-  bd.style.color = m === 'dist' ? 'var(--orange)' : 'var(--muted)';
-  document.getElementById('slPriceInputs').style.display = m === 'price' ? 'block' : 'none';
-  document.getElementById('slDistInputs').style.display = m === 'dist' ? 'block' : 'none';
-  calcMode2();
-}
-
-function renderPartialInputs() {
-  const n = parseInt(document.getElementById('c1_numTP').value) || 4;
-  const defaults = [
-    {r:3, p:25}, {r:4, p:25}, {r:5, p:25}, {r:6, p:25}, {r:7, p:0}
-  ];
-  let html = '';
-  for (let i = 0; i < n; i++) {
-    const d = defaults[i] || {r: i+3, p: Math.floor(100/n)};
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} соотн. 1:</div>
-        <input id="c1_r${i}" type="number" value="${d.r}" min="0.5" step="0.5"
-          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--accent);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} доля %</div>
-        <input id="c1_p${i}" type="number" value="${d.p}" min="0" max="100" step="1"
-          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--green);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
-          onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'" oninput="calcMode1()">
-      </div>
-    </div>`;
-  }
-  document.getElementById('partialInputsContainer').innerHTML = html;
-}
-
-function calcFmt(v, d) {
-  if (isNaN(v) || !isFinite(v)) return '—';
-  const fixed = v.toFixed(d);
-  const parts = fixed.split('.');
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
-  return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
-}
-
-function calcRow(label, value, color) {
-  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1e30;">
-    <span style="color:#4a6080;">${label}</span>
-    <span style="color:${color || 'var(--bright)'};font-weight:700;">${value}</span>
-  </div>`;
-}
-
-function calcSection(title) {
-  return `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;border-top:1px solid var(--border);padding-top:10px;">${title}</div>`;
-}
-
-function calcMode1() {
-  const level    = parseFloat(document.getElementById('c1_level').value) || 0;
-  const ratio    = parseFloat(document.getElementById('c1_ratio').value) || 3;
-  const risk     = parseFloat(document.getElementById('c1_risk').value) || 10;
-  const useLev   = document.getElementById('c1_useLev').checked;
-  const lev      = parseInt(document.getElementById('c1_lev').value) || 10;
-  const useBin   = document.getElementById('c1_useBin').checked;
-  const binType  = document.getElementById('c1_binType').value;
-  const usePartial = document.getElementById('c1_usePartial').checked;
-  const dir      = calcCurrentDir;
-  const isLong   = dir === 'long';
-
-  // Stop calc
-  let tvh, stopLoss, actualStop;
-
-  if (calcCurrentStopMode === 'tech') {
-    const techStop = parseFloat(document.getElementById('c1_techStop').value) || 0;
-    tvh = level;
-    stopLoss = techStop;
-    actualStop = Math.abs(tvh - stopLoss);
+  // Эффективный риск
+  let effectiveRisk;
+  if (cvRiskMode === 'pct') {
+    const deposit = parseFloat(document.getElementById('cv_deposit').value) || 0;
+    const pct     = parseFloat(document.getElementById('cv_riskPctVal').value) || 0;
+    effectiveRisk = deposit * (pct / 100);
   } else {
-    const atr      = parseFloat(document.getElementById('c1_atr').value) || 0.22;
-    const stopPct  = (parseFloat(document.getElementById('c1_stopPct').value) || 15) / 100;
-    const stop     = atr * stopPct;
-    const buffer   = stop * 0.20;
-    tvh      = isLong ? level + buffer : level - buffer;
-    stopLoss = isLong ? tvh - stop : tvh + stop;
+    effectiveRisk = parseFloat(document.getElementById('cv_riskAmt').value) || 0;
+  }
+  if (effectiveRisk <= 0) return cvErr('Укажите риск больше нуля');
+  if (level <= 0) return cvErr('Укажите цену уровня');
+
+  // Стоп и ТВХ
+  let tvh, stopLoss, actualStop, buffer, stopSource, atrUsed = 0, stopPctUsed = 0;
+
+  // Глобальный ATR (из блока "Параметры")
+  const globalAtr  = parseFloat(document.getElementById('cv_globalAtr').value) || 0.22;
+  const lyuftPct   = (parseFloat(document.getElementById('cv_lyuftPct').value) || 20) / 100;
+  // ATR-стоп используется как база для люфта во всех режимах
+  const stopPctGlobal = (parseFloat(document.getElementById('cv_stopPct').value) || 20) / 100;
+  const stopAtrGlobal = globalAtr * stopPctGlobal;
+
+  if (cvStopMode === 'tech') {
+    const techStop = parseFloat(document.getElementById('cv_techStop').value) || 0;
+    buffer     = stopAtrGlobal * lyuftPct;
+    tvh        = isLong ? level + buffer : level - buffer;
+    stopLoss   = techStop;
     actualStop = Math.abs(tvh - stopLoss);
-  }
-
-  if (actualStop <= 0) {
-    document.getElementById('calcResult1').innerHTML = `<div style="color:var(--red);text-align:center;padding:40px 0;">⚠️ Стоп-лосс равен нулю — проверь параметры</div>`;
-    return;
-  }
-
-  const posSize  = risk / actualStop;
-  const volUSD   = posSize * tvh;
-  const takeVal  = actualStop * ratio;
-  const takeProfit = isLong ? tvh + takeVal : tvh - takeVal;
-  const profitBrutto = posSize * takeVal;
-
-  // Binance commission
-  const binRate = binType === 'maker' ? 0.0002 : 0.0005;
-  let entryComm = 0, exitComm = 0, stopComm = 0, tpWithComm = takeProfit;
-  if (useBin) {
-    entryComm = volUSD * binRate;
-    const targetNet = risk * ratio;
-    if (isLong) {
-      tpWithComm = (targetNet + posSize * tvh + entryComm) / (posSize * (1 - binRate));
+    stopSource = 'Технический';
+    atrUsed = globalAtr; stopPctUsed = lyuftPct * 100;
+  } else if (cvStopMode === 'dist') {
+    buffer = stopAtrGlobal * lyuftPct;
+    tvh    = isLong ? level + buffer : level - buffer;
+    let dist;
+    if (cvDistMode === 'ticks') {
+      const ticks    = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+      const tickSize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+      dist = ticks * tickSize;
     } else {
-      tpWithComm = (posSize * tvh - targetNet - entryComm) / (posSize * (1 + binRate));
+      dist = parseFloat(document.getElementById('cv_stopDistVal').value) || 0;
     }
-    exitComm  = posSize * tpWithComm * binRate;
-    stopComm  = posSize * stopLoss * binRate;
+    actualStop = dist;
+    stopLoss   = isLong ? tvh - dist : tvh + dist;
+    stopSource = 'Дистанция';
+    atrUsed = globalAtr; stopPctUsed = lyuftPct * 100;
+  } else {
+    // ATR
+    buffer     = stopAtrGlobal * lyuftPct;
+    tvh        = isLong ? level + buffer : level - buffer;
+    stopLoss   = isLong ? tvh - stopAtrGlobal : tvh + stopAtrGlobal;
+    actualStop = Math.abs(tvh - stopLoss);
+    stopSource = 'ATR';
+    atrUsed = globalAtr; stopPctUsed = stopPctGlobal * 100;
   }
 
-  // Partial close
-  let partialHTML = '';
+  if (actualStop <= 0) return cvErr('Стоп-лосс равен нулю — проверь параметры');
+
+  // Позиция
+  const posSize = effectiveRisk / actualStop;
+  const volUSD  = posSize * tvh;
+
+  // Плечо
+  const useLev = document.getElementById('cv_useLev').checked;
+  const lev    = parseInt(document.getElementById('cv_lev').value) || 10;
+
+  // Лоты
+  const useLots = document.getElementById('cv_useLots').checked;
+  let lots = 0, riskPerLot = 0, realRisk = 0;
+  if (useLots) {
+    const upl = parseFloat(document.getElementById('cv_unitsPerLot').value) || 100;
+    const ls  = parseFloat(document.getElementById('cv_lotStep').value) || 0.01;
+    riskPerLot = actualStop * upl;
+    const rawLots = riskPerLot > 0 ? effectiveRisk / riskPerLot : 0;
+    lots = Math.floor(rawLots / ls) * ls;
+    realRisk = lots * riskPerLot;
+  }
+
+  // Комиссии
+  const useBin        = document.getElementById('cv_useBin').checked;
+  const useManualComm = document.getElementById('cv_useManualComm').checked;
+  const binType       = document.getElementById('cv_binType').value;
+  const commPct       = parseFloat(document.getElementById('cv_commPct').value) || 0.02;
+  let binRate = 0, manualRate = 0;
+  if (useBin)        binRate    = binType === 'maker' ? 0.0002 : 0.0005;
+  if (useManualComm) manualRate = commPct / 100;
+  const activeRate = useBin ? binRate : (useManualComm ? manualRate : 0);
+  const useComm    = (useBin || useManualComm) && activeRate > 0;
+
+  // ТП
+  const takeVal      = actualStop * ratio;
+  const takeProfit   = isLong ? tvh + takeVal : tvh - takeVal;
+  const profitBrutto = posSize * takeVal;
+  const profitInRisks = profitBrutto / effectiveRisk;
+
+  // ТП с комиссией
+  let tpWithComm = takeProfit;
+  let entryComm = 0, exitComm = 0, stopComm = 0, totalComm = 0, profitNetto = profitBrutto;
+  if (useComm) {
+    entryComm = volUSD * activeRate;
+    const targetNet = effectiveRisk * ratio;
+    if (isLong) {
+      tpWithComm = (targetNet + posSize * tvh + entryComm) / (posSize * (1 - activeRate));
+    } else {
+      tpWithComm = (posSize * tvh - targetNet - entryComm) / (posSize * (1 + activeRate));
+    }
+    exitComm   = posSize * tpWithComm * activeRate;
+    stopComm   = posSize * stopLoss * activeRate;
+    totalComm  = entryComm + exitComm;
+    profitNetto = targetNet;
+  }
+
+  // Частичное закрытие
+  const usePartial = document.getElementById('cv_usePartial').checked;
+  let partHTML = '', partTxt = '', partTotalProfit = 0;
   if (usePartial) {
-    const n = parseInt(document.getElementById('c1_numTP').value) || 4;
-    let totalProfit = 0;
-    let partRows = '';
+    const n = parseInt(document.getElementById('cv_numTP').value) || 4;
+    partHTML = cvSec('📊 ЧАСТИЧНОЕ ЗАКРЫТИЕ');
     for (let i = 0; i < n; i++) {
-      const ri = parseFloat(document.getElementById('c1_r'+i)?.value) || (i+3);
-      const pi = parseFloat(document.getElementById('c1_p'+i)?.value) || 25;
+      const ri  = parseFloat(document.getElementById('cv_r' + i)?.value) || (i + 3);
+      const pi  = parseFloat(document.getElementById('cv_p' + i)?.value) || 25;
       const pct = pi / 100;
-      const partSize = posSize * pct;
-      const partTakeVal = actualStop * ri;
-      let partTP = isLong ? tvh + partTakeVal : tvh - partTakeVal;
-      if (useBin) {
-        const partNet = risk * ri * pct;
-        const partEntry = partSize * tvh * binRate;
-        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - binRate));
-        else partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + binRate));
+      const partSize  = posSize * pct;
+      const partTakeV = actualStop * ri;
+      let partTP = isLong ? tvh + partTakeV : tvh - partTakeV;
+      if (useComm) {
+        const partNet   = effectiveRisk * ri * pct;
+        const partEntry = partSize * tvh * activeRate;
+        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - activeRate));
+        else        partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + activeRate));
       }
       const partProfit = partSize * Math.abs(partTP - tvh);
-      totalProfit += partProfit;
-      partRows += calcRow(`ТП${i+1} (1:${ri} | ${pi}%) → цена`, `${calcFmt(partTP,4)} | +$${calcFmt(partProfit,2)}`, 'var(--green)');
+      partTotalProfit += partProfit;
+      partHTML += cvRow(`ТП${i+1} (1:${ri} | ${pi}%) → цена`,
+        `$${cvFmt(partTP,4)} | +$${cvFmt(partProfit,2)}`, 'var(--green)');
+      partTxt += `ТП${i+1} (1:${ri} | ${pi}%) → ${cvFmt(partTP,4)} | +$${cvFmt(partProfit,2)}
+`;
     }
-    const partR = totalProfit / risk;
-    partialHTML = calcSection('📊 ЧАСТИЧНОЕ ЗАКРЫТИЕ') +
-      partRows +
-      calcRow('Итого профит', `$${calcFmt(totalProfit,2)}`, 'var(--green)') +
-      calcRow('Профит в рисках', `${calcFmt(partR,2)}R`, 'var(--accent)');
+    const partR = partTotalProfit / effectiveRisk;
+    partHTML += cvRow('Итого профит', `$${cvFmt(partTotalProfit,2)}`, 'var(--green)');
+    partHTML += cvRow('Профит в рисках', `${cvFmt(partR,2)}R`, 'var(--accent)');
   }
 
-  const dirEmoji = isLong ? '🟢 ЛОНГ' : '🔴 ШОРТ';
-  const profitR  = profitBrutto / risk;
+  // HTML результата
+  const dirColor  = isLong ? 'var(--green)' : 'var(--red)';
+  const dirLabel  = isLong ? '🟢 ЛОНГ' : '🔴 ШОРТ';
+  const depEl     = document.getElementById('cv_deposit');
+  const pctEl     = document.getElementById('cv_riskPctVal');
+  const riskLabel = cvRiskMode === 'pct'
+    ? `Депозит $${cvFmt(parseFloat(depEl.value)||0,0)} × ${pctEl.value}%`
+    : 'Прямая сумма';
 
   let html = `
     <div style="text-align:center;margin-bottom:16px;">
-      <div style="font-size:18px;font-weight:800;color:${isLong?'var(--green)':'var(--red)'};">${dirEmoji}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Соотношение 1:${ratio}</div>
-    </div>
-    ${calcSection('✅ ОБЪЁМ')}
-    ${calcRow('Количество монет/акций', calcFmt(posSize, 4))}
-    ${calcRow('Объём ($)', '$' + calcFmt(volUSD, 2))}
-    ${useLev ? calcRow(`Объём с плечом x${lev}`, '$' + calcFmt(volUSD/lev, 2)) : ''}
-    ${calcSection('✅ ВХОД И ВЫХОД')}
-    ${calcRow('ТВХ (вход)', calcFmt(tvh, 4), 'var(--accent)')}
-    ${calcRow(useBin ? 'ТП + комиссия' : 'ТП', calcFmt(useBin ? tpWithComm : takeProfit, 4), 'var(--green)')}
-    ${calcRow('СЛ', calcFmt(stopLoss, 4), 'var(--red)')}
-    ${calcRow('Размер стопа', calcFmt(actualStop, 6))}
-  `;
+      <div style="font-size:20px;font-weight:800;color:${dirColor};">${dirLabel}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">1:${ratio}  ·  Стоп: ${stopSource}${cvStopMode==='dist'&&cvDistMode==='ticks'?' (тики)':''}</div>
+    </div>`;
 
-  if (useBin) {
-    html += calcSection(`💰 КОМИССИИ BINANCE (${binType === 'maker' ? 'Maker 0.02%' : 'Taker 0.05%'})`) +
-      calcRow('Вход', '$' + calcFmt(entryComm, 4)) +
-      calcRow('Выход (по ТП)', '$' + calcFmt(exitComm, 4)) +
-      calcRow('Выход (по СЛ)', '$' + calcFmt(stopComm, 4)) +
-      calcRow('Всего (вход+ТП)', '$' + calcFmt(entryComm+exitComm, 4));
-  }
-
-  if (!usePartial) {
-    html += calcSection('✅ РЕЗУЛЬТАТ') +
-      calcRow('Профит', '$' + calcFmt(profitBrutto, 2), 'var(--green)') +
-      calcRow('Профит в рисках', calcFmt(profitR, 2) + 'R', 'var(--accent)') +
-      calcRow('Убыток (риск)', '$' + calcFmt(risk, 2), 'var(--red)');
+  html += cvSec('✅ ПАРАМЕТРЫ');
+  html += cvRow('Уровень', '$' + cvFmt(level, 4));
+  html += cvRow('ATR (глобальный)', cvFmt(atrUsed, 4));
+  html += cvRow(`Люфт ТВХ (${Math.round(lyuftPct*100)}% от стопа)`, (isLong ? '+' : '−') + '$' + cvFmt(buffer, 6));
+  html += cvRow('Риск', `$${cvFmt(effectiveRisk,2)} (${riskLabel})`);
+  if (cvStopMode === 'atr') {
+    html += cvRow(`Стоп ${stopPctUsed}% от ATR`, '$' + cvFmt(actualStop,6));
+  } else if (cvStopMode === 'tech') {
+    html += cvRow('Размер стопа (от ТВХ)', '$' + cvFmt(actualStop,6));
+  } else if (cvDistMode === 'ticks') {
+    const ticks = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+    const tsize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+    html += cvRow(`Тики: ${ticks} × $${cvFmt(tsize,5)}`, '$' + cvFmt(actualStop,6));
   } else {
-    html += partialHTML;
+    html += cvRow('Дистанция стопа', '$' + cvFmt(actualStop,6));
+  }
+  html += cvRow('Тейк (значение)', '$' + cvFmt(takeVal,6));
+
+  html += cvSec('✅ ОБЪЁМ');
+  html += cvRow('Количество монет/акций', cvFmt(posSize, 4));
+  html += cvRow('Объём ($)', '$' + cvFmt(volUSD, 2));
+  if (useLev) html += cvRow(`Объём с плечом x${lev} ($)`, '$' + cvFmt(volUSD / lev, 2));
+  if (useLots) {
+    html += cvRow('Лоты', cvFmt(lots, 3), 'var(--accent)');
+    html += cvRow('Риск на 1 лот', '$' + cvFmt(riskPerLot, 4));
+    html += cvRow('Реальный риск (лоты)',
+      '$' + cvFmt(realRisk, 2), realRisk > effectiveRisk ? 'var(--orange)' : 'var(--green)');
   }
 
-  document.getElementById('calcResult1').innerHTML = html;
+  html += cvSec('✅ ВХОД И ВЫХОД');
+  html += cvRow('ТВХ (вход)', '$' + cvFmt(tvh, 4), 'var(--accent)');
+  html += cvRow(useComm ? 'ТП + комиссия' : 'ТП',
+    '$' + cvFmt(useComm ? tpWithComm : takeProfit, 4), 'var(--green)');
+  html += cvRow('СЛ', '$' + cvFmt(stopLoss, 4), 'var(--red)');
 
-  // Формируем текст для копирования
-  const dirLabel = isLong ? 'ЛОНГ' : 'ШОРТ';
-  const stopMode = calcCurrentStopMode === 'tech' ? 'Технический стоп' : 'ATR';
-  let txt = `═══ КАЛЬКУЛЯТОР ПОЗИЦИИ ═══\n`;
-  txt += `Направление : ${dirLabel}  |  Соотношение 1:${ratio}\n`;
-  txt += `Режим стопа : ${stopMode}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `ТВХ         : ${calcFmt(tvh, 4)}\n`;
-  txt += `ТП          : ${calcFmt(useBin ? tpWithComm : takeProfit, 4)}\n`;
-  txt += `СЛ          : ${calcFmt(stopLoss, 4)}\n`;
-  txt += `Размер стопа: ${calcFmt(actualStop, 6)}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `Количество  : ${calcFmt(posSize, 4)}\n`;
-  txt += `Объём ($)   : $${calcFmt(volUSD, 2)}\n`;
-  if (useLev) txt += `С плечом x${lev}: $${calcFmt(volUSD/lev, 2)}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `Риск        : $${calcFmt(risk, 2)}\n`;
-  txt += `Профит      : $${calcFmt(profitBrutto, 2)}\n`;
-  txt += `В рисках    : ${calcFmt(profitR, 2)}R\n`;
-  if (useBin) {
-    txt += `─────────────────────────────\n`;
-    txt += `Комиссия вход  : $${calcFmt(entryComm, 4)}\n`;
-    txt += `Комиссия выход : $${calcFmt(exitComm, 4)}\n`;
-    txt += `Комиссия СЛ    : $${calcFmt(stopComm, 4)}\n`;
+  if (useComm) {
+    const commLabel = useBin
+      ? `💰 КОМИССИИ BINANCE (${binType === 'maker' ? 'Maker 0.02%' : 'Taker 0.05%'})`
+      : `💰 РУЧНАЯ КОМИССИЯ (${commPct}%)`;
+    html += cvSec(commLabel);
+    html += cvRow('Вход',          '$' + cvFmt(entryComm, 4));
+    html += cvRow('Выход (по ТП)', '$' + cvFmt(exitComm,  4));
+    html += cvRow('Выход (по СЛ)', '$' + cvFmt(stopComm,  4));
+    html += cvRow('Итого (вход + ТП)', '$' + cvFmt(totalComm, 4));
   }
+
   if (usePartial) {
-    const n = parseInt(document.getElementById('c1_numTP').value) || 4;
-    txt += `─────────────────────────────\n`;
-    txt += `ЧАСТИЧНОЕ ЗАКРЫТИЕ (${n} ТП)\n`;
-    for (let i = 0; i < n; i++) {
-      const ri = parseFloat(document.getElementById('c1_r'+i)?.value) || (i+3);
-      const pi = parseFloat(document.getElementById('c1_p'+i)?.value) || 25;
-      const pct = pi / 100;
-      const partSize = posSize * pct;
-      const partTakeVal = actualStop * ri;
-      let partTP = isLong ? tvh + partTakeVal : tvh - partTakeVal;
-      if (useBin) {
-        const partNet = risk * ri * pct;
-        const partEntry = partSize * tvh * binRate;
-        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - binRate));
-        else partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + binRate));
-      }
-      const partProfit = partSize * Math.abs(partTP - tvh);
-      txt += `ТП${i+1} (1:${ri} | ${pi}%) → ${calcFmt(partTP, 4)} | +$${calcFmt(partProfit, 2)}\n`;
-    }
-  }
-  txt += `═════════════════════════════`;
-  calcCopyText1 = txt;
-  document.getElementById('copyBtn1').style.display = 'block';
-}
-
-function calcMode2() {
-  const risk        = parseFloat(document.getElementById('c2_risk').value) || 5;
-  const unitsPerLot = parseFloat(document.getElementById('c2_unitsPerLot').value) || 100;
-  const lotStep     = parseFloat(document.getElementById('c2_lotStep').value) || 0.01;
-  const entryRaw    = parseFloat(document.getElementById('c2_entry').value);
-  const tvh         = (entryRaw && entryRaw > 0) ? entryRaw : null;
-
-  let slDistance, slCalc, dirLabel;
-
-  if (calcCurrentSlMode === 'price') {
-    const slPrice = parseFloat(document.getElementById('c2_slPrice').value);
-    if (!tvh || tvh <= 0) {
-      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену входа (ТВХ) выше нуля</div>`;
-      return;
-    }
-    if (!slPrice || slPrice <= 0) {
-      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену стоп-лосса (СЛ) выше нуля</div>`;
-      return;
-    }
-    slDistance = Math.abs(tvh - slPrice);
-    slCalc = slPrice;
-    dirLabel = tvh > slPrice ? '📈 LONG' : '📉 SHORT';
+    html += partHTML;
   } else {
-    const dist = parseFloat(document.getElementById('c2_slDist').value) || 5;
-    if (!tvh || tvh <= 0) {
-      document.getElementById('calcResult2').innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px 0;">Введите цену входа (ТВХ) выше нуля</div>`;
-      return;
+    html += cvSec('✅ РЕЗУЛЬТАТ');
+    if (useComm) {
+      html += cvRow('Профит брутто', '$' + cvFmt(profitBrutto, 2), 'var(--green)');
+      html += cvRow('Профит нетто',  '$' + cvFmt(profitNetto, 2),  'var(--green)');
+    } else {
+      html += cvRow('Профит', '$' + cvFmt(profitBrutto, 2), 'var(--green)');
     }
-    slDistance = dist;
-    slCalc = calcDir2 === 'long' ? tvh - dist : tvh + dist;
-    dirLabel = calcDir2 === 'long' ? '📈 LONG' : '📉 SHORT';
+    html += cvRow('Профит в рисках', cvFmt(profitInRisks, 2) + 'R', 'var(--accent)');
+    html += cvRow('Убыток (риск)',    '$' + cvFmt(effectiveRisk, 2), 'var(--red)');
   }
 
-  if (slDistance <= 0) {
-    document.getElementById('calcResult2').innerHTML = `<div style="color:var(--red);text-align:center;padding:40px 0;">⚠️ Дистанция до СЛ равна нулю</div>`;
-    return;
+  document.getElementById('cv_result').innerHTML = html;
+
+  // Копируемый текст — формат TradingView
+  const instrEl = document.getElementById('cv_instrument');
+  const instr = instrEl ? (instrEl.value.trim() || '—') : '—';
+  const dirSymbol = isLong ? '🟢' : '🔴';
+
+  // Расчёт "до уровня" — расстояние от текущей цены до уровня (если есть поле)
+  const stopPctOfAtr = cvStopMode === 'atr' ? stopPctUsed : Math.round(lyuftPct*100);
+
+  let txt = `КАЛЬКУЛЯТОР ПОЗИЦИИ\n\n`;
+  txt += `Инструмент → ${instr}\n`;
+  txt += `Стратегия  → ${isLong ? 'Лонг' : 'Шорт'} ${ratio}/1 ${dirSymbol}\n\n`;
+
+  txt += `✅  ПАРАМЕТРЫ:\n`;
+  txt += `Уровень → ${cvFmt(level,4)}\n`;
+  txt += `Риск → $${cvFmt(effectiveRisk,2)} (${riskLabel})\n`;
+  txt += `Режим стопа: ${stopSource}\n`;
+  txt += `ATR → ${cvFmt(atrUsed,4)}\n`;
+  if (cvStopMode === 'atr') {
+    txt += `Стоп ${stopPctUsed}% от ATR → ${cvFmt(actualStop,6)}\n`;
+  } else if (cvStopMode === 'dist' && cvDistMode === 'ticks') {
+    const ticks = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+    const tsize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+    txt += `Тики: ${ticks} × $${cvFmt(tsize,5)} = $${cvFmt(actualStop,6)}\n`;
+  } else if (cvStopMode === 'dist') {
+    txt += `Дистанция стопа → ${cvFmt(actualStop,6)}\n`;
+  } else {
+    txt += `Размер стопа → ${cvFmt(actualStop,6)}\n`;
+  }
+  txt += `Люфт ${Math.round(lyuftPct*100)}% от Стопа → ${cvFmt(buffer,6)}\n`;
+  txt += `Тейк (значение) → ${cvFmt(takeVal,6)}\n\n`;
+
+  txt += `✅  ОБЪЁМ:\n`;
+  txt += `Количество → ${cvFmt(posSize,4)}\n`;
+  txt += `Объём ($) → $${cvFmt(volUSD,2)}\n`;
+  if (useLev) txt += `С плечом x${lev} → $${cvFmt(volUSD/lev,2)}\n`;
+  if (useLots) txt += `Лоты → ${cvFmt(lots,3)} (единиц в лоте: ${document.getElementById('cv_unitsPerLot').value})\n`;
+  txt += `\n`;
+
+  txt += `✅  ВХОД И ВЫХОД:\n`;
+  txt += `ТВХ → ${cvFmt(tvh,4)}\n`;
+  txt += `ТП  → ${cvFmt(useComm ? tpWithComm : takeProfit, 4)}\n`;
+  txt += `СЛ  → ${cvFmt(stopLoss,4)}\n\n`;
+
+  if (useComm) {
+    txt += `✅  КОМИССИИ:\n`;
+    txt += `Вход  → $${cvFmt(entryComm,4)}\n`;
+    txt += `Выход → $${cvFmt(exitComm,4)}\n`;
+    txt += `СЛ    → $${cvFmt(stopComm,4)}\n`;
+    txt += `Итого → $${cvFmt(totalComm,4)}\n\n`;
   }
 
-  const riskPerLot = slDistance * unitsPerLot;
-  const rawLots    = riskPerLot > 0 ? risk / riskPerLot : 0;
-  const lots       = Math.floor(rawLots / lotStep) * lotStep;
-  const realRisk   = lots * riskPerLot;
-
-  const dirColor = (calcCurrentSlMode === 'price' ? (tvh > slCalc ? 'var(--green)' : 'var(--red)') : (calcDir2 === 'long' ? 'var(--green)' : 'var(--red)'));
-
-  // Убираем лишние нули в конце лотов
-  function fmtLots(v, d) {
-    if (isNaN(v) || !isFinite(v)) return '—';
-    let s = v.toFixed(d);
-    if (s.includes('.')) s = s.replace(/\.?0+$/, '');
-    return s || '0';
+  if (usePartial) {
+    txt += `✅  ЧАСТИЧНОЕ ЗАКРЫТИЕ:\n${partTxt}\n`;
+  } else {
+    txt += `✅  РЕЗУЛЬТАТ:\n`;
+    if (useComm) {
+      txt += `Профит → $${cvFmt(profitBrutto,2)} минус комиссия\n`;
+      txt += `Профит в рисках → ${cvFmt(profitInRisks,2)}R\n`;
+      txt += `Убыток → $${cvFmt(effectiveRisk,2)} + комиссия\n`;
+    } else {
+      txt += `Профит → $${cvFmt(profitBrutto,2)}\n`;
+      txt += `Профит в рисках → ${cvFmt(profitInRisks,2)}R\n`;
+      txt += `Убыток → $${cvFmt(effectiveRisk,2)}\n`;
+    }
   }
-
-  const html = `
-    <div style="text-align:center;margin-bottom:16px;">
-      <div style="font-size:18px;font-weight:800;color:${dirColor};">${dirLabel}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${calcCurrentSlMode === 'price' ? 'По цене СЛ' : 'По дистанции'}</div>
-    </div>
-    ${calcSection('📍 УРОВНИ')}
-    ${calcRow('ТВХ цена', '$' + calcFmt(tvh, 4), 'var(--accent)')}
-    ${calcRow('СЛ цена', '$' + calcFmt(slCalc, 4), 'var(--red)')}
-    ${calcSection('📊 РАСЧЁТ')}
-    ${calcRow('Дистанция до СЛ', '$' + calcFmt(slDistance, 4))}
-    ${calcRow('Единиц в лоте', calcFmt(unitsPerLot, 0))}
-    ${calcRow('Риск на 1 лот', '$' + calcFmt(riskPerLot, 2))}
-    ${calcRow('Риск на сделку', '$' + calcFmt(risk, 2))}
-    ${calcSection('💼 РЕЗУЛЬТАТ')}
-    <div style="text-align:center;padding:12px 0;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Размер позиции</div>
-      <div style="font-size:36px;font-weight:800;color:var(--accent);letter-spacing:2px;">${fmtLots(lots, 3)}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:2px;">лот(а)</div>
-    </div>
-    ${calcRow('Реальный риск', '$' + calcFmt(realRisk, 2), realRisk > risk ? 'var(--orange)' : 'var(--green)')}
-    ${calcRow('Шаг лота', fmtLots(lotStep, 3))}
-  `;
-
-  document.getElementById('calcResult2').innerHTML = html;
-
-  // Текст для копирования
-  let txt = `═══ КАЛЬКУЛЯТОР ЛОТОВ ═══\n`;
-  txt += `Направление  : ${dirLabel}\n`;
-  txt += `Режим СЛ     : ${calcCurrentSlMode === 'price' ? 'По цене СЛ → $' + calcFmt(slCalc, 4) : 'По дистанции → $' + calcFmt(slDistance, 4)}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `ТВХ цена     : $${calcFmt(tvh, 4)}\n`;
-  txt += `СЛ цена      : $${calcFmt(slCalc, 4)}\n`;
-  txt += `Дистанция СЛ : $${calcFmt(slDistance, 4)}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `Единиц в лоте: ${calcFmt(unitsPerLot, 0)}\n`;
-  txt += `Риск на лот  : $${calcFmt(riskPerLot, 2)}\n`;
-  txt += `Риск сделка  : $${calcFmt(risk, 2)}\n`;
-  txt += `─────────────────────────────\n`;
-  txt += `▶ РАЗМЕР ПОЗИЦИИ: ${fmtLots(lots, 3)} лот(а)\n`;
-  txt += `Реальный риск: $${calcFmt(realRisk, 2)}\n`;
-  txt += `Шаг лота     : ${calcFmt(lotStep, 3)}\n`;
-  txt += `═════════════════════════════`;
-  calcCopyText2 = txt;
-  document.getElementById('copyBtn2').style.display = 'block';
+  cvCopyText = txt;
+  document.getElementById('cv_copyBtn').style.display = 'block';
 }
 
-// ═══════════════════════════════════════════
 // TELEGRAM CHANNELS
 // ═══════════════════════════════════════════
 const TELEGRAM_CHANNELS = [
