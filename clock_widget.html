@@ -445,7 +445,7 @@ setInterval(() => {
   if (!document.getElementById('tickEnabled').checked) return;
   const now = getNow();
   const min = now.getMinutes(), sec = now.getSeconds();
-  const isRed = min >= 50 || min < 5;
+  const isRed = min >= 55 || min < 5;
   if (!isRed) return;
   if (sec === tickLastSec) return;
   tickLastSec = sec;
@@ -463,7 +463,7 @@ let prevClockRed = null;
 function drawClock() {
   const zh = getNow();
   const hours = zh.getHours(), minutes = zh.getMinutes(), seconds = zh.getSeconds();
-  const isRed = minutes >= 50 || minutes < 5;
+  const isRed = minutes >= 55 || minutes < 5;
 
   const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
   const handColor   = isRed ? '#E24B4A' : '#1D9E75';
@@ -535,7 +535,7 @@ function drawClock() {
   }
   if (ecMin) {
     let minsText;
-    if (minutes >= 50)     minsText = 'последние ' + (60 - minutes) + ' мин часа';
+    if (minutes >= 55)     minsText = 'последние ' + (60 - minutes) + ' мин часа';
     else if (minutes < 5)  minsText = 'первые ' + (5 - minutes) + ' мин · ещё запрещён';
     else                   minsText = 'до конца часа: ' + (60 - minutes) + ' мин';
     ecMin.className = 'entry-mins ' + cls;
