@@ -696,7 +696,7 @@ function drawEntryClock() {
   const hours   = zh.getHours();
   const minutes = zh.getMinutes();
   const seconds = zh.getSeconds();
-  const isRed   = minutes >= 50 || minutes < 5;
+  const isRed   = minutes >= 55 || minutes < 5;
   const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
   const handColor   = isRed ? '#E24B4A' : '#1D9E75';
   const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
@@ -782,7 +782,7 @@ function drawEntryClock() {
   if (ecLab) { ecLab.className = 'entry-clock-label ' + cls; ecLab.textContent = isRed ? 'ВХОД ЗАПРЕЩЁН' : 'ВХОД В СДЕЛКУ'; }
   if (ecMin) {
     let minsText;
-    if (minutes >= 50) minsText = 'последние ' + (60 - minutes) + ' мин часа';
+    if (minutes >= 55) minsText = 'последние ' + (60 - minutes) + ' мин часа';
     else if (minutes < 5) minsText = 'первые ' + (5 - minutes) + ' мин · ещё запрещён';
     else minsText = 'до конца часа: ' + (60 - minutes) + ' мин';
     ecMin.className = 'entry-mins ' + cls;
@@ -1305,7 +1305,7 @@ function startTickInterval() {
     const zh = getNow('Europe/Zurich');
     const min = zh.getMinutes();
     const sec = zh.getSeconds();
-    const isRed = min >= 50 || min < 5;
+    const isRed = min >= 55 || min < 5;
     if (!isRed) return;
     // Избегаем двойного тика в одну секунду
     if (sec === tickLastSec) return;
