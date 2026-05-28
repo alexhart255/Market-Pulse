@@ -309,6 +309,7 @@
     <button class="tab" onclick="openRadioMenu(this)">🎵 Музыка</button>
     <button class="tab" onclick="switchTab('utcconv',this)">🌐 UTC</button>
     <button class="tab" onclick="switchTab('calc',this);calcInit()">🧮 Калькулятор</button>
+    <button class="tab" onclick="switchTab('forex',this)">🕐 Forex сессии</button>
   </div>
 
   <div class="tab-panel active" id="tab-today">
@@ -874,6 +875,18 @@
     </button>
   </div>
 </div>
+
+  <!-- FOREX SESSIONS TAB -->
+  <div class="tab-panel" id="tab-forex">
+    <div class="section-title">Forex сессии — расписание по Цюриху</div>
+    <div style="background:#08121e;border:1px solid #1a3a5a;border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--text);line-height:1.7;">
+      🌞 <strong style="color:var(--accent);">Лето (CEST, UTC+2)</strong> &nbsp;·&nbsp; ❄️ <strong style="color:#60aaff;">Зима (CET, UTC+1)</strong> — все времена по Цюриху. Нажмите на сессию чтобы увидеть подробности.
+    </div>
+    <div id="forexSessionsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="margin-top:14px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
+      * Золото (XAU/USD) торгуется во всех сессиях как глобальный OTC-инструмент. Переход на зимнее время — последнее воскресенье октября.
+    </div>
+  </div>
 
 <footer>MARKET PULSE &nbsp;·&nbsp; Образовательный характер &nbsp;·&nbsp; Не является инвестиционной рекомендацией</footer>
 </div>
@@ -4420,6 +4433,192 @@ function renderTelegram() {
   `).join('');
 }
 
+// ═══════════════════════════════════════════
+// FOREX SESSIONS
+// ═══════════════════════════════════════════
+const FOREX_SESSIONS = [
+  {
+    id: 'wellington',
+    emoji: '🌏',
+    name: 'Веллингтон',
+    sub: 'Новая Зеландия — начало недели',
+    summer: 'Вс 23:00 → Пн 01:00',
+    winter: 'Вс 22:00 → Пн 00:00',
+    colorHeader: '#085041',
+    colorBorder: '#9FE1CB',
+    colorText: '#9FE1CB',
+    pairs: ['NZD/USD', 'NZD/JPY', 'AUD/NZD', 'NZD/CHF'],
+    commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)'],
+    note: 'Начало торговой недели. Низкая ликвидность, широкие спреды. Золото уже торгуется, но с осторожностью — объёмы минимальные.',
+    tip: 'Лучшие инструменты: NZD/USD и AUD/NZD. Избегайте крупных позиций — рынок ещё не раскачался.',
+    activity: 20,
+  },
+  {
+    id: 'sydney',
+    emoji: '🦘',
+    name: 'Сидней',
+    sub: 'Австралия',
+    summer: '01:00 → 09:00',
+    winter: '00:00 → 08:00',
+    colorHeader: '#0C447C',
+    colorBorder: '#B5D4F4',
+    colorText: '#B5D4F4',
+    pairs: ['AUD/USD', 'AUD/JPY', 'NZD/USD', 'AUD/NZD', 'AUD/CHF'],
+    commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть'],
+    note: 'Умеренная активность. Хорошие условия для AUD и NZD пар. Азиатские новости начинают влиять на рынок.',
+    tip: 'AUD/USD — основной инструмент сессии. Спреды уже ниже, чем у Веллингтона.',
+    activity: 40,
+  },
+  {
+    id: 'tokyo',
+    emoji: '🗼',
+    name: 'Токио',
+    sub: 'Азия',
+    summer: '02:00 → 11:00',
+    winter: '01:00 → 10:00',
+    colorHeader: '#633806',
+    colorBorder: '#FAC775',
+    colorText: '#FAC775',
+    pairs: ['USD/JPY', 'EUR/JPY', 'GBP/JPY', 'AUD/JPY', 'USD/CNH', 'CHF/JPY'],
+    commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть', 'Brent нефть', 'Nikkei 225'],
+    note: 'Хорошая ликвидность по JPY парам. Золото активно реагирует на азиатский спрос. Банк Японии (BOJ) может выходить с интервенциями.',
+    tip: 'USD/JPY — ключевой инструмент. Следите за данными из Японии и Китая.',
+    activity: 60,
+  },
+  {
+    id: 'europe',
+    emoji: '🏰',
+    name: 'Европа / Лондон',
+    sub: 'Лондон — крупнейший Forex центр мира',
+    summer: '09:00 → 18:00',
+    winter: '08:00 → 17:00',
+    colorHeader: '#3C3489',
+    colorBorder: '#CECBF6',
+    colorText: '#CECBF6',
+    pairs: ['EUR/USD', 'GBP/USD', 'EUR/GBP', 'USD/CHF', 'EUR/CHF', 'EUR/JPY', 'GBP/JPY', 'GBP/CHF'],
+    commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть', 'Brent нефть', 'DAX', 'CAC 40', 'FTSE 100', 'Природный газ'],
+    note: 'Самая высокая ликвидность в Европе. Минимальные спреды. ЕЦБ, Банк Англии, SNB — все здесь. Лучшее время для EUR, GBP, CHF.',
+    tip: 'Пик европейской сессии — 10:00–12:00. EUR/USD и GBP/USD показывают максимальные объёмы.',
+    activity: 85,
+  },
+  {
+    id: 'usa',
+    emoji: '🗽',
+    name: 'Нью-Йорк',
+    sub: 'США · Пик: пересечение с Лондоном 15–18ч',
+    summer: '15:00 → 23:00',
+    winter: '14:00 → 22:00',
+    colorHeader: '#791F1F',
+    colorBorder: '#F7C1C1',
+    colorText: '#F7C1C1',
+    pairs: ['EUR/USD', 'GBP/USD', 'USD/CAD', 'USD/CHF', 'USD/JPY', 'EUR/GBP', 'AUD/USD'],
+    commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть', 'Brent нефть', 'S&P 500', 'NASDAQ (NQ)', 'Медь', 'Природный газ'],
+    note: 'Максимальная волатильность в 15:00–18:00 — пересечение с Лондоном. ФРС, данные NFP, CPI — всё выходит в эту сессию. Самые большие движения недели.',
+    tip: 'Пересечение Лондон + Нью-Йорк (15–18ч по Цюриху) — лучшее время всей недели для торговли EUR/USD и золотом.',
+    activity: 100,
+  },
+  {
+    id: 'dead',
+    emoji: '🌑',
+    name: 'Мёртвая зона',
+    sub: 'Торговля не рекомендуется',
+    summer: '23:00 → 01:00',
+    winter: '22:00 → 00:00',
+    colorHeader: '#444441',
+    colorBorder: '#D3D1C7',
+    colorText: '#D3D1C7',
+    pairs: ['—'],
+    commodities: ['—'],
+    note: 'Рынок практически пустой. Минимальные объёмы, огромные спреды, возможны ложные движения. Большинство профессиональных трейдеров в это время не торгуют.',
+    tip: 'Используйте это время для анализа, планирования на завтра и отдыха.',
+    activity: 5,
+  },
+];
+
+function renderForexSessions() {
+  const container = document.getElementById('forexSessionsList');
+  if (!container) return;
+  container.innerHTML = FOREX_SESSIONS.map(s => {
+    const barWidth = s.activity;
+    const actColor = s.activity >= 80 ? '#00ff88' : s.activity >= 50 ? '#ffaa00' : s.activity >= 20 ? '#00e5ff' : '#4a6080';
+    return `
+    <div onclick="openForexModal('${s.id}')" style="background:#111927;border:1px solid #1e2d42;border-left:3px solid ${s.colorBorder};border-radius:10px;padding:16px 20px;cursor:pointer;transition:border-color .2s,transform .15s;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;"
+      onmouseover="this.style.borderColor='${s.colorBorder}';this.style.transform='translateX(3px)'"
+      onmouseout="this.style.borderColor='#1e2d42';this.style.transform=''">
+      <div style="font-size:28px;line-height:1;">${s.emoji}</div>
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#eaf4ff;margin-bottom:2px;">${s.name} <span style="font-size:11px;font-weight:400;color:#4a6080;">— ${s.sub}</span></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:#00e5ff;">🌞 ${s.summer}</span>
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:#60aaff;">❄️ ${s.winter}</span>
+        </div>
+        <div style="height:4px;background:#1e2d42;border-radius:2px;max-width:260px;">
+          <div style="height:4px;width:${barWidth}%;background:${actColor};border-radius:2px;transition:width .5s;"></div>
+        </div>
+        <div style="font-size:10px;color:#4a6080;margin-top:3px;">Активность: ${barWidth}%</div>
+      </div>
+      <div style="font-size:11px;color:#4a6080;font-family:'Space Mono',monospace;white-space:nowrap;">Подробнее →</div>
+    </div>`;
+  }).join('');
+}
+
+function openForexModal(id) {
+  const s = FOREX_SESSIONS.find(x => x.id === id);
+  if (!s) return;
+  const actColor = s.activity >= 80 ? '#00ff88' : s.activity >= 50 ? '#ffaa00' : s.activity >= 20 ? '#00e5ff' : '#4a6080';
+  document.getElementById('forexModalTitle').innerHTML = `${s.emoji} ${s.name} <span style="font-size:13px;font-weight:400;color:#4a6080;">— ${s.sub}</span>`;
+  document.getElementById('forexModalBody').innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+      <div style="flex:1;min-width:180px;background:#0d1e30;border:1px solid ${s.colorBorder}44;border-radius:10px;padding:14px 18px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:8px;">🌞 Лето (CEST)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:18px;color:#00e5ff;font-weight:700;">${s.summer}</div>
+      </div>
+      <div style="flex:1;min-width:180px;background:#0a1428;border:1px solid #60aaff44;border-radius:10px;padding:14px 18px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:8px;">❄️ Зима (CET)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:18px;color:#60aaff;font-weight:700;">${s.winter}</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:#080c14;border:1px solid #1e2d42;border-radius:10px;padding:14px 18px;text-align:center;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin-bottom:8px;">Активность</div>
+        <div style="font-family:'Space Mono',monospace;font-size:24px;color:${actColor};font-weight:700;">${s.activity}%</div>
+        <div style="height:4px;background:#1e2d42;border-radius:2px;margin-top:8px;">
+          <div style="height:4px;width:${s.activity}%;background:${actColor};border-radius:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:#4a6080;margin-bottom:10px;display:flex;align-items:center;gap:8px;">Валютные пары <span style="flex:1;height:1px;background:#1e2d42;display:block;"></span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${s.pairs.map(p => p === '—' ? '<span style="color:#4a6080;font-size:13px;">— нет активных инструментов</span>' : `<span style="background:#0d1e30;border:1px solid ${s.colorBorder}66;border-radius:6px;padding:5px 12px;font-family:\'Space Mono\',monospace;font-size:12px;color:${s.colorText};">${p}</span>`).join('')}
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:#4a6080;margin-bottom:10px;display:flex;align-items:center;gap:8px;">Товары и индексы <span style="flex:1;height:1px;background:#1e2d42;display:block;"></span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${s.commodities.map(c => c === '—' ? '<span style="color:#4a6080;font-size:13px;">— нет активных инструментов</span>' : `<span style="background:#0a1428;border:1px solid #1e3a5a;border-radius:6px;padding:5px 12px;font-size:12px;color:#c8dff5;">${c}</span>`).join('')}
+      </div>
+    </div>
+
+    <div style="background:#08121e;border:1px solid #1a3a5a;border-left:3px solid #00e5ff;border-radius:8px;padding:14px 16px;font-size:13px;color:#c8dff5;line-height:1.75;margin-bottom:12px;">
+      ${s.note}
+    </div>
+    <div style="background:#0a1a0a;border:1px solid #1a4a1a;border-left:3px solid #00ff88;border-radius:8px;padding:14px 16px;font-size:13px;color:#b0e8ba;line-height:1.75;">
+      💡 <strong style="color:#00ff88;">Совет:</strong> ${s.tip}
+    </div>
+  `;
+  document.getElementById('forexModalOverlay').classList.add('open');
+}
+
+function closeForexModal() {
+  document.getElementById('forexModalOverlay').classList.remove('open');
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', function() {
+  renderForexSessions();
+});
+
 function getZurichOffsetHours(){
   try {
     const now = new Date();
@@ -4470,5 +4669,17 @@ function utcConvCalc(){
 }
 
 </script>
+
+<!-- FOREX SESSIONS MODAL -->
+<div id="forexModalOverlay" onclick="if(event.target===this)closeForexModal()" class="modal-overlay">
+  <div class="modal-box" style="max-width:680px;">
+    <div class="modal-header">
+      <div class="modal-title" id="forexModalTitle"></div>
+      <button class="modal-close" onclick="closeForexModal()">✕</button>
+    </div>
+    <div class="modal-body" id="forexModalBody"></div>
+  </div>
+</div>
+
 </body>
 </html>
