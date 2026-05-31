@@ -166,8 +166,6 @@
 <body>
 <div class="wrapper">
   <div class="entry-clock" id="ec">
-    <div class="entry-clock-label" id="ec-label">ВХОД В СДЕЛКУ</div>
-
     <!-- Цифровое время внутри карточки -->
     <div class="digital-time" id="digitalTime">--:--:--</div>
 
@@ -482,17 +480,12 @@ function drawClock() {
   // UI обновления
   const cls = isRed ? 'red' : 'green';
   const ecEl  = document.getElementById('ec');
-  const ecLab = document.getElementById('ec-label');
   const ecMin = document.getElementById('ec-mins');
   const dtEl  = document.getElementById('digitalTime');
   const utcBlock = document.getElementById('utcBlock');
   const utcVal   = document.getElementById('utcDisplay');
 
   if (ecEl)  ecEl.className  = 'entry-clock ' + cls;
-  if (ecLab) {
-    ecLab.className  = 'entry-clock-label ' + cls;
-    ecLab.textContent = isRed ? 'ВХОД ЗАПРЕЩЁН' : 'ВХОД В СДЕЛКУ';
-  }
   if (dtEl) {
     dtEl.className  = 'digital-time ' + cls;
     dtEl.textContent = pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
