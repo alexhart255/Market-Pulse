@@ -158,9 +158,10 @@
   .warn-box strong{color:var(--orange);}
 
   /* ── CLOCK WIDGET INLINE ── */
-  .digital-time{font-size:13px;color:#555;letter-spacing:.15em;margin-bottom:10px;transition:color .5s;font-family:'Space Mono',monospace;}
-  .digital-time.green{color:#1D9E75;}
-  .digital-time.red{color:#E24B4A;}
+  .digital-time{font-size:42px;font-weight:700;color:#333;letter-spacing:.12em;margin-bottom:14px;transition:color .3s;font-family:'Space Mono',monospace;text-shadow:none;}
+  .digital-time.green{color:#1D9E75;text-shadow:0 0 20px rgba(29,158,117,.5);}
+  .digital-time.red{color:#E24B4A;text-shadow:0 0 20px rgba(226,75,74,.5);animation:dtBlink .8s ease-in-out infinite;}
+  @keyframes dtBlink{0%,100%{opacity:1}50%{opacity:.45}}
   .entry-clock{display:flex;flex-direction:column;align-items:center;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:14px 22px 16px;transition:border-color .5s,background .5s,box-shadow .5s;min-width:180px;}
   .entry-clock.green{border-color:#1D9E75;background:#0d2018;box-shadow:0 0 24px 4px rgba(29,158,117,.18);}
   .entry-clock.red{border-color:#E24B4A;background:#1e0d0d;box-shadow:0 0 24px 4px rgba(226,75,74,.18);animation:entryClockBlink 1s ease-in-out infinite;}
@@ -2576,8 +2577,6 @@ function startClockWidget(){
 }
 function stopClockWidget(){
   if(_clockInterval){clearInterval(_clockInterval);_clockInterval=null;}
-  if(_clockRAF){cancelAnimationFrame(_clockRAF);_clockRAF=null;}
-  if(_clockTickInterval){clearInterval(_clockTickInterval);_clockTickInterval=null;}
 }
 
 // ── Inline clock widget (аналоговый циферблат) ──
@@ -2605,7 +2604,6 @@ function renderClockWidget(){
   if(!container) return;
   container.innerHTML = `
     <div class="entry-clock" id="cw-ec">
-      <div class="entry-clock-label" id="cw-label">ВХОД В СДЕЛКУ</div>
       <div class="digital-time" id="cw-digital">--:--:--</div>
       <div id="cw-canvas-wrap" style="position:relative;width:380px;height:380px;">
         <canvas id="cw-canvas" width="380" height="380" style="border-radius:50%;display:block;"></canvas>
@@ -2797,10 +2795,9 @@ function _cwDrawClock(){
 
   const cls = isRed?'red':'green';
   const pad2 = n=>String(n).padStart(2,'0');
-  const ecEl=document.getElementById('cw-ec'), ecLab=document.getElementById('cw-label'), ecMin=document.getElementById('cw-mins'), dtEl=document.getElementById('cw-digital');
+  const ecEl=document.getElementById('cw-ec'), ecMin=document.getElementById('cw-mins'), dtEl=document.getElementById('cw-digital');
   const utcBlock=document.getElementById('cw-utcBlock'), utcVal=document.getElementById('cw-utcDisplay');
   if(ecEl)  ecEl.className='entry-clock '+cls;
-  if(ecLab){ ecLab.className='entry-clock-label '+cls; ecLab.textContent=isRed?'ВХОД ЗАПРЕЩЁН':'ВХОД В СДЕЛКУ'; }
   if(dtEl){ dtEl.className='digital-time '+cls; dtEl.textContent=pad2(hours)+':'+pad2(minutes)+':'+pad2(seconds); }
   if(utcBlock) utcBlock.className='tz-row '+cls;
   if(utcVal)   utcVal.className='utc-value '+cls;
@@ -2905,7 +2902,7 @@ function buildClockHTML(){
 <body>
 <div class="wrapper">
   <div class="entry-clock" id="ec">
-    <div class="entry-clock-label" id="ec-label">ВХОД В СДЕЛКУ</div>
+
 
     <!-- Цифровое время внутри карточки -->
     <div class="digital-time" id="digitalTime">--:--:--</div>
@@ -2994,7 +2991,7 @@ let tickLastSec=-1;
 setInterval(()=>{if(!document.getElementById('tickEnabled').checked)return;const now=getNow();const min=now.getMinutes(),sec=now.getSeconds();const isRed=min>=55||min<5;if(!isRed)return;if(sec===tickLastSec)return;tickLastSec=sec;playTick();},100);
 document.addEventListener('click',()=>{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();getACtx();},{once:false});
 let prevClockRed=null;
-function drawClock(){const zh=getNow();const hours=zh.getHours(),minutes=zh.getMinutes(),seconds=zh.getSeconds();const isRed=minutes>=55||minutes<5;const faceColor=isRed?'#3a0a0a':'#0a2e20';const handColor=isRed?'#E24B4A':'#1D9E75';const tickColor=isRed?'#E24B4A':'#1D9E75';const borderColor=isRed?'#E24B4A':'#1D9E75';const blinkAlpha=isRed?0.35+0.65*(0.5+0.5*Math.sin(Date.now()/(1000/(2*Math.PI)))):1;ctx.clearRect(0,0,300,300);ctx.globalAlpha=blinkAlpha;ctx.beginPath();ctx.arc(EC,EC,ER,0,2*Math.PI);ctx.fillStyle=faceColor;ctx.fill();ctx.strokeStyle=borderColor;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;for(let i=0;i<60;i++){const ang=(i*6-90)*Math.PI/180;const isMajor=i%5===0;const r1=isMajor?ER-20:ER-13;ctx.beginPath();ctx.moveTo(EC+r1*Math.cos(ang),EC+r1*Math.sin(ang));ctx.lineTo(EC+(ER-4)*Math.cos(ang),EC+(ER-4)*Math.sin(ang));ctx.strokeStyle=tickColor;ctx.lineWidth=isMajor?2.5:0.9;ctx.globalAlpha=isMajor?0.9:0.4;ctx.stroke();ctx.globalAlpha=1;}const hAng=((hours%12)*30+minutes*0.5-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+74*Math.cos(hAng),EC+74*Math.sin(hAng));ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.lineCap='round';ctx.stroke();const mAng=(minutes*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+110*Math.cos(mAng),EC+110*Math.sin(mAng));ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();const sAng=(seconds*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC-25*Math.cos(sAng),EC-25*Math.sin(sAng));ctx.lineTo(EC+124*Math.cos(sAng),EC+124*Math.sin(sAng));ctx.strokeStyle=handColor;ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();ctx.beginPath();ctx.arc(EC,EC,7,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();ctx.globalAlpha=1;const cls=isRed?'red':'green';const ecEl=document.getElementById('ec'),ecLab=document.getElementById('ec-label'),ecMin=document.getElementById('ec-mins'),dtEl=document.getElementById('digitalTime');if(ecEl)ecEl.className='entry-clock '+cls;if(ecLab){ecLab.className='entry-clock-label '+cls;ecLab.textContent=isRed?'ВХОД ЗАПРЕЩЁН':'ВХОД В СДЕЛКУ';}if(dtEl){dtEl.className='digital-time '+cls;dtEl.textContent=pad(hours)+':'+pad(minutes)+':'+pad(seconds);}const utcBlock=document.getElementById('utcBlock');if(utcBlock){utcBlock.className='utc-block '+cls;}const utcVal=document.getElementById('utcDisplay');if(utcVal){utcVal.className='utc-value '+cls;}if(ecMin){let minsText;if(minutes>=55)minsText='последние '+(60-minutes)+' мин часа';else if(minutes<5)minsText='первые '+(5-minutes)+' мин · ещё запрещён';else minsText='до конца часа: '+(60-minutes)+' мин';ecMin.className='entry-mins '+cls;ecMin.textContent=minsText;}if(prevClockRed!==null){if(isRed&&!prevClockRed)soundBell();if(!isRed&&prevClockRed)soundTrill();}prevClockRed=isRed;}
+function drawClock(){const zh=getNow();const hours=zh.getHours(),minutes=zh.getMinutes(),seconds=zh.getSeconds();const isRed=minutes>=55||minutes<5;const faceColor=isRed?'#3a0a0a':'#0a2e20';const handColor=isRed?'#E24B4A':'#1D9E75';const tickColor=isRed?'#E24B4A':'#1D9E75';const borderColor=isRed?'#E24B4A':'#1D9E75';const blinkAlpha=isRed?0.35+0.65*(0.5+0.5*Math.sin(Date.now()/(1000/(2*Math.PI)))):1;ctx.clearRect(0,0,300,300);ctx.globalAlpha=blinkAlpha;ctx.beginPath();ctx.arc(EC,EC,ER,0,2*Math.PI);ctx.fillStyle=faceColor;ctx.fill();ctx.strokeStyle=borderColor;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;for(let i=0;i<60;i++){const ang=(i*6-90)*Math.PI/180;const isMajor=i%5===0;const r1=isMajor?ER-20:ER-13;ctx.beginPath();ctx.moveTo(EC+r1*Math.cos(ang),EC+r1*Math.sin(ang));ctx.lineTo(EC+(ER-4)*Math.cos(ang),EC+(ER-4)*Math.sin(ang));ctx.strokeStyle=tickColor;ctx.lineWidth=isMajor?2.5:0.9;ctx.globalAlpha=isMajor?0.9:0.4;ctx.stroke();ctx.globalAlpha=1;}const hAng=((hours%12)*30+minutes*0.5-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+74*Math.cos(hAng),EC+74*Math.sin(hAng));ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.lineCap='round';ctx.stroke();const mAng=(minutes*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+110*Math.cos(mAng),EC+110*Math.sin(mAng));ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();const sAng=(seconds*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC-25*Math.cos(sAng),EC-25*Math.sin(sAng));ctx.lineTo(EC+124*Math.cos(sAng),EC+124*Math.sin(sAng));ctx.strokeStyle=handColor;ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();ctx.beginPath();ctx.arc(EC,EC,7,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();ctx.globalAlpha=1;const cls=isRed?'red':'green';const ecEl=document.getElementById('ec'),ecMin=document.getElementById('ec-mins'),dtEl=document.getElementById('digitalTime');if(ecEl)ecEl.className='entry-clock '+cls;if(dtEl){dtEl.className='digital-time '+cls;dtEl.textContent=pad(hours)+':'+pad(minutes)+':'+pad(seconds);}const utcBlock=document.getElementById('utcBlock');if(utcBlock){utcBlock.className='utc-block '+cls;}const utcVal=document.getElementById('utcDisplay');if(utcVal){utcVal.className='utc-value '+cls;}if(ecMin){let minsText;if(minutes>=55)minsText='последние '+(60-minutes)+' мин часа';else if(minutes<5)minsText='первые '+(5-minutes)+' мин · ещё запрещён';else minsText='до конца часа: '+(60-minutes)+' мин';ecMin.className='entry-mins '+cls;ecMin.textContent=minsText;}if(prevClockRed!==null){if(isRed&&!prevClockRed)soundBell();if(!isRed&&prevClockRed)soundTrill();}prevClockRed=isRed;}
 function loop(){drawClock();requestAnimationFrame(loop);}
 loop();
 <\/script>
