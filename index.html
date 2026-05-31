@@ -2576,6 +2576,8 @@ function startClockWidget(){
 }
 function stopClockWidget(){
   if(_clockInterval){clearInterval(_clockInterval);_clockInterval=null;}
+  if(_clockRAF){cancelAnimationFrame(_clockRAF);_clockRAF=null;}
+  if(_clockTickInterval){clearInterval(_clockTickInterval);_clockTickInterval=null;}
 }
 
 // ── Inline clock widget (аналоговый циферблат) ──
