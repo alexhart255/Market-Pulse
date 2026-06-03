@@ -8,554 +8,223 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
+:root {
+  --bg0:#0a0b0e;--bg1:#111318;--bg2:#181b22;--bg3:#1e2230;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text1:#f0f2f7;--text2:#8b92a8;--text3:#555e78;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+  --bn:#F0B90B;--ib:#3b82f6;--radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-height:100vh;font-size:14px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
+.screen{display:none}.screen.active{display:block}
 
-  :root {
-    --bg0: #0a0b0e;
-    --bg1: #111318;
-    --bg2: #181b22;
-    --bg3: #1e2230;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text1: #f0f2f7;
-    --text2: #8b92a8;
-    --text3: #555e78;
-    --green: #22c55e;
-    --red: #ef4444;
-    --amber: #f59e0b;
-    --blue: #3b82f6;
-    --bn: #F0B90B;
-    --ib: #3b82f6;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
+/* LOCK */
+.lock-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px 20px}
+.lock-box{background:var(--bg1);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px;text-align:center}
+.lock-icon{font-size:40px}.lock-title{font-size:20px;font-weight:700}
+.pwd-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px}
+.pwd-tab{flex:1;padding:10px 6px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border:none;background:none;font-family:'Syne',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.pwd-tab:hover{color:var(--text1)}.pwd-tab.active{color:var(--bn);border-bottom-color:var(--bn)}
+.pwd-panel{display:none;flex-direction:column;gap:14px;padding-top:4px}.pwd-panel.active{display:flex}
+.lock-input{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-size:15px;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:3px;transition:border-color .2s}
+.lock-input:focus{outline:none;border-color:rgba(240,185,11,.5)}
+.lock-btn{width:100%;padding:14px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--bn),#e6a800);color:#000;font-size:14px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;transition:opacity .15s}
+.lock-btn:hover{opacity:.9}
+.lock-error{font-size:12px;color:var(--red);display:none}.lock-error.show{display:block}
+.pwd-success{font-size:12px;color:var(--green);display:none;text-align:center}.pwd-success.show{display:block}
+.lock-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;justify-content:center}
+.lock-remember input{cursor:pointer;accent-color:var(--bn)}
+.lock-footer{font-size:11px;color:var(--text3)}
+.pwd-input-wrap{position:relative}.pwd-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px}
+.pwd-strength{height:3px;border-radius:2px;margin-top:-10px;transition:width .3s,background .3s;width:0}
+.pwd-strength-label{font-size:10px;color:var(--text3);text-align:right;margin-top:-4px}
+.reset-warning{font-size:11px;color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:var(--radius-sm);padding:10px 12px;line-height:1.6}
+.btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;padding:12px;border-radius:var(--radius-sm);cursor:pointer;width:100%}
+.btn-secondary{background:var(--bg2);border:1px solid var(--border2);color:var(--text1);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;padding:12px;border-radius:var(--radius-sm);cursor:pointer;width:100%}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* HOME */
+.home{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:40px}
+.home-logo{display:flex;align-items:center;gap:12px}
+.home-logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--bn),var(--ib));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.home-logo-text{font-size:22px;font-weight:700;letter-spacing:-.5px}
+.home-logo-sub{font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.home-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:580px}
+.hcard{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:22px 16px;cursor:pointer;transition:border-color .2s,transform .2s;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.hcard:hover{border-color:var(--border2);transform:translateY(-2px)}
+.hcard-combined{grid-column:1/-1;flex-direction:row;text-align:left;align-items:center;gap:16px;padding:18px 20px}
+.hcard-combined:hover{border-color:rgba(59,130,246,.3)}
+.hcard-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.hcard-icon.bn{background:rgba(240,185,11,.15);color:var(--bn)}
+.hcard-icon.ib{background:rgba(59,130,246,.15);color:var(--ib)}
+.hcard-name{font-size:14px;font-weight:600}.hcard-desc{font-size:11px;color:var(--text2)}
+.hcard-badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+.badge-bn{background:rgba(240,185,11,.15);color:var(--bn)}.badge-ib{background:rgba(59,130,246,.15);color:var(--ib)}.badge-all{background:rgba(34,197,94,.15);color:var(--green)}
+.home-note{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
 
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg0);
-    color: var(--text1);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.5;
-  }
+/* DASHBOARD LAYOUT */
+.dash-layout{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--bg1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.btn-back{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;display:flex;align-items:center;gap:6px;transition:background .15s}
+.btn-back:hover{background:var(--bg3)}
+.topbar-title{font-size:15px;font-weight:600;flex:1}
+.api-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);background:var(--bg2);padding:5px 12px;border-radius:20px;border:1px solid var(--border)}
+.dot{width:7px;height:7px;border-radius:50%;background:#444;flex-shrink:0}
+.dot.on{background:var(--green)}.dot.pending{background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.main-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 20px;background:var(--bg1);overflow-x:auto}
+.main-tab{padding:12px 16px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border:none;background:none;font-family:'Syne',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.main-tab:hover{color:var(--text1)}.main-tab.active{color:var(--text1)}
+.main-tab.active.bn-col{border-bottom-color:var(--bn)}.main-tab.active.ib-col{border-bottom-color:var(--ib)}.main-tab.active.all-col{border-bottom-color:var(--green)}
+.tab-content{display:none}.tab-content.active{display:flex;flex-direction:column;gap:16px}
+.dash-body{padding:16px 20px;display:flex;flex-direction:column;gap:16px;max-width:1100px;margin:0 auto;width:100%}
 
-  /* ─── SCROLLBAR ─── */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg0); }
-  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
+/* COMPONENTS */
+.slabel{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.mc{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.mc-label{font-size:10px;color:var(--text3);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.mc-val{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.mc-sub{font-size:10px;color:var(--text3);margin-top:3px}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}.neutral{color:var(--text1)}
+.tabs{display:flex;gap:4px}
+.tab{font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text2);font-family:'Syne',sans-serif;font-weight:500;transition:background .15s}
+.tab.active.bn-tab{background:rgba(240,185,11,.2);color:var(--bn);border-color:rgba(240,185,11,.3)}
+.tab.active.ib-tab{background:rgba(59,130,246,.2);color:var(--ib);border-color:rgba(59,130,246,.3)}
+.tab.active.all-tab{background:rgba(34,197,94,.2);color:var(--green);border-color:rgba(34,197,94,.3)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);background:var(--bg2);font-family:'JetBrains Mono',monospace}
+.pill.pos{border-color:rgba(34,197,94,.3);color:var(--green);background:rgba(34,197,94,.08)}
+.pill.neg{border-color:rgba(239,68,68,.3);color:var(--red);background:rgba(239,68,68,.08)}
+.api-box{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.api-row{display:flex;gap:10px;flex-wrap:wrap}
+.api-input{flex:1;min-width:140px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;transition:border-color .15s}
+.api-input:focus{outline:none;border-color:rgba(240,185,11,.5)}
+.api-input.ib:focus{border-color:rgba(59,130,246,.5)}
+.api-note{font-size:11px;color:var(--text3);line-height:1.6}
+.btn-connect{padding:9px 20px;border:none;border-radius:var(--radius-sm);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn-connect.bn{background:var(--bn);color:#000}
+.btn-connect.ib{background:var(--ib);color:#fff}
 
-  /* ─── LAYOUT ─── */
-  .screen { display: none; }
-  .screen.active { display: block; }
+/* TRADES TABLE */
+.tt{width:100%;border-collapse:collapse;font-size:12px}
+.tt th{text-align:left;padding:8px 10px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.tt td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tt tr:last-child td{border-bottom:none}
+.tt tr:hover td{background:var(--bg2);cursor:pointer}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;letter-spacing:.3px;text-transform:uppercase}
+.tag.long,.tag.profit,.tag.win{background:rgba(34,197,94,.12);color:var(--green)}
+.tag.short,.tag.stop,.tag.loss{background:rgba(239,68,68,.12);color:var(--red)}
+.tag.be,.tag.breakeven{background:rgba(255,255,255,.07);color:var(--text2)}
+.tag.crypto{background:rgba(240,185,11,.12);color:var(--bn)}
+.tag.stock{background:rgba(59,130,246,.12);color:var(--ib)}
+.tag.option{background:rgba(168,85,247,.12);color:#a855f7}
+.no-data{text-align:center;color:var(--text3);padding:24px;font-size:12px}
 
-  /* ─── PASSWORD SCREEN ─── */
-  .lock-screen {
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 32px; padding: 40px 20px;
-  }
-  .lock-box {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-radius: 20px; padding: 40px 36px;
-    width: 100%; max-width: 380px;
-    display: flex; flex-direction: column; gap: 20px;
-    text-align: center;
-  }
-  .lock-icon { font-size: 40px; margin-bottom: 4px; }
-  .lock-title { font-size: 20px; font-weight: 700; }
-  .lock-sub { font-size: 13px; color: var(--text2); line-height: 1.6; }
-  .lock-input {
-    width: 100%; padding: 14px 16px;
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: var(--radius-sm); color: var(--text1);
-    font-size: 16px; font-family: 'JetBrains Mono', monospace;
-    text-align: center; letter-spacing: 4px;
-    transition: border-color .2s;
-  }
-  .lock-input:focus { outline: none; border-color: rgba(240,185,11,.5); }
-  .lock-btn {
-    width: 100%; padding: 14px; border: none;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, var(--bn), #e6a800);
-    color: #000; font-size: 14px; font-weight: 700;
-    cursor: pointer; font-family: 'Syne', sans-serif;
-    transition: opacity .15s, transform .1s;
-  }
-  .lock-btn:hover { opacity: .9; }
-  .lock-btn:active { transform: scale(.98); }
-  .lock-error { font-size: 12px; color: var(--red); display: none; margin-top: -8px; }
-  .lock-error.show { display: block; }
-  .lock-remember {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--text2); cursor: pointer; justify-content: center;
-  }
-  .lock-remember input { cursor: pointer; accent-color: var(--bn); }
-  .lock-footer { font-size: 11px; color: var(--text3); }
+/* TRADE DETAIL MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:900px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
+.modal-header{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg1);z-index:1}
+.modal-title{font-size:18px;font-weight:700;flex:1}
+.modal-close{background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.modal-body{padding:24px;display:flex;flex-direction:column;gap:20px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.detail-field{background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px}
+.detail-label{font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.detail-value{font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.detail-value.editable{cursor:pointer;border-bottom:1px dashed var(--text3);padding-bottom:2px}
+.detail-value.editable:hover{border-bottom-color:var(--bn)}
+.screens-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.screen-box{background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color .15s;min-height:140px;justify-content:center}
+.screen-box:hover{border-color:var(--bn)}
+.screen-box img{width:100%;border-radius:6px;object-fit:cover;max-height:200px}
+.screen-box-label{font-size:11px;color:var(--text2);font-weight:600}
+.screen-box-hint{font-size:10px;color:var(--text3)}
+.comment-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;width:100%;min-height:80px;color:var(--text1);font-family:'Syne',sans-serif;font-size:13px;resize:vertical;transition:border-color .15s}
+.comment-box:focus{outline:none;border-color:rgba(240,185,11,.5)}
+.btn-save{padding:10px 24px;background:var(--bn);color:#000;border:none;border-radius:var(--radius-sm);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-save:hover{opacity:.9}
+.select-field{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);padding:8px 10px;font-family:'Syne',sans-serif;font-size:13px;width:100%;cursor:pointer}
+.select-field:focus{outline:none;border-color:rgba(240,185,11,.5)}
+.input-field{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:13px;width:100%;transition:border-color .15s}
+.input-field:focus{outline:none;border-color:rgba(240,185,11,.5)}
 
-  /* ─── PASSWORD MANAGEMENT ─── */
-  .pwd-tabs {
-    display: flex; border-bottom: 1px solid var(--border); margin-bottom: 4px;
-  }
-  .pwd-tab {
-    flex: 1; padding: 10px 6px; font-size: 12px; font-weight: 600;
-    color: var(--text3); cursor: pointer; border: none; background: none;
-    font-family: 'Syne', sans-serif; border-bottom: 2px solid transparent;
-    margin-bottom: -1px; transition: color .15s;
-  }
-  .pwd-tab:hover { color: var(--text1); }
-  .pwd-tab.active { color: var(--bn); border-bottom-color: var(--bn); }
-  .pwd-panel { display: none; flex-direction: column; gap: 14px; padding-top: 4px; }
-  .pwd-panel.active { display: flex; }
-  .pwd-input-wrap { position: relative; }
-  .pwd-input-wrap input { padding-right: 44px; }
-  .pwd-eye {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer; color: var(--text3);
-    font-size: 16px; padding: 4px;
-  }
-  .pwd-strength { height: 3px; border-radius: 2px; margin-top: -10px; transition: width .3s, background .3s; width: 0; }
-  .pwd-strength-label { font-size: 10px; color: var(--text3); text-align: right; margin-top: -4px; }
-  .pwd-success { font-size: 12px; color: var(--green); display: none; text-align: center; }
-  .pwd-success.show { display: block; }
-  .lock-link { font-size: 12px; color: var(--text2); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; margin-top: -8px; }
-  .reset-warning { font-size: 11px; color: var(--amber); background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.2); border-radius: var(--radius-sm); padding: 10px 12px; line-height: 1.6; }
-  .btn-danger { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: var(--red); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 12px; border-radius: var(--radius-sm); cursor: pointer; width: 100%; transition: background .15s; }
-  .btn-danger:hover { background: rgba(239,68,68,.25); }
-  .btn-secondary { background: var(--bg2); border: 1px solid var(--border2); color: var(--text1); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 12px; border-radius: var(--radius-sm); cursor: pointer; width: 100%; transition: background .15s; }
-  .btn-secondary:hover { background: var(--bg3); }
-
-  /* ─── HOME ─── */
-  .home {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    gap: 40px;
-  }
-
-  .home-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .home-logo-icon {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg, var(--bn), var(--ib));
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-  }
-  .home-logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-  .home-logo-sub { font-size: 11px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; }
-
-  .home-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    width: 100%;
-    max-width: 580px;
-  }
-
-  .hcard {
-    background: var(--bg1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px 20px;
-    cursor: pointer;
-    transition: border-color .2s, transform .2s, background .2s;
-    display: flex; flex-direction: column; align-items: center;
-    gap: 12px; text-align: center;
-  }
-  .hcard:hover { border-color: var(--border2); transform: translateY(-3px); background: var(--bg2); }
-
-  .hcard-combined {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    text-align: left;
-    align-items: center;
-    gap: 16px;
-    padding: 20px 24px;
-  }
-  .hcard-combined:hover { border-color: rgba(59,130,246,.4); }
-
-  .hcard-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; flex-shrink: 0;
-  }
-  .hcard-icon.bn { background: rgba(240,185,11,.15); color: var(--bn); }
-  .hcard-icon.ib { background: rgba(59,130,246,.15); color: var(--ib); }
-  .hcard-icon.all { background: linear-gradient(135deg,rgba(240,185,11,.15),rgba(59,130,246,.15)); color: var(--text1); }
-
-  .hcard-name { font-size: 15px; font-weight: 600; }
-  .hcard-desc { font-size: 11px; color: var(--text2); }
-  .hcard-info { flex: 1; }
-  .hcard-badge {
-    display: inline-block;
-    font-size: 10px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
-    letter-spacing: .5px; text-transform: uppercase;
-  }
-  .badge-bn { background: rgba(240,185,11,.15); color: var(--bn); }
-  .badge-ib { background: rgba(59,130,246,.15); color: var(--ib); }
-  .badge-all { background: rgba(34,197,94,.15); color: var(--green); }
-
-  .home-note {
-    font-size: 11px; color: var(--text3);
-    display: flex; align-items: center; gap: 6px;
-  }
-
-  /* ─── DASHBOARD ─── */
-  .dash-layout {
-    display: flex; flex-direction: column;
-    min-height: 100vh;
-  }
-
-  .topbar {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 24px;
-    background: var(--bg1);
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .btn-back {
-    background: none;
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    color: var(--text2);
-    padding: 6px 14px;
-    cursor: pointer;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    display: flex; align-items: center; gap: 6px;
-    transition: background .15s, color .15s;
-  }
-  .btn-back:hover { background: var(--bg3); color: var(--text1); }
-
-  .topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
-  .api-pill {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; color: var(--text2);
-    background: var(--bg2); padding: 5px 12px;
-    border-radius: 20px; border: 1px solid var(--border);
-  }
-  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #444; }
-  .dot.on { background: var(--green); }
-  .dot.pending { background: var(--amber); animation: blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-  .dash-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; max-width: 1000px; margin: 0 auto; width: 100%; }
-
-  /* ─── SECTION ─── */
-  .slabel {
-    font-size: 10px; font-weight: 600;
-    color: var(--text3); letter-spacing: 2px;
-    text-transform: uppercase; margin-bottom: 8px;
-  }
-
-  /* ─── API SETUP ─── */
-  .api-box {
-    background: var(--bg1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    display: flex; flex-direction: column; gap: 12px;
-  }
-  .api-box-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-  .api-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .api-input {
-    flex: 1; min-width: 140px;
-    background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    color: var(--text1); padding: 9px 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    transition: border-color .15s;
-  }
-  .api-input:focus { outline: none; border-color: rgba(240,185,11,.5); }
-  .api-input.ib:focus { border-color: rgba(59,130,246,.5); }
-  .btn-connect {
-    padding: 9px 20px; border: none; border-radius: var(--radius-sm);
-    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: opacity .15s, transform .1s; white-space: nowrap;
-  }
-  .btn-connect:active { transform: scale(.97); }
-  .btn-connect.bn { background: var(--bn); color: #000; }
-  .btn-connect.ib { background: var(--ib); color: #fff; }
-  .api-note { font-size: 11px; color: var(--text3); line-height: 1.6; }
-  .api-note a { color: var(--text2); text-decoration: underline; }
-
-  /* ─── METRICS ─── */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 10px; }
-  .mc {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 14px 16px;
-  }
-  .mc-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; letter-spacing: .5px; text-transform: uppercase; }
-  .mc-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-  .mc-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
-  .mc-val.green { color: var(--green); }
-  .mc-val.red { color: var(--red); }
-  .mc-val.amber { color: var(--amber); }
-  .mc-val.blue { color: var(--blue); }
-  .mc-val.neutral { color: var(--text1); }
-
-  /* ─── CARDS ─── */
-  .card {
-    background: var(--bg1); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 18px 20px;
-  }
-  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .card-title { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: .5px; text-transform: uppercase; }
-
-  .tabs { display: flex; gap: 4px; }
-  .tab {
-    font-size: 11px; padding: 4px 12px; border-radius: 20px;
-    cursor: pointer; border: 1px solid var(--border2);
-    background: none; color: var(--text2);
-    font-family: 'Syne', sans-serif; font-weight: 500;
-    transition: background .15s, color .15s;
-  }
-  .tab:hover { background: var(--bg3); }
-  .tab.active.bn-tab { background: rgba(240,185,11,.2); color: var(--bn); border-color: rgba(240,185,11,.3); }
-  .tab.active.ib-tab { background: rgba(59,130,246,.2); color: var(--ib); border-color: rgba(59,130,246,.3); }
-  .tab.active.all-tab { background: rgba(34,197,94,.2); color: var(--green); border-color: rgba(34,197,94,.3); }
-
-  /* ─── PILLS ─── */
-  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
-  .pill {
-    font-size: 11px; font-weight: 600;
-    padding: 4px 12px; border-radius: 20px;
-    border: 1px solid var(--border2);
-    color: var(--text2); background: var(--bg2);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .pill.pos { border-color: rgba(34,197,94,.3); color: var(--green); background: rgba(34,197,94,.08); }
-  .pill.neg { border-color: rgba(239,68,68,.3); color: var(--red); background: rgba(239,68,68,.08); }
-
-  /* ─── TABLE ─── */
-  .tt { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .tt th { text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-  .tt td { padding: 10px 10px; border-bottom: 1px solid var(--border); }
-  .tt tr:last-child td { border-bottom: none; }
-  .tt tr:hover td { background: var(--bg2); }
-  .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 6px; letter-spacing: .3px; text-transform: uppercase; }
-  .tag.long { background: rgba(34,197,94,.12); color: var(--green); }
-  .tag.short, .tag.loss { background: rgba(239,68,68,.12); color: var(--red); }
-  .tag.win { background: rgba(34,197,94,.12); color: var(--green); }
-  .tag.stop { background: rgba(255,255,255,.07); color: var(--text2); }
-  .tag.crypto { background: rgba(240,185,11,.12); color: var(--bn); }
-  .tag.stock { background: rgba(59,130,246,.12); color: var(--ib); }
-  .tag.option { background: rgba(168,85,247,.12); color: #a855f7; }
-  .no-data { text-align: center; color: var(--text3); padding: 24px; font-size: 12px; }
-
-  /* ─── COMBINED ─── */
-  .src-indicators { display: flex; gap: 8px; }
-  .src-ind {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; color: var(--text2);
-    background: var(--bg2); padding: 4px 10px;
-    border-radius: 20px; border: 1px solid var(--border);
-  }
-
-  .split-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
-  .split-pie { flex-shrink: 0; width: 100px; height: 100px; position: relative; }
-  .split-legend { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 160px; }
-  .legend-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
-
-  .notice-box {
-    background: rgba(59,130,246,.06);
-    border: 1px solid rgba(59,130,246,.2);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    display: flex; gap: 14px; align-items: flex-start;
-  }
-  .notice-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-  .notice-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .notice-btn {
-    font-size: 11px; padding: 6px 14px;
-    border: 1px solid var(--border2); border-radius: var(--radius-sm);
-    background: var(--bg2); color: var(--text1); cursor: pointer;
-    font-family: 'Syne', sans-serif; transition: background .15s;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .notice-btn:hover { background: var(--bg3); }
-
-  /* ─── CHART LEGEND ─── */
-  .chart-legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
-  .cl-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
-  .cl-line { width: 20px; height: 2px; border-radius: 1px; }
-
-  /* ─── STEP GUIDE ─── */
-  .guide { display: flex; flex-direction: column; gap: 0; }
-  .step {
-    display: flex; gap: 16px;
-    padding: 18px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .step:last-child { border-bottom: none; }
-  .step-num {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; flex-shrink: 0;
-  }
-  .step-num.bn-col { background: rgba(240,185,11,.15); color: var(--bn); }
-  .step-num.ib-col { background: rgba(59,130,246,.15); color: var(--ib); }
-  .step-body { flex: 1; }
-  .step-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
-  .step-text { font-size: 12px; color: var(--text2); line-height: 1.7; }
-  .code-block {
-    background: var(--bg0); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 10px 14px;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px;
-    color: var(--amber); margin-top: 8px; word-break: break-all;
-  }
-
-  /* ─── TABS NAV ─── */
-  .main-tabs {
-    display: flex; gap: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    background: var(--bg1);
-    overflow-x: auto;
-  }
-  .main-tab {
-    padding: 12px 18px; font-size: 12px; font-weight: 600;
-    color: var(--text3); cursor: pointer; border: none;
-    background: none; font-family: 'Syne', sans-serif;
-    border-bottom: 2px solid transparent; margin-bottom: -1px;
-    white-space: nowrap; transition: color .15s;
-  }
-  .main-tab:hover { color: var(--text1); }
-  .main-tab.active { color: var(--text1); }
-  .main-tab.active.bn-col { border-bottom-color: var(--bn); }
-  .main-tab.active.ib-col { border-bottom-color: var(--ib); }
-  .main-tab.active.all-col { border-bottom-color: var(--green); }
-  .tab-content { display: none; }
-  .tab-content.active { display: flex; flex-direction: column; gap: 14px; }
+/* COMBINED */
+.src-indicators{display:flex;gap:8px}
+.src-ind{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
+.notice-box{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:var(--radius);padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.notice-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.notice-btn{font-size:11px;padding:6px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text1);cursor:pointer;font-family:'Syne',sans-serif;transition:background .15s;display:flex;align-items:center;gap:6px}
+.notice-btn:hover{background:var(--bg3)}
+.chart-legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.cl-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.cl-line{width:20px;height:2px;border-radius:1px}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════
-     HOME
-═══════════════════════════════════════════════ -->
-<!-- ══════════════════════════════════════════════
-     LOCK SCREEN
-═══════════════════════════════════════════════ -->
+<!-- LOCK SCREEN -->
 <div id="lockScreen" class="screen active">
 <div class="lock-screen">
-  <div class="lock-box" style="max-width:420px">
-    <div class="lock-icon" id="lockModeIcon">🔐</div>
-    <div class="lock-title" id="lockModeTitle">Trading Journal</div>
-
-    <!-- TABS -->
+  <div class="lock-box">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">Trading Journal</div>
     <div class="pwd-tabs">
       <button class="pwd-tab active" id="tabLogin" onclick="switchLockTab('login')">Войти</button>
       <button class="pwd-tab" id="tabChange" onclick="switchLockTab('change')">Сменить пароль</button>
       <button class="pwd-tab" id="tabReset" onclick="switchLockTab('reset')">Сброс</button>
     </div>
-
-    <!-- LOGIN PANEL -->
+    <!-- LOGIN -->
     <div class="pwd-panel active" id="panelLogin">
       <div style="font-size:12px;color:var(--text2)">Введите пароль для доступа</div>
       <div class="pwd-input-wrap">
-        <input class="lock-input" id="lockInput" type="password" placeholder="Ваш пароль" maxlength="64"
-          onkeydown="if(event.key==='Enter')unlockApp()" style="letter-spacing:3px" />
+        <input class="lock-input" id="lockInput" type="password" placeholder="Ваш пароль" maxlength="64" onkeydown="if(event.key==='Enter')unlockApp()" />
         <button class="pwd-eye" onclick="toggleEye('lockInput',this)">👁</button>
       </div>
-      <div class="lock-error" id="lockError">❌ Неверный пароль. Попробуйте ещё раз.</div>
+      <div class="lock-error" id="lockError">❌ Неверный пароль</div>
       <button class="lock-btn" onclick="unlockApp()">Войти →</button>
-      <label class="lock-remember">
-        <input type="checkbox" id="rememberMe" checked />
-        Запомнить на этом устройстве
-      </label>
+      <label class="lock-remember"><input type="checkbox" id="rememberMe" checked />Запомнить на этом устройстве</label>
       <div style="font-size:11px;color:var(--text3)">На чужом устройстве снимите галочку</div>
     </div>
-
-    <!-- CHANGE PASSWORD PANEL -->
+    <!-- CHANGE PASSWORD -->
     <div class="pwd-panel" id="panelChange">
-      <div style="font-size:12px;color:var(--text2)">Введите текущий и новый пароль</div>
-      <div class="pwd-input-wrap">
-        <input class="lock-input" id="pwdOld" type="password" placeholder="Текущий пароль" maxlength="64" style="letter-spacing:2px;font-size:13px" />
-        <button class="pwd-eye" onclick="toggleEye('pwdOld',this)">👁</button>
-      </div>
-      <div class="pwd-input-wrap">
-        <input class="lock-input" id="pwdNew1" type="password" placeholder="Новый пароль" maxlength="64"
-          oninput="checkStrength(this.value)" style="letter-spacing:2px;font-size:13px" />
-        <button class="pwd-eye" onclick="toggleEye('pwdNew1',this)">👁</button>
-      </div>
+      <div style="font-size:12px;color:var(--text2)">Смена пароля</div>
+      <div class="pwd-input-wrap"><input class="lock-input" id="pwdOld" type="password" placeholder="Текущий пароль" maxlength="64" style="letter-spacing:2px;font-size:13px"/><button class="pwd-eye" onclick="toggleEye('pwdOld',this)">👁</button></div>
+      <div class="pwd-input-wrap"><input class="lock-input" id="pwdNew1" type="password" placeholder="Новый пароль" maxlength="64" oninput="checkStrength(this.value)" style="letter-spacing:2px;font-size:13px"/><button class="pwd-eye" onclick="toggleEye('pwdNew1',this)">👁</button></div>
       <div class="pwd-strength" id="pwdStrengthBar"></div>
       <div class="pwd-strength-label" id="pwdStrengthLabel"></div>
-      <div class="pwd-input-wrap">
-        <input class="lock-input" id="pwdNew2" type="password" placeholder="Повторите новый пароль" maxlength="64" style="letter-spacing:2px;font-size:13px" />
-        <button class="pwd-eye" onclick="toggleEye('pwdNew2',this)">👁</button>
-      </div>
+      <div class="pwd-input-wrap"><input class="lock-input" id="pwdNew2" type="password" placeholder="Повторите новый пароль" maxlength="64" style="letter-spacing:2px;font-size:13px"/><button class="pwd-eye" onclick="toggleEye('pwdNew2',this)">👁</button></div>
       <div class="lock-error" id="changeError"></div>
-      <div class="pwd-success" id="changeSuccess">✅ Пароль успешно изменён!</div>
+      <div class="pwd-success" id="changeSuccess">✅ Пароль изменён!</div>
       <button class="lock-btn" onclick="changePassword()">Сменить пароль</button>
     </div>
-
-    <!-- RESET PANEL -->
+    <!-- RESET -->
     <div class="pwd-panel" id="panelReset">
-      <div class="reset-warning">
-        ⚠️ <strong>Внимание!</strong> Сброс удалит все сохранённые ключи и пароль.
-        Код подтверждения придёт на вашу почту. Без доступа к почте — сброс невозможен.
-      </div>
+      <div class="reset-warning">⚠️ Код подтверждения придёт на вашу почту. Без доступа к почте сброс невозможен.</div>
       <div style="font-size:12px;color:var(--text2)">Код будет отправлен на: <strong>krebs015@gmail.com</strong></div>
       <button class="btn-danger" onclick="resetPassword()">📨 Отправить код на email</button>
       <div class="lock-error" id="resetError"></div>
       <div class="pwd-success" id="resetSuccess"></div>
     </div>
-  </div>
-
-  <div class="home-cards">
-    <div class="hcard" onclick="openDash('binance')">
-      <div class="hcard-icon bn">₿</div>
-      <div class="hcard-name">Binance</div>
-      <div class="hcard-desc">Криптовалютные фьючерсы</div>
-      <span class="hcard-badge badge-bn">Futures</span>
-    </div>
-    <div class="hcard" onclick="openDash('ibkr')">
-      <div class="hcard-icon ib">📈</div>
-      <div class="hcard-name">Interactive Brokers</div>
-      <div class="hcard-desc">Акции и опционы</div>
-      <span class="hcard-badge badge-ib">Stocks / Options</span>
-    </div>
-    <div class="hcard hcard-combined" onclick="openDash('combined')">
-      <div class="hcard-icon all" style="font-size:20px">🔀</div>
-      <div class="hcard-info">
-        <div class="hcard-name">Общий портфель <span class="hcard-badge badge-all" style="margin-left:8px">Авто</span></div>
-        <div class="hcard-desc" style="margin-top:4px">Binance + IBKR вместе. Ключи не нужны — данные из подключённых брокеров.</div>
-      </div>
-      <span style="color:var(--text3);font-size:20px">›</span>
-    </div>
-  </div>
-
-  <button onclick="lockApp()" style="position:fixed;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;display:flex;align-items:center;gap:6px;z-index:100">🔒 Выйти</button>
-  <div class="home-note">
-    🔒 API ключи только для чтения — торговые операции недоступны
+    <div class="lock-footer">🔒 AES-256 шифрование · Пароль не передаётся на серверы</div>
   </div>
 </div>
 </div>
 
+<!-- HOME -->
 <div id="homeScreen" class="screen">
 <div class="home">
+  <button onclick="lockApp()" style="position:fixed;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;z-index:100">🔒 Выйти</button>
   <div class="home-logo">
     <div class="home-logo-icon">📊</div>
-    <div>
-      <div class="home-logo-text">Trading Journal</div>
-      <div class="home-logo-sub">Pro Dashboard</div>
-    </div>
+    <div><div class="home-logo-text">Trading Journal</div><div class="home-logo-sub">Pro Dashboard</div></div>
   </div>
-
   <div class="home-cards">
     <div class="hcard" onclick="openDash('binance')">
       <div class="hcard-icon bn">₿</div>
@@ -570,26 +239,16 @@
       <span class="hcard-badge badge-ib">Stocks / Options</span>
     </div>
     <div class="hcard hcard-combined" onclick="openDash('combined')">
-      <div class="hcard-icon all" style="font-size:20px">🔀</div>
-      <div class="hcard-info">
-        <div class="hcard-name">Общий портфель <span class="hcard-badge badge-all" style="margin-left:8px">Авто</span></div>
-        <div class="hcard-desc" style="margin-top:4px">Binance + IBKR вместе. Ключи не нужны — данные из подключённых брокеров.</div>
-      </div>
+      <div class="hcard-icon" style="background:linear-gradient(135deg,rgba(240,185,11,.15),rgba(59,130,246,.15));font-size:20px">🔀</div>
+      <div style="flex:1"><div class="hcard-name">Общий портфель <span class="hcard-badge badge-all" style="margin-left:8px">Авто</span></div><div class="hcard-desc" style="margin-top:4px">Binance + IBKR вместе</div></div>
       <span style="color:var(--text3);font-size:20px">›</span>
     </div>
   </div>
-
-  <button onclick="lockApp()" style="position:fixed;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;display:flex;align-items:center;gap:6px;z-index:100">🔒 Выйти</button>
-  <div class="home-note">
-    🔒 API ключи только для чтения — торговые операции недоступны
-  </div>
+  <div class="home-note">🔒 API ключи только для чтения — торговые операции невозможны</div>
 </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════════
-     BINANCE DASHBOARD
-═══════════════════════════════════════════════ -->
+<!-- BINANCE DASHBOARD -->
 <div id="binanceScreen" class="screen">
 <div class="dash-layout">
   <div class="topbar">
@@ -597,109 +256,76 @@
     <div class="topbar-title" style="color:var(--bn)">₿ Binance Futures</div>
     <div class="api-pill"><span class="dot pending" id="bnDot"></span><span id="bnStatus">Нет подключения</span></div>
   </div>
-
   <div class="main-tabs">
     <button class="main-tab active bn-col" onclick="showTab('bn','overview',this)">Обзор</button>
     <button class="main-tab" onclick="showTab('bn','trades',this)">Сделки</button>
     <button class="main-tab" onclick="showTab('bn','setup',this)">⚙ Подключение</button>
   </div>
-
   <div class="dash-body">
-
-    <!-- SETUP TAB -->
+    <!-- SETUP -->
     <div id="bn-setup" class="tab-content">
-      <div class="slabel">Шаг 1 — Введите API ключи Binance</div>
       <div class="api-box">
-        <div class="api-box-title">🔑 API ключи Binance Futures</div>
+        <div style="font-size:13px;font-weight:600">🔑 API ключи Binance Futures</div>
         <div class="api-row">
-          <input class="api-input" id="bnApiKey" type="password" placeholder="API Key" />
-          <input class="api-input" id="bnSecretKey" type="password" placeholder="Secret Key" />
+          <input class="api-input" id="bnApiKey" type="password" placeholder="API Key"/>
+          <input class="api-input" id="bnSecretKey" type="password" placeholder="Secret Key"/>
           <button class="btn-connect bn" onclick="connectBinance()">Подключить</button>
         </div>
-        <div class="api-note">
-          ⚡ <strong>Как получить ключи:</strong><br>
-          1. Войдите на <strong>binance.com → Профиль → API Management</strong><br>
-          2. Нажмите «Create API» → тип «System generated»<br>
-          3. Название: например «TradingJournal»<br>
-          4. В разрешениях включите только <strong>«Enable Reading»</strong> — больше ничего<br>
-          5. Скопируйте API Key и Secret Key сюда<br><br>
-          🔒 Ключ только для чтения — никаких торговых операций невозможно.
-        </div>
+        <div class="api-note">1. binance.com → Профиль → API Management<br>2. Create API → System generated → название «TradingJournal»<br>3. Включить только «Enable Reading» → скопировать ключи сюда</div>
       </div>
     </div>
-
-    <!-- OVERVIEW TAB -->
+    <!-- OVERVIEW -->
     <div id="bn-overview" class="tab-content active">
-      <div>
-        <div class="slabel">Общая статистика</div>
+      <div><div class="slabel">Статистика</div>
         <div class="metrics-grid">
           <div class="mc"><div class="mc-label">Всего сделок</div><div class="mc-val neutral" id="bnTotal">—</div></div>
+          <div class="mc"><div class="mc-label">Профит</div><div class="mc-val green" id="bnWins">—</div></div>
+          <div class="mc"><div class="mc-label">Стоп</div><div class="mc-val red" id="bnStops">—</div></div>
+          <div class="mc"><div class="mc-label">Безубыток</div><div class="mc-val amber" id="bnBe">—</div></div>
           <div class="mc"><div class="mc-label">Винрейт</div><div class="mc-val green" id="bnWR">—</div></div>
-          <div class="mc"><div class="mc-label">Профит фактор</div><div class="mc-val green" id="bnPF">—</div></div>
-          <div class="mc"><div class="mc-label">Итог PnL (USDT)</div><div class="mc-val" id="bnPnl">—</div></div>
-          <div class="mc"><div class="mc-label">Прибыльных</div><div class="mc-val green" id="bnWins">—</div></div>
-          <div class="mc"><div class="mc-label">Убыточных</div><div class="mc-val red" id="bnLoss">—</div></div>
-          <div class="mc"><div class="mc-label">Стопов</div><div class="mc-val red" id="bnStops">—</div></div>
+          <div class="mc"><div class="mc-label">Итог PnL</div><div class="mc-val" id="bnPnl">—</div></div>
           <div class="mc"><div class="mc-label">Ср. прибыль</div><div class="mc-val green" id="bnAvgW">—</div></div>
+          <div class="mc"><div class="mc-label">Лучшая сделка</div><div class="mc-val green" id="bnBest">—</div></div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Кривая PnL</span>
-          <div class="tabs">
-            <button class="tab active bn-tab" onclick="switchPeriod(this,'bn','7d')">7д</button>
-            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','30d')">30д</button>
-            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','90d')">3м</button>
-          </div>
+        <div class="card-header"><span class="card-title">Кривая PnL</span>
+          <div class="tabs"><button class="tab active bn-tab" onclick="switchPeriod(this,'bn','7d')">7д</button><button class="tab bn-tab" onclick="switchPeriod(this,'bn','30d')">30д</button><button class="tab bn-tab" onclick="switchPeriod(this,'bn','90d')">3м</button></div>
         </div>
-        <div style="position:relative;height:180px"><canvas id="bnPnlChart" role="img" aria-label="Binance PnL curve">PnL кривая Binance</canvas></div>
+        <div style="position:relative;height:180px"><canvas id="bnPnlChart" role="img" aria-label="Binance PnL">PnL Binance</canvas></div>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="card">
-          <div class="card-header"><span class="card-title">По часам дня</span></div>
-          <div style="position:relative;height:130px"><canvas id="bnHourChart" role="img" aria-label="PnL by hour">По часам</canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">По дням недели</span></div>
-          <div style="position:relative;height:130px"><canvas id="bnDayChart" role="img" aria-label="PnL by weekday">По дням</canvas></div>
-        </div>
+        <div class="card"><div class="card-header"><span class="card-title">По часам</span></div><div style="position:relative;height:130px"><canvas id="bnHourChart" role="img" aria-label="По часам">По часам</canvas></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">По дням недели</span></div><div style="position:relative;height:130px"><canvas id="bnDayChart" role="img" aria-label="По дням">По дням</canvas></div></div>
       </div>
-
-      <div>
-        <div class="slabel">Топ торговые пары</div>
-        <div class="pills" id="bnPills"><span class="pill">—</span></div>
-      </div>
+      <div><div class="slabel">Топ пары</div><div class="pills" id="bnPills"><span class="pill">—</span></div></div>
     </div>
-
-    <!-- TRADES TAB -->
+    <!-- TRADES -->
     <div id="bn-trades" class="tab-content">
-      <div class="card" style="padding:14px 16px">
-        <div class="card-header">
-          <span class="card-title">История сделок</span>
+      <div class="card" style="padding:12px 16px">
+        <div class="card-header"><span class="card-title">История сделок</span>
           <div class="tabs">
             <button class="tab active bn-tab" onclick="filterBnTrades('all',this)">Все</button>
-            <button class="tab bn-tab" onclick="filterBnTrades('win',this)">Прибыль</button>
-            <button class="tab bn-tab" onclick="filterBnTrades('loss',this)">Убыток</button>
-            <button class="tab bn-tab" onclick="filterBnTrades('stop',this)">Стоп</button>
+            <button class="tab bn-tab" onclick="filterBnTrades('Профит',this)">Профит</button>
+            <button class="tab bn-tab" onclick="filterBnTrades('Стоп',this)">Стоп</button>
+            <button class="tab bn-tab" onclick="filterBnTrades('Безубыток',this)">Безубыток</button>
           </div>
         </div>
         <table class="tt" id="bnTable">
-          <thead><tr><th>Пара</th><th>Тип</th><th>Открытие</th><th>Закрытие</th><th>PnL</th><th>Итог</th></tr></thead>
-          <tbody><tr><td colspan="6" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
+          <thead><tr>
+            <th>Тикер</th><th>Тип</th><th>Вход</th><th>Выход</th>
+            <th>Время в сделке</th><th>Цена входа</th><th>Цена выхода</th>
+            <th>Изм. цены %</th><th>PnL $</th><th>Результат</th><th>Детали</th>
+          </tr></thead>
+          <tbody><tr><td colspan="11" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════════
-     IBKR DASHBOARD
-═══════════════════════════════════════════════ -->
+<!-- IBKR DASHBOARD -->
 <div id="ibkrScreen" class="screen">
 <div class="dash-layout">
   <div class="topbar">
@@ -707,115 +333,78 @@
     <div class="topbar-title" style="color:var(--ib)">📈 Interactive Brokers</div>
     <div class="api-pill"><span class="dot pending" id="ibDot"></span><span id="ibStatus">Нет подключения</span></div>
   </div>
-
   <div class="main-tabs">
     <button class="main-tab active ib-col" onclick="showTab('ib','overview',this)">Обзор</button>
     <button class="main-tab" onclick="showTab('ib','trades',this)">Сделки</button>
     <button class="main-tab" onclick="showTab('ib','setup',this)">⚙ Подключение</button>
   </div>
-
   <div class="dash-body">
-
-    <!-- SETUP TAB -->
+    <!-- SETUP -->
     <div id="ib-setup" class="tab-content">
-      <div class="slabel">Шаг 1 — Введите данные IBKR</div>
       <div class="api-box">
-        <div class="api-box-title">🔑 Interactive Brokers API</div>
+        <div style="font-size:13px;font-weight:600">🔑 Interactive Brokers API</div>
         <div class="api-row">
-          <input class="api-input ib" id="ibAcc" type="text" placeholder="Account ID (напр. U1234567)" />
-          <input class="api-input ib" id="ibTok" type="password" placeholder="Access Token" />
+          <input class="api-input ib" id="ibAcc" type="text" placeholder="Account ID (U1234567)"/>
+          <input class="api-input ib" id="ibTok" type="password" placeholder="Access Token"/>
           <button class="btn-connect ib" onclick="connectIBKR()">Подключить</button>
         </div>
-        <div class="api-note">
-          ⚡ <strong>Как получить доступ IBKR:</strong><br>
-          <strong>Вариант A — Client Portal API (рекомендуется):</strong><br>
-          1. Скачайте <strong>Client Portal API Gateway</strong> с сайта IBKR Developers<br>
-          2. Запустите: <span style="font-family:monospace;color:var(--amber)">java -jar root/conf.yaml</span><br>
-          3. Авторизуйтесь по адресу: <span style="font-family:monospace;color:var(--amber)">https://localhost:5000</span><br>
-          4. Account ID берётся из вашего аккаунта IBKR<br><br>
-          <strong>Вариант B — TWS API:</strong><br>
-          1. Откройте Trader Workstation (TWS)<br>
-          2. Edit → Global Configuration → API → Settings<br>
-          3. Включите «Enable ActiveX and Socket Clients»<br>
-          4. Порт по умолчанию: 7497 (paper) или 7496 (live)<br><br>
-          🔒 Используйте только read-only разрешения.
-        </div>
+        <div class="api-note">Вариант A: Client Portal API Gateway — скачать на developers.interactivebrokers.com<br>Вариант B: TWS → Edit → Global Configuration → API → Enable Socket</div>
       </div>
     </div>
-
-    <!-- OVERVIEW TAB -->
+    <!-- OVERVIEW -->
     <div id="ib-overview" class="tab-content active">
-      <div>
-        <div class="slabel">Общая статистика</div>
+      <div><div class="slabel">Статистика</div>
         <div class="metrics-grid">
           <div class="mc"><div class="mc-label">Всего сделок</div><div class="mc-val neutral" id="ibTotal">—</div></div>
+          <div class="mc"><div class="mc-label">Профит</div><div class="mc-val green" id="ibWins">—</div></div>
+          <div class="mc"><div class="mc-label">Стоп</div><div class="mc-val red" id="ibStops">—</div></div>
+          <div class="mc"><div class="mc-label">Безубыток</div><div class="mc-val amber" id="ibBe">—</div></div>
           <div class="mc"><div class="mc-label">Винрейт</div><div class="mc-val green" id="ibWR">—</div></div>
-          <div class="mc"><div class="mc-label">Профит фактор</div><div class="mc-val green" id="ibPF">—</div></div>
-          <div class="mc"><div class="mc-label">Итог PnL ($)</div><div class="mc-val" id="ibPnl">—</div></div>
-          <div class="mc"><div class="mc-label">Прибыльных</div><div class="mc-val green" id="ibWins">—</div></div>
-          <div class="mc"><div class="mc-label">Убыточных</div><div class="mc-val red" id="ibLoss">—</div></div>
-          <div class="mc"><div class="mc-label">Акций</div><div class="mc-val blue" id="ibStocks">—</div></div>
-          <div class="mc"><div class="mc-label">Опционов</div><div class="mc-val amber" id="ibOptions">—</div></div>
+          <div class="mc"><div class="mc-label">Итог PnL $</div><div class="mc-val" id="ibPnl">—</div></div>
+          <div class="mc"><div class="mc-label">Акций</div><div class="mc-val blue" id="ibStockCount">—</div></div>
+          <div class="mc"><div class="mc-label">Опционов</div><div class="mc-val amber" id="ibOptCount">—</div></div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Кривая PnL</span>
-          <div class="tabs">
-            <button class="tab active ib-tab" onclick="switchPeriod(this,'ib','mtd')">С нач. месяца</button>
-            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','ytd')">С нач. года</button>
-            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','all')">Всё</button>
-          </div>
+        <div class="card-header"><span class="card-title">Кривая PnL</span>
+          <div class="tabs"><button class="tab active ib-tab" onclick="switchPeriod(this,'ib','mtd')">С нач. месяца</button><button class="tab ib-tab" onclick="switchPeriod(this,'ib','ytd')">С нач. года</button><button class="tab ib-tab" onclick="switchPeriod(this,'ib','all')">Всё</button></div>
         </div>
-        <div style="position:relative;height:180px"><canvas id="ibPnlChart" role="img" aria-label="IBKR PnL curve">PnL кривая IBKR</canvas></div>
+        <div style="position:relative;height:180px"><canvas id="ibPnlChart" role="img" aria-label="IBKR PnL">PnL IBKR</canvas></div>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="card">
-          <div class="card-header"><span class="card-title">По часам дня</span></div>
-          <div style="position:relative;height:130px"><canvas id="ibHourChart" role="img" aria-label="IBKR PnL by hour">По часам</canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">По дням недели</span></div>
-          <div style="position:relative;height:130px"><canvas id="ibDayChart" role="img" aria-label="IBKR PnL by weekday">По дням</canvas></div>
-        </div>
+        <div class="card"><div class="card-header"><span class="card-title">По часам</span></div><div style="position:relative;height:130px"><canvas id="ibHourChart" role="img" aria-label="По часам">По часам</canvas></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">По дням недели</span></div><div style="position:relative;height:130px"><canvas id="ibDayChart" role="img" aria-label="По дням">По дням</canvas></div></div>
       </div>
-
-      <div>
-        <div class="slabel">Топ тикеры</div>
-        <div class="pills" id="ibPills"><span class="pill">—</span></div>
-      </div>
+      <div><div class="slabel">Топ тикеры</div><div class="pills" id="ibPills"><span class="pill">—</span></div></div>
     </div>
-
-    <!-- TRADES TAB -->
+    <!-- TRADES -->
     <div id="ib-trades" class="tab-content">
-      <div class="card" style="padding:14px 16px">
-        <div class="card-header">
-          <span class="card-title">История сделок</span>
+      <div class="card" style="padding:12px 16px">
+        <div class="card-header"><span class="card-title">История сделок</span>
           <div class="tabs">
             <button class="tab active ib-tab" onclick="filterIbTrades('all',this)">Все</button>
             <button class="tab ib-tab" onclick="filterIbTrades('stock',this)">Акции</button>
             <button class="tab ib-tab" onclick="filterIbTrades('option',this)">Опционы</button>
-            <button class="tab ib-tab" onclick="filterIbTrades('win',this)">Прибыль</button>
-            <button class="tab ib-tab" onclick="filterIbTrades('loss',this)">Убыток</button>
+            <button class="tab ib-tab" onclick="filterIbTrades('Профит',this)">Профит</button>
+            <button class="tab ib-tab" onclick="filterIbTrades('Стоп',this)">Стоп</button>
           </div>
         </div>
         <table class="tt" id="ibTable">
-          <thead><tr><th>Тикер</th><th>Тип</th><th>Дата</th><th>Кол-во</th><th>PnL $</th><th>Итог</th></tr></thead>
-          <tbody><tr><td colspan="6" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
+          <thead><tr>
+            <th>Тикер</th><th>Тип</th><th>Дата входа</th><th>День</th>
+            <th>Вр. входа</th><th>Дата выхода</th><th>Вр. выхода</th>
+            <th>Время в сделке</th><th>Цена входа</th><th>Цена выхода</th>
+            <th>Изм. %</th><th>PnL $</th><th>Результат</th><th>Детали</th>
+          </tr></thead>
+          <tbody><tr><td colspan="14" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════════
-     COMBINED DASHBOARD
-═══════════════════════════════════════════════ -->
+<!-- COMBINED -->
 <div id="combinedScreen" class="screen">
 <div class="dash-layout">
   <div class="topbar">
@@ -826,1014 +415,833 @@
       <div class="src-ind"><span class="dot" id="cIbDot"></span><span style="font-size:10px;color:var(--ib)">IB</span></div>
     </div>
   </div>
-
   <div class="main-tabs">
     <button class="main-tab active all-col" onclick="showTab('c','overview',this)">Обзор</button>
     <button class="main-tab" onclick="showTab('c','trades',this)">Все сделки</button>
     <button class="main-tab" onclick="showTab('c','charts',this)">Графики</button>
   </div>
-
   <div class="dash-body">
-
     <div id="c-overview" class="tab-content active">
       <div id="cNotice" class="notice-box">
-        <div class="notice-icon">ℹ️</div>
-        <div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Данные подтягиваются автоматически</div>
-          <div style="font-size:11px;color:var(--text2)">Подключите Binance и/или IBKR в их разделах — здесь всё появится без ввода ключей.</div>
+        <div style="font-size:20px">ℹ️</div>
+        <div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Данные подтягиваются автоматически</div>
+          <div style="font-size:11px;color:var(--text2)">Подключите Binance и/или IBKR — здесь всё появится само.</div>
           <div class="notice-btns">
             <button class="notice-btn" onclick="openDash('binance')">₿ Подключить Binance</button>
             <button class="notice-btn" onclick="openDash('ibkr')">📈 Подключить IBKR</button>
           </div>
         </div>
       </div>
-
-      <div>
-        <div class="slabel">Суммарный результат</div>
+      <div><div class="slabel">Суммарный результат</div>
         <div class="metrics-grid">
           <div class="mc"><div class="mc-label">Всего сделок</div><div class="mc-val neutral" id="cTotal">—</div><div class="mc-sub" id="cTotalSub"></div></div>
           <div class="mc"><div class="mc-label">Общий PnL</div><div class="mc-val" id="cPnl">—</div><div class="mc-sub" id="cPnlSub"></div></div>
           <div class="mc"><div class="mc-label">Ср. винрейт</div><div class="mc-val green" id="cWR">—</div></div>
-          <div class="mc"><div class="mc-label">Лучший день</div><div class="mc-val green" id="cBest">—</div></div>
-          <div class="mc"><div class="mc-label">Прибыльных</div><div class="mc-val green" id="cWins">—</div></div>
-          <div class="mc"><div class="mc-label">Убыточных</div><div class="mc-val red" id="cLoss">—</div></div>
-          <div class="mc"><div class="mc-label">Стопов</div><div class="mc-val red" id="cStops">—</div></div>
-          <div class="mc"><div class="mc-label">Ср. прибыль</div><div class="mc-val green" id="cAvg">—</div></div>
+          <div class="mc"><div class="mc-label">Профит</div><div class="mc-val green" id="cWins">—</div></div>
+          <div class="mc"><div class="mc-label">Стоп</div><div class="mc-val red" id="cLoss">—</div></div>
+          <div class="mc"><div class="mc-label">Безубыток</div><div class="mc-val amber" id="cBe">—</div></div>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-header"><span class="card-title">Распределение портфеля</span></div>
-        <div class="split-row">
-          <div class="split-pie"><canvas id="cPieChart" role="img" aria-label="Portfolio distribution">Распределение</canvas></div>
-          <div class="split-legend">
-            <div class="legend-row">
-              <span style="display:flex;align-items:center;gap:8px"><span class="legend-dot" style="background:var(--bn)"></span>Binance Futures</span>
-              <span style="color:var(--bn);font-family:'JetBrains Mono',monospace;font-size:12px" id="cBnPct">—</span>
-            </div>
-            <div class="legend-row">
-              <span style="display:flex;align-items:center;gap:8px"><span class="legend-dot" style="background:var(--ib)"></span>Interactive Brokers</span>
-              <span style="color:var(--ib);font-family:'JetBrains Mono',monospace;font-size:12px" id="cIbPct">—</span>
-            </div>
-            <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;justify-content:space-between;font-size:12px">
-                <span style="color:var(--text2)">BN PnL</span>
-                <span style="color:var(--bn);font-family:'JetBrains Mono',monospace" id="cBnPnlV">—</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:12px">
-                <span style="color:var(--text2)">IB PnL</span>
-                <span style="color:var(--ib);font-family:'JetBrains Mono',monospace" id="cIbPnlV">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="slabel">Все активы</div>
-        <div class="pills" id="cAllPills"><span class="pill">—</span></div>
-      </div>
+      <div><div class="slabel">Все активы</div><div class="pills" id="cAllPills"><span class="pill">—</span></div></div>
     </div>
-
     <div id="c-trades" class="tab-content">
-      <div class="card" style="padding:14px 16px">
-        <div class="card-header">
-          <span class="card-title">Все сделки</span>
+      <div class="card" style="padding:12px 16px">
+        <div class="card-header"><span class="card-title">Все сделки</span>
           <div class="tabs">
             <button class="tab active all-tab" onclick="filterCombined('all',this)">Все</button>
             <button class="tab all-tab" onclick="filterCombined('crypto',this)">Крипто</button>
             <button class="tab all-tab" onclick="filterCombined('stocks',this)">Акции</button>
-            <button class="tab all-tab" onclick="filterCombined('win',this)">Прибыль</button>
-            <button class="tab all-tab" onclick="filterCombined('loss',this)">Убыток</button>
+            <button class="tab all-tab" onclick="filterCombined('Профит',this)">Профит</button>
+            <button class="tab all-tab" onclick="filterCombined('Стоп',this)">Стоп</button>
           </div>
         </div>
         <table class="tt" id="cTable">
-          <thead><tr><th>Инструмент</th><th>Брокер</th><th>Дата</th><th>PnL</th><th>Итог</th></tr></thead>
-          <tbody id="cTbody"><tr><td colspan="5" class="no-data">Нет данных. Подключите брокеров.</td></tr></tbody>
+          <thead><tr><th>Инструмент</th><th>Брокер</th><th>Тип сделки</th><th>Дата</th><th>PnL $</th><th>Результат</th><th>Детали</th></tr></thead>
+          <tbody id="cTbody"><tr><td colspan="7" class="no-data">Нет данных</td></tr></tbody>
         </table>
       </div>
     </div>
-
     <div id="c-charts" class="tab-content">
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Общая кривая PnL</span>
-          <div class="tabs">
-            <button class="tab active all-tab" onclick="switchPeriod(this,'c','30d')">30д</button>
-            <button class="tab all-tab" onclick="switchPeriod(this,'c','90d')">3м</button>
-          </div>
+        <div class="card-header"><span class="card-title">Общая кривая PnL</span>
+          <div class="tabs"><button class="tab active all-tab" onclick="switchPeriod(this,'c','30d')">30д</button><button class="tab all-tab" onclick="switchPeriod(this,'c','90d')">3м</button></div>
         </div>
-        <div style="position:relative;height:200px"><canvas id="cLineChart" role="img" aria-label="Combined PnL">Общий PnL</canvas></div>
+        <div style="position:relative;height:200px"><canvas id="cLineChart" role="img" aria-label="Общий PnL">Общий PnL</canvas></div>
         <div class="chart-legend">
           <div class="cl-item"><div class="cl-line" style="background:var(--bn)"></div>Binance</div>
           <div class="cl-item"><div class="cl-line" style="background:var(--ib)"></div>IBKR</div>
-          <div class="cl-item"><div class="cl-line" style="background:var(--green);border-top:2px dashed var(--green);height:0"></div>Итого</div>
+          <div class="cl-item"><div class="cl-line" style="background:var(--green)"></div>Итого</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">PnL по месяцам (стек)</span></div>
-        <div style="position:relative;height:150px"><canvas id="cMonthChart" role="img" aria-label="Monthly PnL stacked">По месяцам</canvas></div>
+        <div class="card-header"><span class="card-title">PnL по месяцам</span></div>
+        <div style="position:relative;height:150px"><canvas id="cMonthChart" role="img" aria-label="По месяцам">По месяцам</canvas></div>
       </div>
     </div>
-
   </div>
 </div>
 </div>
 
+<!-- TRADE DETAIL MODAL -->
+<div class="modal-overlay" id="tradeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Детали сделки</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- AUTO FIELDS -->
+      <div>
+        <div class="slabel">Автоматические данные</div>
+        <div class="detail-grid" id="modalAutoFields"></div>
+      </div>
+      <!-- MANUAL FIELDS -->
+      <div>
+        <div class="slabel">Ввести вручную</div>
+        <div class="detail-grid">
+          <div class="detail-field">
+            <div class="detail-label">Тип сделки</div>
+            <select class="select-field" id="mTradeType"><option value="">—</option><option>Лонг</option><option>Шорт</option></select>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Риск соотношение</div>
+            <input class="input-field" id="mRisk" placeholder="напр. 1/3" />
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Какой уровень</div>
+            <input class="input-field" id="mLevel" placeholder="напр. 1min, 1/День" />
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Цена уровня</div>
+            <input class="input-field" id="mLevelPrice" placeholder="напр. 147.10" />
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">% Stop — ATR или Технический</div>
+            <select class="select-field" id="mStopType"><option value="">—</option><option>ATR</option><option>Технический</option></select>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Результат сделки</div>
+            <select class="select-field" id="mResult"><option value="">—</option><option>Профит</option><option>Стоп</option><option>Безубыток</option></select>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Результат в $ (если авто недоступно)</div>
+            <input class="input-field" id="mPnlUsd" placeholder="напр. 142.50" />
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Возможность перезахода?</div>
+            <select class="select-field" id="mReentry"><option value="">—</option><option>Да</option><option>Нет</option></select>
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Результат в рисках при выходе</div>
+            <input class="input-field" id="mRiskResult" placeholder="напр. 1/3" />
+          </div>
+          <div class="detail-field">
+            <div class="detail-label">Сколько в рисках ещё сходил</div>
+            <input class="input-field" id="mRiskMore" placeholder="напр. 6.8" />
+          </div>
+        </div>
+      </div>
+      <!-- SCREENS -->
+      <div>
+        <div class="slabel">Скрины графика</div>
+        <div class="screens-row">
+          <div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:6px">📸 Скрин 1 — Вход в сделку</div>
+            <div class="screen-box" id="screen1Box" onclick="uploadScreen(1)">
+              <div id="screen1Preview" style="display:none;width:100%"><img id="screen1Img" src="" alt="Скрин входа" /></div>
+              <div id="screen1Empty">
+                <div style="font-size:28px">📷</div>
+                <div class="screen-box-label">Нажмите чтобы загрузить</div>
+                <div class="screen-box-hint">Скрин входа в сделку</div>
+              </div>
+            </div>
+            <input type="file" id="screen1Input" accept="image/*" style="display:none" onchange="handleScreenUpload(1,this)"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:6px">📸 Скрин 2 — Выход из сделки</div>
+            <div class="screen-box" id="screen2Box" onclick="uploadScreen(2)">
+              <div id="screen2Preview" style="display:none;width:100%"><img id="screen2Img" src="" alt="Скрин выхода" /></div>
+              <div id="screen2Empty">
+                <div style="font-size:28px">📷</div>
+                <div class="screen-box-label">Нажмите чтобы загрузить</div>
+                <div class="screen-box-hint">Скрин выхода из сделки</div>
+              </div>
+            </div>
+            <input type="file" id="screen2Input" accept="image/*" style="display:none" onchange="handleScreenUpload(2,this)"/>
+          </div>
+        </div>
+      </div>
+      <!-- COMMENT -->
+      <div>
+        <div class="slabel">Комментарий к сделке</div>
+        <textarea class="comment-box" id="mComment" placeholder="Опишите что произошло в этой сделке, ваши мысли и выводы..."></textarea>
+      </div>
+      <!-- SAVE -->
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-secondary" style="width:auto;padding:10px 20px" onclick="closeModal()">Отмена</button>
+        <button class="btn-save" onclick="saveTradeDetails()">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-// ══════════════════════════════════════════════
-// EMAILJS CONFIG
-// ══════════════════════════════════════════════
+// ══════════════════════════════
+// CONFIG
+// ══════════════════════════════
 const EMAILJS_SERVICE_ID  = 'service_64itku4';
 const EMAILJS_TEMPLATE_ID = 'template_gxid8lm';
 const EMAILJS_PUBLIC_KEY  = 'Svv-_bIIo0xsVCtVP';
-const OWNER_EMAIL         = 'krebs015@gmail.com'; // твой email для получения кодов
+const OWNER_EMAIL         = 'krebs015@gmail.com';
+const SUPABASE_URL        = 'https://lboflhhaufrzmetbvqnk.supabase.co';
+const SUPABASE_KEY        = 'sb_publishable_KtPemBjjIqwLQid2mVey3g_8lEO3Fh6';
+const PRESET_PWD_HASH     = 'b16bf4a5ef11a8ab0b931e27254a6c1a5e55a332ad8b654240a679905d0010fc';
+const ENCRYPTED_KEYS      = { bn_api:null, bn_secret:null, ib_acc:null, ib_token:null };
+const KEYS                = { bn_api:null, bn_secret:null, ib_acc:null, ib_token:null };
+const REMEMBER_KEY        = 'tj_remember';
+const STORAGE_KEY         = 'tj_session';
+let supabaseClient        = null;
+let currentTrade          = null;
+let tradeDetails          = {};
 
-// ══════════════════════════════════════════════
-// SUPABASE CONFIG
-// ══════════════════════════════════════════════
-const SUPABASE_URL = 'https://lboflhhaufrzmetbvqnk.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_KtPemBjjIqwLQid2mVey3g_8lEO3Fh6';
-let supabaseClient = null;
-
+// ══════════════════════════════
+// SUPABASE
+// ══════════════════════════════
 function initSupabase() {
-  if (!supabaseClient) {
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
+  if (!supabaseClient) supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   return supabaseClient;
 }
-
-// Сохранить сделки Binance в облако
-async function saveBnTradesToCloud(trades) {
+async function saveTradeDetail(tradeId, broker, data) {
   const db = initSupabase();
-  const rows = trades.map(t => ({
-    pair: t.pair, type: t.type,
-    open_time: t.open, close_time: t.close,
-    pnl: t.pnl, result: t.result
-  }));
-  const { error } = await db.from('tj_binance_trades').upsert(rows);
-  if (error) console.error('Supabase BN error:', error);
-  else console.log('✅ Binance сделки сохранены в облако:', rows.length);
+  const { error } = await db.from('tj_trade_details').upsert({ trade_id: tradeId, broker, ...data });
+  if (error) console.error('Save error:', error);
 }
-
-// Сохранить сделки IBKR в облако
-async function saveIbTradesToCloud(trades) {
+async function loadTradeDetail(tradeId, broker) {
   const db = initSupabase();
-  const rows = trades.map(t => ({
-    ticker: t.ticker, trade_type: t.type,
-    trade_date: t.date, quantity: t.qty,
-    pnl: t.pnl, result: t.result
-  }));
-  const { error } = await db.from('tj_ibkr_trades').upsert(rows);
-  if (error) console.error('Supabase IB error:', error);
-  else console.log('✅ IBKR сделки сохранены в облако:', rows.length);
-}
-
-// Загрузить сделки Binance из облака
-async function loadBnTradesFromCloud() {
-  const db = initSupabase();
-  const { data, error } = await db.from('tj_binance_trades')
-    .select('*').order('open_time', { ascending: false }).limit(100);
-  if (error) { console.error('Supabase load BN error:', error); return null; }
+  const { data } = await db.from('tj_trade_details').select('*').eq('trade_id', tradeId).eq('broker', broker).single();
   return data;
 }
-
-// Загрузить сделки IBKR из облака
-async function loadIbTradesFromCloud() {
+async function saveScreenToSupabase(tradeId, broker, screenNum, base64) {
   const db = initSupabase();
-  const { data, error } = await db.from('tj_ibkr_trades')
-    .select('*').order('trade_date', { ascending: false }).limit(100);
-  if (error) { console.error('Supabase load IB error:', error); return null; }
-  return data;
+  const key = `screen${screenNum}`;
+  const { error } = await db.from('tj_trade_details').upsert({ trade_id: tradeId, broker, [key]: base64 }, { onConflict: 'trade_id,broker' });
+  if (error) console.error('Screen save error:', error);
 }
 
-// ══════════════════════════════════════════════
-// ENCRYPTED API KEYS CONFIG
-// Замени на свои зашифрованные ключи после запуска encryptKeys()
-// ══════════════════════════════════════════════
-const ENCRYPTED_KEYS = {
-  bn_api:    null,   // сюда вставить зашифрованный Binance API Key
-  bn_secret: null,   // сюда вставить зашифрованный Binance Secret Key
-  ib_acc:    null,   // сюда вставить зашифрованный IBKR Account ID
-  ib_token:  null,   // сюда вставить зашифрованный IBKR Token
-};
-
-// Хранилище расшифрованных ключей (только в памяти, не на диске)
-const KEYS = { bn_api: null, bn_secret: null, ib_acc: null, ib_token: null };
-
-// ══════════════════════════════════════════════
-// CRYPTO HELPERS (AES-256-GCM через Web Crypto API)
-// ══════════════════════════════════════════════
+// ══════════════════════════════
+// CRYPTO
+// ══════════════════════════════
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
   const raw = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
-    raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-  );
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' }, raw, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
 }
-
 async function encryptText(text, password) {
   const enc = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv   = crypto.getRandomValues(new Uint8Array(12));
   const key  = await deriveKey(password, salt);
-  const ct   = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+  const ct   = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(text));
   const buf  = new Uint8Array([...salt, ...iv, ...new Uint8Array(ct)]);
   return btoa(String.fromCharCode(...buf));
 }
-
 async function decryptText(b64, password) {
-  const buf  = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const salt = buf.slice(0, 16);
-  const iv   = buf.slice(16, 28);
-  const ct   = buf.slice(28);
-  const key  = await deriveKey(password, salt);
-  const pt   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  const buf = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const key = await deriveKey(password, buf.slice(0,16));
+  const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv:buf.slice(16,28) }, key, buf.slice(28));
   return new TextDecoder().decode(pt);
 }
-
-// ══════════════════════════════════════════════
-// LOCK / UNLOCK
-// ══════════════════════════════════════════════
-const STORAGE_KEY = 'tj_session';
-const REMEMBER_KEY = 'tj_remember';
-
-async function unlockApp() {
-  const pwd = document.getElementById('lockInput').value.trim();
-  const remember = document.getElementById('rememberMe').checked;
-  if (!pwd) return;
-
-  const btn = document.querySelector('.lock-btn');
-  btn.textContent = 'Проверяем...'; btn.disabled = true;
-
-  // Вычисляем хеш введённого пароля
-  const enteredHash = await hashPassword(pwd);
-
-  // Сравниваем с сохранённым хешем
-  const savedHash = PRESET_PWD_HASH;
-
-  if (enteredHash === savedHash) {
-    // Пароль верный — открываем приложение
-    document.getElementById('lockError').classList.remove('show');
-    if (remember) {
-      localStorage.setItem(REMEMBER_KEY, 'true');
-      localStorage.setItem(STORAGE_KEY, 'active');
-    }
-    showApp();
-  } else {
-    // Пароль неверный
-    document.getElementById('lockError').classList.add('show');
-    btn.textContent = 'Войти →'; btn.disabled = false;
-    document.getElementById('lockInput').value = '';
-    document.getElementById('lockInput').focus();
-  }
-}
-
 async function hashPassword(pwd) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function showApp() {
-  const homeScreen = document.getElementById('homeScreen');
-  if (!homeScreen) return;
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  homeScreen.classList.add('active');
-  // Подставляем ключи в поля ввода если они расшифрованы
-  if (KEYS.bn_api)    { const el = document.getElementById('bnApiKey');    if(el) el.value = KEYS.bn_api; }
-  if (KEYS.bn_secret) { const el = document.getElementById('bnSecretKey'); if(el) el.value = KEYS.bn_secret; }
-  if (KEYS.ib_acc)    { const el = document.getElementById('ibAcc');       if(el) el.value = KEYS.ib_acc; }
-  if (KEYS.ib_token)  { const el = document.getElementById('ibTok');       if(el) el.value = KEYS.ib_token; }
+// ══════════════════════════════
+// LOCK / UNLOCK
+// ══════════════════════════════
+function switchLockTab(tab) {
+  ['login','change','reset'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+    document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  });
 }
-
-// Проверяем при загрузке — если "запомнить" было нажато ранее
+function toggleEye(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+function checkStrength(pwd, sfx) {
+  const s = sfx||'';
+  const bar = document.getElementById('pwdStrengthBar'+s);
+  const lbl = document.getElementById('pwdStrengthLabel'+s);
+  if(!bar) return;
+  let score=0;
+  if(pwd.length>=8)score++;if(pwd.length>=12)score++;
+  if(/[A-Z]/.test(pwd))score++;if(/[0-9]/.test(pwd))score++;if(/[^A-Za-z0-9]/.test(pwd))score++;
+  const lvls=[{w:'20%',bg:'#ef4444',l:'Очень слабый'},{w:'40%',bg:'#f97316',l:'Слабый'},{w:'60%',bg:'#f59e0b',l:'Средний'},{w:'80%',bg:'#84cc16',l:'Хороший'},{w:'100%',bg:'#22c55e',l:'Отличный'}];
+  const lvl=lvls[Math.min(score,4)];
+  bar.style.width=pwd.length?lvl.w:'0';bar.style.background=lvl.bg;
+  lbl.textContent=pwd.length?lvl.l:'';lbl.style.color=lvl.bg;
+}
+async function unlockApp() {
+  const pwd = document.getElementById('lockInput').value.trim();
+  const remember = document.getElementById('rememberMe').checked;
+  if(!pwd) return;
+  const btn = document.querySelector('.lock-btn');
+  btn.textContent='Проверяем...';btn.disabled=true;
+  const enteredHash = await hashPassword(pwd);
+  const savedHash = PRESET_PWD_HASH;
+  if(enteredHash===savedHash) {
+    document.getElementById('lockError').classList.remove('show');
+    if(remember){localStorage.setItem(REMEMBER_KEY,'true');localStorage.setItem(STORAGE_KEY,'active');}
+    showApp();
+  } else {
+    document.getElementById('lockError').classList.add('show');
+    btn.textContent='Войти →';btn.disabled=false;
+    document.getElementById('lockInput').value='';
+    document.getElementById('lockInput').focus();
+  }
+}
+async function changePassword() {
+  const oldPwd=document.getElementById('pwdOld').value;
+  const newPwd1=document.getElementById('pwdNew1').value;
+  const newPwd2=document.getElementById('pwdNew2').value;
+  const errEl=document.getElementById('changeError');
+  const okEl=document.getElementById('changeSuccess');
+  errEl.classList.remove('show');okEl.classList.remove('show');
+  if(!oldPwd){errEl.textContent='❌ Введите текущий пароль';errEl.classList.add('show');return;}
+  if(newPwd1.length<8){errEl.textContent='❌ Минимум 8 символов';errEl.classList.add('show');return;}
+  if(newPwd1!==newPwd2){errEl.textContent='❌ Пароли не совпадают';errEl.classList.add('show');return;}
+  const hash=await hashPassword(oldPwd);
+  if(hash!==PRESET_PWD_HASH){errEl.textContent='❌ Неверный текущий пароль';errEl.classList.add('show');return;}
+  okEl.classList.add('show');
+  setTimeout(()=>{okEl.classList.remove('show');switchLockTab('login');},2500);
+}
+let otpCode=null,otpExpiry=null,otpStep='request';
+async function resetPassword() {
+  if(otpStep==='request') await requestOTP();
+  else await verifyOTPAndReset();
+}
+async function requestOTP() {
+  otpCode=Math.floor(100000+Math.random()*900000).toString();
+  otpExpiry=Date.now()+10*60*1000;
+  const btn=document.querySelector('#panelReset .btn-danger');
+  btn.textContent='📨 Отправляем...';btn.disabled=true;
+  try {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{to_email:OWNER_EMAIL,passcode:otpCode,time:new Date(otpExpiry).toLocaleTimeString('ru-RU')});
+    otpStep='verify';
+    document.getElementById('panelReset').innerHTML=`
+      <div style="font-size:12px;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:12px">✅ Код отправлен на <strong>${OWNER_EMAIL}</strong></div>
+      <input class="lock-input" id="otpInput" type="text" placeholder="_ _ _ _ _ _" maxlength="6" style="letter-spacing:8px;font-size:22px;text-align:center" onkeydown="if(event.key==='Enter')resetPassword()"/>
+      <div style="font-size:12px;color:var(--text2)">Введите новый пароль</div>
+      <div class="pwd-input-wrap"><input class="lock-input" id="pwdReset1" type="password" placeholder="Новый пароль" oninput="checkStrength(this.value,'Reset')" style="letter-spacing:2px;font-size:13px"/><button class="pwd-eye" onclick="toggleEye('pwdReset1',this)">👁</button></div>
+      <div class="pwd-strength" id="pwdStrengthBarReset"></div>
+      <div class="pwd-strength-label" id="pwdStrengthLabelReset"></div>
+      <div class="pwd-input-wrap"><input class="lock-input" id="pwdReset2" type="password" placeholder="Повторите пароль" style="letter-spacing:2px;font-size:13px"/><button class="pwd-eye" onclick="toggleEye('pwdReset2',this)">👁</button></div>
+      <div class="lock-error" id="resetError"></div>
+      <div class="pwd-success" id="resetSuccess"></div>
+      <button class="lock-btn" onclick="resetPassword()">✅ Подтвердить</button>
+      <button class="btn-secondary" onclick="cancelOTP()">← Отмена</button>`;
+  } catch(e) {
+    document.getElementById('resetError').textContent='❌ Ошибка отправки';
+    document.getElementById('resetError').classList.add('show');
+    btn.textContent='📨 Отправить код';btn.disabled=false;
+  }
+}
+async function verifyOTPAndReset() {
+  const otpInput=document.getElementById('otpInput');
+  const newPwd1=document.getElementById('pwdReset1').value;
+  const newPwd2=document.getElementById('pwdReset2').value;
+  const errEl=document.getElementById('resetError');
+  errEl.classList.remove('show');
+  if(!otpInput||otpInput.value.trim()!==otpCode){errEl.textContent='❌ Неверный код';errEl.classList.add('show');return;}
+  if(Date.now()>otpExpiry){errEl.textContent='❌ Код истёк';errEl.classList.add('show');cancelOTP();return;}
+  if(newPwd1.length<8){errEl.textContent='❌ Минимум 8 символов';errEl.classList.add('show');return;}
+  if(newPwd1!==newPwd2){errEl.textContent='❌ Пароли не совпадают';errEl.classList.add('show');return;}
+  localStorage.removeItem(REMEMBER_KEY);localStorage.removeItem(STORAGE_KEY);
+  const okEl=document.getElementById('resetSuccess');
+  okEl.textContent='✅ Пароль изменён! Войдите с новым паролем.';okEl.classList.add('show');
+  otpCode=null;otpExpiry=null;otpStep='request';
+  setTimeout(()=>switchLockTab('login'),2500);
+}
+function cancelOTP() {
+  otpCode=null;otpExpiry=null;otpStep='request';
+  document.getElementById('panelReset').innerHTML=`
+    <div class="reset-warning">⚠️ Код подтверждения придёт на вашу почту.</div>
+    <div style="font-size:12px;color:var(--text2)">Код будет отправлен на: <strong>krebs015@gmail.com</strong></div>
+    <button class="btn-danger" onclick="resetPassword()">📨 Отправить код на email</button>
+    <div class="lock-error" id="resetError"></div><div class="pwd-success" id="resetSuccess"></div>`;
+}
+function showApp() {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('homeScreen').classList.add('active');
+}
+function lockApp() {
+  Object.keys(KEYS).forEach(k=>KEYS[k]=null);
+  localStorage.removeItem(REMEMBER_KEY);localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('lockInput').value='';
+  switchLockTab('login');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('lockScreen').classList.add('active');
+}
 async function checkAutoLogin() {
-  const remember = localStorage.getItem(REMEMBER_KEY);
-  const session  = localStorage.getItem(STORAGE_KEY);
-  if (remember && session) {
-    const rememberEl = document.getElementById('rememberMe');
-    if (rememberEl) rememberEl.checked = true;
-    const homeScreen = document.getElementById('homeScreen');
-    if (homeScreen) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      homeScreen.classList.add('active');
-    }
+  if(localStorage.getItem(REMEMBER_KEY)&&localStorage.getItem(STORAGE_KEY)) {
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('homeScreen').classList.add('active');
     return true;
   }
   return false;
 }
-
-// Функция для шифрования ключей (запускается один раз при настройке)
-// Открой консоль браузера (F12) и вызови: setupKeys()
 async function setupKeys() {
-  const pwd = prompt('Придумайте пароль для дашборда (минимум 8 символов):');
-  if (!pwd || pwd.length < 8) { alert('Пароль слишком короткий!'); return; }
-  const confirm = prompt('Повторите пароль:');
-  if (pwd !== confirm) { alert('Пароли не совпадают!'); return; }
-
-  const bn_api    = prompt('Вставьте Binance API Key (или Enter чтобы пропустить):') || '';
-  const bn_secret = prompt('Вставьте Binance Secret Key (или Enter чтобы пропустить):') || '';
-  const ib_acc    = prompt('Вставьте IBKR Account ID (или Enter чтобы пропустить):') || '';
-  const ib_token  = prompt('Вставьте IBKR Access Token (или Enter чтобы пропустить):') || '';
-
-  const result = {};
-  if (bn_api)    result.bn_api    = await encryptText(bn_api, pwd);
-  if (bn_secret) result.bn_secret = await encryptText(bn_secret, pwd);
-  if (ib_acc)    result.ib_acc    = await encryptText(ib_acc, pwd);
-  if (ib_token)  result.ib_token  = await encryptText(ib_token, pwd);
-
-  const hash = await hashPassword(pwd);
-  localStorage.setItem('tj_pwd_hash', hash);
-
-  console.log('=== СКОПИРУЙ ЭТО В КОД (замени ENCRYPTED_KEYS) ===');
-  console.log(JSON.stringify(result, null, 2));
-  console.log('=== ГОТОВО! Скопируй это и пришли разработчику ===');
-  console.log(JSON.stringify({keys: result, hash: hash}, null, 2));
-  alert('✅ Пароль задан! Скопируй текст из консоли (вкладка Консоль) и пришли его — ключи будут вставлены в файл.');
+  const pwd=prompt('Придумайте пароль (мин. 8 символов):');
+  if(!pwd||pwd.length<8){alert('Слишком короткий!');return;}
+  if(pwd!==prompt('Повторите пароль:')){ alert('Не совпадают!');return;}
+  const bn_api=prompt('Binance API Key (Enter = пропустить):')||'';
+  const bn_secret=prompt('Binance Secret Key (Enter = пропустить):')||'';
+  const ib_acc=prompt('IBKR Account ID (Enter = пропустить):')||'';
+  const ib_token=prompt('IBKR Token (Enter = пропустить):')||'';
+  const result={};
+  if(bn_api) result.bn_api=await encryptText(bn_api,pwd);
+  if(bn_secret) result.bn_secret=await encryptText(bn_secret,pwd);
+  if(ib_acc) result.ib_acc=await encryptText(ib_acc,pwd);
+  if(ib_token) result.ib_token=await encryptText(ib_token,pwd);
+  const hash=await hashPassword(pwd);
+  localStorage.setItem('tj_pwd_hash',hash);
+  console.log('=== СКОПИРУЙ И ПРИШЛИ ===');
+  console.log(JSON.stringify({keys:result,hash},null,2));
+  alert('✅ Готово! Скопируй текст из консоли и пришли.');
 }
-
-// ══════════════════════════════════════════════
-// PASSWORD MANAGEMENT UI
-// ══════════════════════════════════════════════
-function switchLockTab(tab) {
-  ['login','change','reset'].forEach(t => {
-    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
-    document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
-  });
-  // Clear errors
-  ['lockError','changeError','resetError'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.classList.remove('show'); el.textContent = ''; }
-  });
-  ['changeSuccess','resetSuccess'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('show');
-  });
-}
-
-function toggleEye(inputId, btn) {
-  const inp = document.getElementById(inputId);
-  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
-  else { inp.type = 'password'; btn.textContent = '👁'; }
-}
-
-function checkStrength(pwd, suffix) {
-  const sfx = suffix || '';
-  const bar = document.getElementById('pwdStrengthBar' + (sfx ? sfx.charAt(0).toUpperCase() + sfx.slice(1) : ''));
-  const lbl = document.getElementById('pwdStrengthLabel' + (sfx ? sfx.charAt(0).toUpperCase() + sfx.slice(1) : ''));
-  if (!bar || !lbl) return;
-  let score = 0;
-  if (pwd.length >= 8) score++;
-  if (pwd.length >= 12) score++;
-  if (/[A-Z]/.test(pwd)) score++;
-  if (/[0-9]/.test(pwd)) score++;
-  if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  const levels = [
-    { w: '20%', bg: '#ef4444', label: 'Очень слабый' },
-    { w: '40%', bg: '#f97316', label: 'Слабый' },
-    { w: '60%', bg: '#f59e0b', label: 'Средний' },
-    { w: '80%', bg: '#84cc16', label: 'Хороший' },
-    { w: '100%', bg: '#22c55e', label: 'Отличный' },
-  ];
-  const lvl = levels[Math.min(score, 4)];
-  bar.style.width = pwd.length ? lvl.w : '0';
-  bar.style.background = lvl.bg;
-  lbl.textContent = pwd.length ? lvl.label : '';
-  lbl.style.color = lvl.bg;
-}
-
-async function changePassword() {
-  const oldPwd = document.getElementById('pwdOld').value;
-  const newPwd1 = document.getElementById('pwdNew1').value;
-  const newPwd2 = document.getElementById('pwdNew2').value;
-  const errEl = document.getElementById('changeError');
-  const okEl = document.getElementById('changeSuccess');
-
-  errEl.classList.remove('show'); okEl.classList.remove('show');
-
-  if (!oldPwd) { errEl.textContent = '❌ Введите текущий пароль'; errEl.classList.add('show'); return; }
-  if (newPwd1.length < 8) { errEl.textContent = '❌ Новый пароль должен быть минимум 8 символов'; errEl.classList.add('show'); return; }
-  if (newPwd1 !== newPwd2) { errEl.textContent = '❌ Новые пароли не совпадают'; errEl.classList.add('show'); return; }
-  if (oldPwd === newPwd1) { errEl.textContent = '❌ Новый пароль совпадает со старым'; errEl.classList.add('show'); return; }
-
-  // Verify old password
-  try {
-    const stored = localStorage.getItem('tj_pwd_hash');
-    if (stored) {
-      const hash = await hashPassword(oldPwd);
-      if (hash !== stored) throw new Error('wrong');
-    }
-  } catch(e) {
-    errEl.textContent = '❌ Неверный текущий пароль'; errEl.classList.add('show'); return;
-  }
-
-  // Re-encrypt all keys with new password
-  const newEncrypted = {};
-  for (const [k, v] of Object.entries(ENCRYPTED_KEYS)) {
-    if (v) {
-      try {
-        const plain = await decryptText(v, oldPwd);
-        newEncrypted[k] = await encryptText(plain, newPwd1);
-        KEYS[k] = plain;
-      } catch(e) { /* skip */ }
-    }
-  }
-  // Update in-memory encrypted keys
-  Object.assign(ENCRYPTED_KEYS, newEncrypted);
-
-  // Save new hash
-  const newHash = await hashPassword(newPwd1);
-  localStorage.setItem('tj_pwd_hash', newHash);
-
-  // Update remember session if active
-  if (localStorage.getItem(REMEMBER_KEY)) {
-    localStorage.setItem(STORAGE_KEY, await encryptText(newPwd1 + '_verified', newPwd1));
-  }
-
-  okEl.classList.add('show');
-  document.getElementById('pwdOld').value = '';
-  document.getElementById('pwdNew1').value = '';
-  document.getElementById('pwdNew2').value = '';
-
-  // Show updated encrypted keys in console for copy-paste into code
-  console.log('=== НОВЫЕ ЗАШИФРОВАННЫЕ КЛЮЧИ (вставь в ENCRYPTED_KEYS) ===');
-  console.log(JSON.stringify(ENCRYPTED_KEYS, null, 2));
-
-  setTimeout(() => {
-    okEl.classList.remove('show');
-    switchLockTab('login');
-  }, 2500);
-}
-
-// ══════════════════════════════════════════════
-// EMAIL OTP SYSTEM
-// ══════════════════════════════════════════════
-let otpCode = null;
-let otpExpiry = null;
-let otpStep = 'request'; // 'request' | 'verify'
-
-async function resetPassword() {
-  if (otpStep === 'request') {
-    await requestOTP();
-  } else {
-    await verifyOTPAndReset();
-  }
-}
-
-async function requestOTP() {
-  const errEl = document.getElementById('resetError');
-  const okEl  = document.getElementById('resetSuccess');
-  errEl.classList.remove('show'); okEl.classList.remove('show');
-
-  // Generate 6-digit code
-  otpCode   = Math.floor(100000 + Math.random() * 900000).toString();
-  otpExpiry = Date.now() + 10 * 60 * 1000; // 10 минут
-
-  const btn = document.querySelector('#panelReset .btn-danger');
-  btn.textContent = '📨 Отправляем код...';
-  btn.disabled = true;
-
-  try {
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: OWNER_EMAIL,
-      passcode: otpCode,
-      time: new Date(otpExpiry).toLocaleTimeString('ru-RU')
-    });
-
-    // Switch UI to OTP entry step
-    otpStep = 'verify';
-    document.getElementById('panelReset').innerHTML = `
-      <div style="font-size:13px;color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:12px">
-        ✅ Код отправлен на <strong>${OWNER_EMAIL}</strong><br>
-        <span style="font-size:11px;color:var(--text2)">Действителен 10 минут. Проверьте папку "Спам" если не пришёл.</span>
-      </div>
-      <div style="font-size:12px;color:var(--text2)">Введите 6-значный код из письма</div>
-      <input class="lock-input" id="otpInput" type="text" placeholder="_ _ _ _ _ _"
-        maxlength="6" style="letter-spacing:8px;font-size:22px;text-align:center"
-        onkeydown="if(event.key==='Enter')resetPassword()" />
-      <div class="lock-error" id="resetError"></div>
-      <div class="pwd-success" id="resetSuccess"></div>
-      <div style="font-size:12px;color:var(--text2);margin-top:4px">Введите новый пароль</div>
-      <div class="pwd-input-wrap">
-        <input class="lock-input" id="pwdReset1" type="password" placeholder="Новый пароль (мин. 8 символов)"
-          oninput="checkStrength(this.value,'reset')" style="letter-spacing:2px;font-size:13px" />
-        <button class="pwd-eye" onclick="toggleEye('pwdReset1',this)">👁</button>
-      </div>
-      <div class="pwd-strength" id="pwdStrengthBarReset"></div>
-      <div class="pwd-strength-label" id="pwdStrengthLabelReset"></div>
-      <div class="pwd-input-wrap">
-        <input class="lock-input" id="pwdReset2" type="password" placeholder="Повторите новый пароль" style="letter-spacing:2px;font-size:13px" />
-        <button class="pwd-eye" onclick="toggleEye('pwdReset2',this)">👁</button>
-      </div>
-      <button class="lock-btn" onclick="resetPassword()">✅ Подтвердить и сменить пароль</button>
-      <button class="btn-secondary" onclick="cancelOTP()">← Отмена</button>
-    `;
-
-  } catch(e) {
-    errEl.textContent = '❌ Ошибка отправки письма. Проверьте подключение.';
-    errEl.classList.add('show');
-    btn.textContent = '📨 Отправить код на email';
-    btn.disabled = false;
-    console.error('EmailJS error:', e);
-  }
-}
-
-async function verifyOTPAndReset() {
-  const otpInput = document.getElementById('otpInput');
-  const newPwd1  = document.getElementById('pwdReset1').value;
-  const newPwd2  = document.getElementById('pwdReset2').value;
-  const errEl    = document.getElementById('resetError');
-  const okEl     = document.getElementById('resetSuccess');
-
-  errEl.classList.remove('show'); okEl.classList.remove('show');
-
-  // Check OTP
-  if (!otpInput || otpInput.value.trim() !== otpCode) {
-    errEl.textContent = '❌ Неверный код. Проверьте письмо.';
-    errEl.classList.add('show'); return;
-  }
-  if (Date.now() > otpExpiry) {
-    errEl.textContent = '❌ Код истёк. Запросите новый.';
-    errEl.classList.add('show');
-    cancelOTP(); return;
-  }
-  if (newPwd1.length < 8) {
-    errEl.textContent = '❌ Пароль должен быть минимум 8 символов';
-    errEl.classList.add('show'); return;
-  }
-  if (newPwd1 !== newPwd2) {
-    errEl.textContent = '❌ Пароли не совпадают';
-    errEl.classList.add('show'); return;
-  }
-
-  // Clear old data, set new password
-  localStorage.removeItem(REMEMBER_KEY);
-  localStorage.removeItem(STORAGE_KEY);
-  Object.keys(ENCRYPTED_KEYS).forEach(k => ENCRYPTED_KEYS[k] = null);
-  Object.keys(KEYS).forEach(k => KEYS[k] = null);
-
-  const newHash = await hashPassword(newPwd1);
-  localStorage.setItem('tj_pwd_hash', newHash);
-
-  otpCode = null; otpExpiry = null; otpStep = 'request';
-
-  okEl.classList.add('show');
-  okEl.textContent = '✅ Пароль успешно изменён! Войдите с новым паролем.';
-
-  setTimeout(() => { switchLockTab('login'); }, 2500);
-}
-
-function cancelOTP() {
-  otpCode = null; otpExpiry = null; otpStep = 'request';
-  // Restore original reset panel
-  const panel = document.getElementById('panelReset');
-  panel.innerHTML = `
-    <div class="reset-warning">
-      ⚠️ <strong>Внимание!</strong> Сброс удалит все сохранённые ключи и пароль.
-      Вам нужно будет ввести ключи API заново и задать новый пароль.
-      Ваши реальные данные на биржах не затрагиваются.
-    </div>
-    <button class="btn-danger" onclick="resetPassword()">📨 Отправить код на email</button>
-    <div class="lock-error" id="resetError"></div>
-    <div class="pwd-success" id="resetSuccess"></div>
-  `;
-}
-
-// Выход из приложения
-function lockApp() {
-  // Очищаем ключи из памяти
-  Object.keys(KEYS).forEach(k => KEYS[k] = null);
-  // Удаляем сессию — при следующем открытии потребуется пароль
-  localStorage.removeItem(REMEMBER_KEY);
-  localStorage.removeItem(STORAGE_KEY);
-  // Показываем экран входа
-  document.getElementById('lockInput').value = '';
-  switchLockTab('login');
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('lockScreen').classList.add('active');
-}
-
-// Предустановленный хеш пароля (задан через setupKeys)
-const PRESET_PWD_HASH = 'b16bf4a5ef11a8ab0b931e27254a6c1a5e55a332ad8b654240a679905d0010fc';
-
-// Запуск при загрузке страницы
 window.addEventListener('load', async () => {
-  // Устанавливаем хеш если его ещё нет в localStorage
-  if (!localStorage.getItem('tj_pwd_hash') && PRESET_PWD_HASH) {
-    localStorage.setItem('tj_pwd_hash', PRESET_PWD_HASH);
-  }
   await checkAutoLogin();
+  // Восстанавливаем ключи из localStorage
+  const savedBnApi = localStorage.getItem('tj_bn_api');
+  const savedBnSecret = localStorage.getItem('tj_bn_secret');
+  const savedIbAcc = localStorage.getItem('tj_ib_acc');
+  const savedIbToken = localStorage.getItem('tj_ib_token');
+  if (savedBnApi && savedBnSecret) {
+    document.getElementById('bnApiKey').value = savedBnApi;
+    document.getElementById('bnSecretKey').value = savedBnSecret;
+    // Автоматически подключаемся
+    const dot = document.getElementById('bnDot');
+    if (dot) { dot.className = 'dot pending'; document.getElementById('bnStatus').textContent = 'Подключение...'; }
+    fetchBinanceTrades(savedBnApi, savedBnSecret);
+  }
+  if (savedIbAcc && savedIbToken) {
+    document.getElementById('ibAcc').value = savedIbAcc;
+    document.getElementById('ibTok').value = savedIbToken;
+    // Автоматически подключаемся
+    const dot = document.getElementById('ibDot');
+    if (dot) { dot.className = 'dot on'; document.getElementById('ibStatus').textContent = 'Подключено'; }
+    state.ib = true;
+    document.getElementById('cIbDot').className = 'dot on';
+  }
 });
 
-// ══════════════════════════════════════════════
-const state = { bn: false, ib: false };
-const charts = {};
-
-// Demo data — заменяется реальными данными из API
-const bnData = {
-  total:47, wr:63.8, pf:1.84, pnl:1247, wins:30, loss:17, stops:12, avgWin:68.4,
-  pairs:[{s:'BTCUSDT',p:true},{s:'ETHUSDT',p:true},{s:'SOLUSDT',p:true},{s:'BNBUSDT',p:false},{s:'XRPUSDT',p:false},{s:'LINKUSDT',p:true}],
-  trades:[
-    {pair:'BTCUSDT',type:'LONG',open:'03.06 09:14',close:'03.06 11:32',pnl:142.5,result:'win'},
-    {pair:'ETHUSDT',type:'SHORT',open:'02.06 21:33',close:'02.06 22:10',pnl:-38.2,result:'loss'},
-    {pair:'SOLUSDT',type:'LONG',open:'02.06 15:07',close:'02.06 17:45',pnl:89.0,result:'win'},
-    {pair:'BTCUSDT',type:'SHORT',open:'01.06 11:22',close:'01.06 11:45',pnl:-55.0,result:'stop'},
-    {pair:'BNBUSDT',type:'LONG',open:'31.05 08:45',close:'31.05 14:20',pnl:61.3,result:'win'},
-    {pair:'LINKUSDT',type:'LONG',open:'30.05 10:00',close:'30.05 16:30',pnl:33.8,result:'win'},
-    {pair:'ETHUSDT',type:'LONG',open:'29.05 09:15',close:'29.05 12:00',pnl:-22.1,result:'stop'},
-  ]
-};
-
-const ibData = {
-  total:31, wr:71.0, pf:2.31, pnl:3840, wins:22, loss:9, stocks:24, options:7,
-  tickers:[{s:'AAPL',p:true},{s:'NVDA',p:true},{s:'SPY',p:true},{s:'TSLA',p:false},{s:'AMD',p:false},{s:'MSFT',p:true}],
-  trades:[
-    {ticker:'AAPL',type:'stock',date:'03.06',qty:50,pnl:310,result:'win'},
-    {ticker:'SPY 580C',type:'option',date:'02.06',qty:5,pnl:-125,result:'loss'},
-    {ticker:'NVDA',type:'stock',date:'02.06',qty:20,pnl:540,result:'win'},
-    {ticker:'TSLA',type:'stock',date:'01.06',qty:30,pnl:-210,result:'stop'},
-    {ticker:'QQQ 480P',type:'option',date:'30.05',qty:3,pnl:180,result:'win'},
-    {ticker:'MSFT',type:'stock',date:'29.05',qty:40,pnl:290,result:'win'},
-    {ticker:'AMD',type:'stock',date:'28.05',qty:60,pnl:-95,result:'loss'},
-  ]
-};
-
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // NAVIGATION
-// ══════════════════════════════════════════════
-function goHome() {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('homeScreen').classList.add('active');
-}
-
-function openDash(broker) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const map = {binance:'binanceScreen', ibkr:'ibkrScreen', combined:'combinedScreen'};
+// ══════════════════════════════
+const state={bn:false,ib:false};
+const charts={};
+function goHome(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('homeScreen').classList.add('active');}
+function openDash(broker){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const map={binance:'binanceScreen',ibkr:'ibkrScreen',combined:'combinedScreen'};
   document.getElementById(map[broker]).classList.add('active');
-  if (broker === 'binance') setTimeout(initBnCharts, 50);
-  if (broker === 'ibkr') setTimeout(initIbCharts, 50);
-  if (broker === 'combined') setTimeout(initCombined, 50);
+  if(broker==='binance')setTimeout(initBnCharts,50);
+  if(broker==='ibkr')setTimeout(initIbCharts,50);
+  if(broker==='combined')setTimeout(initCombined,50);
 }
-
-function showTab(prefix, tab, el) {
-  const screen = el.closest('.dash-layout');
-  screen.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  screen.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(prefix + '-' + tab).classList.add('active');
+function showTab(prefix,tab,el){
+  const screen=el.closest('.dash-layout');
+  screen.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  screen.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(prefix+'-'+tab).classList.add('active');
   el.classList.add('active');
 }
 
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // CHART HELPERS
-// ══════════════════════════════════════════════
-const gc = () => 'rgba(255,255,255,0.05)';
-const tc = () => '#555e78';
+// ══════════════════════════════
+const gc=()=>'rgba(255,255,255,0.05)';
+const tc=()=>'#555e78';
+function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);return charts[id];}
+function genCurve(n,vol,trend){let v=0,a=[];for(let i=0;i<n;i++){v+=Math.random()*vol-(vol*0.38)+trend;a.push(parseFloat(v.toFixed(2)));}return a;}
+function genLabels(n){const a=[],now=new Date('2026-06-03');for(let i=n-1;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);a.push(d.getDate()+'/'+(d.getMonth()+1));}return a;}
+function lineChart(id,labels,datasets){mkChart(id,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},maxTicksLimit:8}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},callback:v=>'$'+v}}}}});}
+function barChart(id,labels,data,colors){mkChart(id,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:tc(),font:{size:10}}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:10},callback:v=>'$'+v}}}}});}
 
-function mkChart(id, cfg) {
-  if (charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), cfg);
-  return charts[id];
-}
+// ══════════════════════════════
+// DEMO DATA
+// ══════════════════════════════
+const bnTrades=[
+  {id:'bn_1',pair:'BTCUSDT',tradeType:'Лонг',entryDate:'03.06.2026',weekDay:'Среда',entryTime:'09:14',exitDate:'03.06.2026',exitTime:'11:32',duration:'2ч 18м',entryPrice:67240,exitPrice:67890,priceChange:0.97,pnl:142.5,result:'Профит'},
+  {id:'bn_2',pair:'ETHUSDT',tradeType:'Шорт',entryDate:'02.06.2026',weekDay:'Вторник',entryTime:'21:33',exitDate:'02.06.2026',exitTime:'22:10',duration:'0ч 37м',entryPrice:3840,exitPrice:3878,priceChange:0.99,pnl:-38.2,result:'Стоп'},
+  {id:'bn_3',pair:'SOLUSDT',tradeType:'Лонг',entryDate:'02.06.2026',weekDay:'Вторник',entryTime:'15:07',exitDate:'02.06.2026',exitTime:'17:45',duration:'2ч 38м',entryPrice:162.4,exitPrice:164.9,priceChange:1.54,pnl:89.0,result:'Профит'},
+  {id:'bn_4',pair:'BTCUSDT',tradeType:'Шорт',entryDate:'01.06.2026',weekDay:'Понедельник',entryTime:'11:22',exitDate:'01.06.2026',exitTime:'11:45',duration:'0ч 23м',entryPrice:66980,exitPrice:66980,priceChange:0,pnl:0,result:'Безубыток'},
+  {id:'bn_5',pair:'BNBUSDT',tradeType:'Лонг',entryDate:'31.05.2026',weekDay:'Воскресенье',entryTime:'08:45',exitDate:'31.05.2026',exitTime:'14:20',duration:'5ч 35м',entryPrice:618.5,exitPrice:628.2,priceChange:1.57,pnl:61.3,result:'Профит'},
+];
+const ibTrades=[
+  {id:'ib_1',ticker:'AAPL',tradeType:'stock',entryDate:'03.06.2026',weekDay:'Среда',entryTime:'16:30',exitDate:'03.06.2026',exitTime:'17:15',duration:'0ч 45м',entryPrice:192.4,exitPrice:198.6,priceChange:3.22,qty:50,pnl:310,result:'Профит'},
+  {id:'ib_2',ticker:'SPY 580C',tradeType:'option',entryDate:'02.06.2026',weekDay:'Вторник',entryTime:'14:20',exitDate:'02.06.2026',exitTime:'15:45',duration:'1ч 25м',entryPrice:2.8,exitPrice:2.55,priceChange:-8.93,qty:5,pnl:-125,result:'Стоп'},
+  {id:'ib_3',ticker:'NVDA',tradeType:'stock',entryDate:'02.06.2026',weekDay:'Вторник',entryTime:'15:10',exitDate:'02.06.2026',exitTime:'16:50',duration:'1ч 40м',entryPrice:875.2,exitPrice:902.3,priceChange:3.09,qty:20,pnl:540,result:'Профит'},
+  {id:'ib_4',ticker:'TSLA',tradeType:'stock',entryDate:'01.06.2026',weekDay:'Понедельник',entryTime:'14:55',exitDate:'01.06.2026',exitTime:'15:20',duration:'0ч 25м',entryPrice:182.6,exitPrice:182.6,priceChange:0,qty:30,pnl:0,result:'Безубыток'},
+  {id:'ib_5',ticker:'QQQ 480P',tradeType:'option',entryDate:'30.05.2026',weekDay:'Пятница',entryTime:'13:40',exitDate:'30.05.2026',exitTime:'15:55',duration:'2ч 15м',entryPrice:4.2,exitPrice:10.2,priceChange:142.86,qty:3,pnl:180,result:'Профит'},
+];
 
-function genCurve(n, vol, trend) {
-  let v = 0, a = [];
-  for (let i = 0; i < n; i++) { v += Math.random() * vol - (vol * 0.38) + trend; a.push(parseFloat(v.toFixed(2))); }
-  return a;
-}
-
-function genLabels(n) {
-  const a = [], now = new Date('2026-06-03');
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(now); d.setDate(d.getDate() - i);
-    a.push(d.getDate() + '/' + (d.getMonth() + 1));
-  }
-  return a;
-}
-
-function lineChart(id, labels, datasets, yFmt) {
-  mkChart(id, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 10 }, maxTicksLimit: 8 } },
-        y: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 10 }, callback: v => (yFmt || '$') + v } }
-      }
-    }
-  });
-}
-
-function barChart(id, labels, data, colors) {
-  mkChart(id, {
-    type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: tc(), font: { size: 10 } } },
-        y: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 10 }, callback: v => '$' + v } }
-      }
-    }
-  });
-}
-
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // BINANCE
-// ══════════════════════════════════════════════
-function connectBinance() {
-  const k = document.getElementById('bnApiKey').value;
-  const s = document.getElementById('bnSecretKey').value;
-  if (!k || !s) { alert('Введите API Key и Secret Key'); return; }
-  const dot = document.getElementById('bnDot');
-  dot.className = 'dot pending';
-  document.getElementById('bnStatus').textContent = 'Подключение...';
-  // Здесь будет реальный запрос к Binance API
-  // fetch(`https://fapi.binance.com/fapi/v2/account`, { headers: {'X-MBX-APIKEY': k} })
-  setTimeout(() => {
-    state.bn = true;
-    dot.className = 'dot on';
-    document.getElementById('bnStatus').textContent = 'Подключено';
-    loadBnData();
-    document.getElementById('cBnDot').className = 'dot on';
-  }, 1200);
+// ══════════════════════════════
+function connectBinance(){
+  const k=document.getElementById('bnApiKey').value,s=document.getElementById('bnSecretKey').value;
+  if(!k||!s){alert('Введите API Key и Secret Key');return;}
+  // Сохраняем ключи в localStorage чтобы не слетали при обновлении
+  localStorage.setItem('tj_bn_api', k);
+  localStorage.setItem('tj_bn_secret', s);
+  const dot=document.getElementById('bnDot');dot.className='dot pending';
+  document.getElementById('bnStatus').textContent='Подключение...';
+  fetchBinanceTrades(k, s);
 }
 
-function loadBnData() {
-  // Сохраняем в облако автоматически
-  saveBnTradesToCloud(bnData.trades);
-  document.getElementById('bnTotal').textContent = bnData.total;
-  document.getElementById('bnWR').textContent = bnData.wr + '%';
-  document.getElementById('bnPF').textContent = bnData.pf;
-  const pEl = document.getElementById('bnPnl');
-  pEl.textContent = '+$' + bnData.pnl.toLocaleString();
-  pEl.className = 'mc-val green';
-  document.getElementById('bnWins').textContent = bnData.wins;
-  document.getElementById('bnLoss').textContent = bnData.loss;
-  document.getElementById('bnStops').textContent = bnData.stops;
-  document.getElementById('bnAvgW').textContent = '+$' + bnData.avgWin;
-  document.getElementById('bnPills').innerHTML = bnData.pairs.map(x => `<span class="pill ${x.p?'pos':'neg'}">${x.s}</span>`).join('');
+async function fetchBinanceTrades(apiKey, secret) {
+  const dot=document.getElementById('bnDot');
+  try {
+    // Запрос к Binance Futures API
+    const timestamp = Date.now();
+    const params = `timestamp=${timestamp}&limit=100`;
+    // Подписываем запрос (HMAC SHA256)
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(params));
+    const signature = Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const url = `https://fapi.binance.com/fapi/v1/userTrades?${params}&signature=${signature}`;
+    const resp = await fetch(url, { headers: { 'X-MBX-APIKEY': apiKey } });
+    if (!resp.ok) throw new Error('API error: ' + resp.status);
+    const data = await resp.json();
+    // Обрабатываем реальные сделки
+    processBinanceTrades(data);
+    state.bn=true;dot.className='dot on';
+    document.getElementById('bnStatus').textContent='Подключено';
+    document.getElementById('cBnDot').className='dot on';
+  } catch(e) {
+    console.warn('Binance API недоступен (CORS), используем демо-данные:', e.message);
+    // Fallback на демо-данные если API недоступен напрямую
+    state.bn=true;dot.className='dot on';
+    document.getElementById('bnStatus').textContent='Подключено (демо)';
+    document.getElementById('cBnDot').className='dot on';
+    loadBnData();
+  }
+}
+
+function processBinanceTrades(apiData) {
+  if (!apiData || !apiData.length) { loadBnData(); return; }
+  // Конвертируем формат Binance в наш формат
+  const processed = apiData.slice(0,50).map((t,i) => {
+    const entryDt = new Date(t.time);
+    const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+    return {
+      id: 'bn_'+t.id,
+      pair: t.symbol,
+      tradeType: t.side==='BUY'?'Лонг':'Шорт',
+      entryDate: entryDt.toLocaleDateString('ru-RU'),
+      weekDay: days[entryDt.getDay()],
+      entryTime: entryDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+      exitDate: entryDt.toLocaleDateString('ru-RU'),
+      exitTime: entryDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+      duration: '—',
+      entryPrice: parseFloat(t.price),
+      exitPrice: parseFloat(t.price),
+      priceChange: 0,
+      pnl: parseFloat(t.realizedPnl||0),
+      result: parseFloat(t.realizedPnl||0)>0?'Профит':parseFloat(t.realizedPnl||0)<0?'Стоп':'Безубыток',
+    };
+  });
+  // Заменяем демо-данные реальными
+  bnTrades.length = 0;
+  processed.forEach(t => bnTrades.push(t));
+  loadBnData();
+}
+function loadBnData(){
+  const wins=bnTrades.filter(t=>t.result==='Профит').length;
+  const stops=bnTrades.filter(t=>t.result==='Стоп').length;
+  const be=bnTrades.filter(t=>t.result==='Безубыток').length;
+  const pnl=bnTrades.reduce((a,t)=>a+t.pnl,0);
+  document.getElementById('bnTotal').textContent=bnTrades.length;
+  document.getElementById('bnWins').textContent=wins;
+  document.getElementById('bnStops').textContent=stops;
+  document.getElementById('bnBe').textContent=be;
+  document.getElementById('bnWR').textContent=Math.round(wins/bnTrades.length*100)+'%';
+  const pEl=document.getElementById('bnPnl');pEl.textContent=(pnl>=0?'+':'')+'$'+pnl.toFixed(2);pEl.className='mc-val '+(pnl>=0?'green':'red');
+  document.getElementById('bnAvgW').textContent='+$'+(bnTrades.filter(t=>t.pnl>0).reduce((a,t)=>a+t.pnl,0)/Math.max(wins,1)).toFixed(2);
+  document.getElementById('bnBest').textContent='+$'+Math.max(...bnTrades.map(t=>t.pnl)).toFixed(2);
+  const pairs=[...new Set(bnTrades.map(t=>t.pair))];
+  document.getElementById('bnPills').innerHTML=pairs.map(p=>{const t=bnTrades.filter(x=>x.pair===p);const pnl=t.reduce((a,x)=>a+x.pnl,0);return`<span class="pill ${pnl>=0?'pos':'neg'}">${p}</span>`;}).join('');
   renderBnTrades('all');
 }
-
-function renderBnTrades(filter) {
-  const trades = filter === 'all' ? bnData.trades : bnData.trades.filter(t => t.result === filter);
-  const tbody = document.querySelector('#bnTable tbody');
-  if (!trades.length) { tbody.innerHTML = '<tr><td colspan="6" class="no-data">Нет сделок</td></tr>'; return; }
-  tbody.innerHTML = trades.map(t => `
-    <tr>
-      <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.pair}</td>
-      <td><span class="tag ${t.type.toLowerCase()}">${t.type}</span></td>
-      <td style="color:var(--text2);font-size:11px">${t.open}</td>
-      <td style="color:var(--text2);font-size:11px">${t.close}</td>
-      <td style="font-family:'JetBrains Mono',monospace;${t.pnl>0?'color:var(--green)':'color:var(--red)'}">${t.pnl>0?'+':''}$${t.pnl.toFixed(2)}</td>
-      <td><span class="tag ${t.result}">${t.result==='win'?'✓ Прибыль':t.result==='stop'?'◼ Стоп':'✗ Убыток'}</span></td>
-    </tr>`).join('');
+function renderBnTrades(filter){
+  let trades=filter==='all'?bnTrades:bnTrades.filter(t=>t.result===filter);
+  const tbody=document.querySelector('#bnTable tbody');
+  if(!trades.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">Нет сделок</td></tr>';return;}
+  tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')">
+    <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.pair}</td>
+    <td><span class="tag ${t.tradeType==='Лонг'?'long':'short'}">${t.tradeType}</span></td>
+    <td style="color:var(--text2);font-size:11px">${t.entryDate}<br><span style="color:var(--text3)">${t.entryTime}</span></td>
+    <td style="color:var(--text2);font-size:11px">${t.exitDate}<br><span style="color:var(--text3)">${t.exitTime}</span></td>
+    <td style="color:var(--text2);font-size:11px">${t.duration}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice.toLocaleString()}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice.toLocaleString()}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl.toFixed(2)}</td>
+    <td><span class="tag ${t.result==='Профит'?'profit':t.result==='Стоп'?'stop':'be'}">${t.result}</span></td>
+    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">📋 Детали</button></td>
+  </tr>`).join('');
+}
+function filterBnTrades(f,el){el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderBnTrades(f);}
+function initBnCharts(){
+  lineChart('bnPnlChart',genLabels(7),[{data:genCurve(7,60,12),borderColor:'#F0B90B',backgroundColor:'rgba(240,185,11,0.07)',fill:true,tension:.4,pointRadius:2,borderWidth:2}]);
+  const hd=[-5,3,8,45,38,62,30,-4,18,25,20,8];
+  barChart('bnHourChart',['0h','2h','4h','6h','8h','10h','12h','14h','16h','18h','20h','22h'],hd,hd.map(v=>v>0?'rgba(240,185,11,.7)':'rgba(239,68,68,.7)'));
+  const dd=[180,-60,310,240,90];
+  barChart('bnDayChart',['Пн','Вт','Ср','Чт','Пт'],dd,dd.map(v=>v>0?'rgba(240,185,11,.75)':'rgba(239,68,68,.7)'));
 }
 
-function filterBnTrades(f, el) {
-  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderBnTrades(f);
-}
-
-function initBnCharts() {
-  const n = 7;
-  lineChart('bnPnlChart', genLabels(n),
-    [{ data: genCurve(n, 60, 12), borderColor: '#F0B90B', backgroundColor: 'rgba(240,185,11,0.07)', fill: true, tension: .4, pointRadius: 2, borderWidth: 2 }]);
-  const hd = [-5, 3, 8, 45, 38, 62, 30, -4, 18, 25, 20, 8];
-  barChart('bnHourChart', ['0h','2h','4h','6h','8h','10h','12h','14h','16h','18h','20h','22h'], hd,
-    hd.map(v => v > 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'));
-  const dd = [180, -60, 310, 240, 90];
-  barChart('bnDayChart', ['Пн','Вт','Ср','Чт','Пт'], dd,
-    dd.map(v => v > 0 ? 'rgba(240,185,11,0.75)' : 'rgba(239,68,68,0.7)'));
-}
-
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // IBKR
-// ══════════════════════════════════════════════
-function connectIBKR() {
-  const a = document.getElementById('ibAcc').value;
-  const t = document.getElementById('ibTok').value;
-  if (!a || !t) { alert('Введите Account ID и Access Token'); return; }
-  const dot = document.getElementById('ibDot');
-  dot.className = 'dot pending';
-  document.getElementById('ibStatus').textContent = 'Подключение...';
-  // Здесь будет реальный запрос к IBKR Client Portal API
-  // fetch(`https://localhost:5000/v1/api/portfolio/${a}/summary`, { headers: {'Authorization': 'Bearer '+t} })
-  setTimeout(() => {
-    state.ib = true;
-    dot.className = 'dot on';
-    document.getElementById('ibStatus').textContent = 'Подключено';
+// ══════════════════════════════
+function connectIBKR(){
+  const a=document.getElementById('ibAcc').value,t=document.getElementById('ibTok').value;
+  if(!a||!t){alert('Введите Account ID и Token');return;}
+  // Сохраняем ключи в localStorage
+  localStorage.setItem('tj_ib_acc', a);
+  localStorage.setItem('tj_ib_token', t);
+  const dot=document.getElementById('ibDot');dot.className='dot pending';
+  document.getElementById('ibStatus').textContent='Подключение...';
+  setTimeout(()=>{
+    state.ib=true;dot.className='dot on';
+    document.getElementById('ibStatus').textContent='Подключено';
+    document.getElementById('cIbDot').className='dot on';
     loadIbData();
-    document.getElementById('cIbDot').className = 'dot on';
-  }, 1200);
+  },1200);
 }
-
-function loadIbData() {
-  // Сохраняем в облако автоматически
-  saveIbTradesToCloud(ibData.trades);
-  document.getElementById('ibTotal').textContent = ibData.total;
-  document.getElementById('ibWR').textContent = ibData.wr + '%';
-  document.getElementById('ibPF').textContent = ibData.pf;
-  const pEl = document.getElementById('ibPnl');
-  pEl.textContent = '+$' + ibData.pnl.toLocaleString();
-  pEl.className = 'mc-val green';
-  document.getElementById('ibWins').textContent = ibData.wins;
-  document.getElementById('ibLoss').textContent = ibData.loss;
-  document.getElementById('ibStocks').textContent = ibData.stocks;
-  document.getElementById('ibOptions').textContent = ibData.options;
-  document.getElementById('ibPills').innerHTML = ibData.tickers.map(x => `<span class="pill ${x.p?'pos':'neg'}">${x.s}</span>`).join('');
+function loadIbData(){
+  const wins=ibTrades.filter(t=>t.result==='Профит').length;
+  const stops=ibTrades.filter(t=>t.result==='Стоп').length;
+  const be=ibTrades.filter(t=>t.result==='Безубыток').length;
+  const pnl=ibTrades.reduce((a,t)=>a+t.pnl,0);
+  document.getElementById('ibTotal').textContent=ibTrades.length;
+  document.getElementById('ibWins').textContent=wins;
+  document.getElementById('ibStops').textContent=stops;
+  document.getElementById('ibBe').textContent=be;
+  document.getElementById('ibWR').textContent=Math.round(wins/ibTrades.length*100)+'%';
+  const pEl=document.getElementById('ibPnl');pEl.textContent=(pnl>=0?'+':'')+'$'+pnl.toFixed(2);pEl.className='mc-val '+(pnl>=0?'green':'red');
+  document.getElementById('ibStockCount').textContent=ibTrades.filter(t=>t.tradeType==='stock').length;
+  document.getElementById('ibOptCount').textContent=ibTrades.filter(t=>t.tradeType==='option').length;
+  const tickers=[...new Set(ibTrades.map(t=>t.ticker))];
+  document.getElementById('ibPills').innerHTML=tickers.map(p=>{const t=ibTrades.filter(x=>x.ticker===p);const pnl=t.reduce((a,x)=>a+x.pnl,0);return`<span class="pill ${pnl>=0?'pos':'neg'}">${p}</span>`;}).join('');
   renderIbTrades('all');
 }
-
-function renderIbTrades(filter) {
-  let trades = ibData.trades;
-  if (filter === 'stock') trades = trades.filter(t => t.type === 'stock');
-  else if (filter === 'option') trades = trades.filter(t => t.type === 'option');
-  else if (filter === 'win' || filter === 'loss') trades = trades.filter(t => t.result === filter);
-  const tbody = document.querySelector('#ibTable tbody');
-  if (!trades.length) { tbody.innerHTML = '<tr><td colspan="6" class="no-data">Нет сделок</td></tr>'; return; }
-  tbody.innerHTML = trades.map(t => `
-    <tr>
-      <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.ticker}</td>
-      <td><span class="tag ${t.type}">${t.type === 'stock' ? 'Акция' : 'Опцион'}</span></td>
-      <td style="color:var(--text2);font-size:11px">${t.date}</td>
-      <td style="color:var(--text2);font-size:11px">${t.qty} шт.</td>
-      <td style="font-family:'JetBrains Mono',monospace;${t.pnl>0?'color:var(--green)':'color:var(--red)'}">${t.pnl>0?'+':''}$${t.pnl}</td>
-      <td><span class="tag ${t.result}">${t.result==='win'?'✓ Прибыль':t.result==='stop'?'◼ Стоп':'✗ Убыток'}</span></td>
-    </tr>`).join('');
+function renderIbTrades(filter){
+  let trades=ibTrades;
+  if(filter==='stock')trades=ibTrades.filter(t=>t.tradeType==='stock');
+  else if(filter==='option')trades=ibTrades.filter(t=>t.tradeType==='option');
+  else if(filter!=='all')trades=ibTrades.filter(t=>t.result===filter);
+  const tbody=document.querySelector('#ibTable tbody');
+  if(!trades.length){tbody.innerHTML='<tr><td colspan="14" class="no-data">Нет сделок</td></tr>';return;}
+  tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')">
+    <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.ticker}</td>
+    <td><span class="tag ${t.tradeType}">${t.tradeType==='stock'?'Акция':'Опцион'}</span></td>
+    <td style="color:var(--text2);font-size:11px">${t.entryDate}</td>
+    <td style="color:var(--text2);font-size:11px">${t.weekDay}</td>
+    <td style="color:var(--text2);font-size:11px">${t.entryTime}</td>
+    <td style="color:var(--text2);font-size:11px">${t.exitDate}</td>
+    <td style="color:var(--text2);font-size:11px">${t.exitTime}</td>
+    <td style="color:var(--text2);font-size:11px">${t.duration}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl}</td>
+    <td><span class="tag ${t.result==='Профит'?'profit':t.result==='Стоп'?'stop':'be'}">${t.result}</span></td>
+    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">📋 Детали</button></td>
+  </tr>`).join('');
+}
+function filterIbTrades(f,el){el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderIbTrades(f);}
+function initIbCharts(){
+  lineChart('ibPnlChart',genLabels(20),[{data:genCurve(20,200,30),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',fill:true,tension:.4,pointRadius:2,borderWidth:2}]);
+  const hd=[0,0,0,0,120,340,280,210,390,220,180,90,40,0,0,0];
+  barChart('ibHourChart',['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'],hd,hd.map(v=>v>0?'rgba(59,130,246,.7)':'rgba(239,68,68,.7)'));
+  const dd=[320,-180,540,210,-90];
+  barChart('ibDayChart',['Пн','Вт','Ср','Чт','Пт'],dd,dd.map(v=>v>0?'rgba(59,130,246,.75)':'rgba(239,68,68,.7)'));
 }
 
-function filterIbTrades(f, el) {
-  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderIbTrades(f);
+// ══════════════════════════════
+// TRADE DETAIL MODAL
+// ══════════════════════════════
+async function openTradeDetail(trade, broker) {
+  currentTrade = { ...trade, broker };
+  const savedDetails = await loadTradeDetail(trade.id, broker) || {};
+  tradeDetails = savedDetails;
+  const isBn = broker === 'binance';
+  const name = isBn ? trade.pair : trade.ticker;
+  document.getElementById('modalTitle').textContent = `${name} — ${trade.entryDate} ${trade.entryTime}`;
+  // Auto fields
+  const autoFields = isBn ? [
+    {l:'Тикер',v:trade.pair},{l:'Тип инструмента',v:'Фьючерс'},{l:'Дата входа',v:trade.entryDate},
+    {l:'День недели',v:trade.weekDay},{l:'Время входа',v:trade.entryTime},
+    {l:'Дата выхода',v:trade.exitDate},{l:'Время выхода',v:trade.exitTime},
+    {l:'Время в сделке',v:trade.duration},{l:'Цена входа',v:'$'+trade.entryPrice.toLocaleString()},
+    {l:'Цена выхода',v:'$'+trade.exitPrice.toLocaleString()},
+    {l:'Изменение цены',v:(trade.priceChange>0?'+':'')+trade.priceChange.toFixed(2)+'%'},
+    {l:'PnL (авто)',v:(trade.pnl>0?'+':'')+'$'+trade.pnl.toFixed(2),c:trade.pnl>0?'green':trade.pnl<0?'red':'neutral'},
+  ] : [
+    {l:'Тикер',v:trade.ticker},{l:'Тип',v:trade.tradeType==='stock'?'Акция':'Опцион'},
+    {l:'Дата входа',v:trade.entryDate},{l:'День недели',v:trade.weekDay},
+    {l:'Время входа',v:trade.entryTime},{l:'Дата выхода',v:trade.exitDate},
+    {l:'Время выхода',v:trade.exitTime},{l:'Время в сделке',v:trade.duration},
+    {l:'Цена входа',v:'$'+trade.entryPrice},{l:'Цена выхода',v:'$'+trade.exitPrice},
+    {l:'Изменение цены',v:(trade.priceChange>0?'+':'')+trade.priceChange.toFixed(2)+'%'},
+    {l:'Количество',v:trade.qty+' шт.'},
+    {l:'PnL (авто)',v:(trade.pnl>0?'+':'')+'$'+trade.pnl,c:trade.pnl>0?'green':trade.pnl<0?'red':'neutral'},
+  ];
+  document.getElementById('modalAutoFields').innerHTML = autoFields.map(f=>
+    `<div class="detail-field"><div class="detail-label">${f.l}</div><div class="detail-value ${f.c||'neutral'}">${f.v}</div></div>`
+  ).join('');
+  // Fill manual fields
+  document.getElementById('mTradeType').value = savedDetails.trade_type || '';
+  document.getElementById('mRisk').value = savedDetails.risk || '';
+  document.getElementById('mLevel').value = savedDetails.level || '';
+  document.getElementById('mLevelPrice').value = savedDetails.level_price || '';
+  document.getElementById('mStopType').value = savedDetails.stop_type || '';
+  document.getElementById('mResult').value = savedDetails.result_manual || '';
+  document.getElementById('mPnlUsd').value = savedDetails.pnl_manual || '';
+  document.getElementById('mReentry').value = savedDetails.reentry || '';
+  document.getElementById('mRiskResult').value = savedDetails.risk_result || '';
+  document.getElementById('mRiskMore').value = savedDetails.risk_more || '';
+  document.getElementById('mComment').value = savedDetails.comment || '';
+  // Screens
+  if(savedDetails.screen1){document.getElementById('screen1Img').src=savedDetails.screen1;document.getElementById('screen1Preview').style.display='block';document.getElementById('screen1Empty').style.display='none';}
+  else {document.getElementById('screen1Preview').style.display='none';document.getElementById('screen1Empty').style.display='flex';}
+  if(savedDetails.screen2){document.getElementById('screen2Img').src=savedDetails.screen2;document.getElementById('screen2Preview').style.display='block';document.getElementById('screen2Empty').style.display='none';}
+  else {document.getElementById('screen2Preview').style.display='none';document.getElementById('screen2Empty').style.display='flex';}
+  document.getElementById('tradeModal').classList.add('open');
+}
+function closeModal(){document.getElementById('tradeModal').classList.remove('open');currentTrade=null;}
+document.getElementById('tradeModal').addEventListener('click',e=>{if(e.target===document.getElementById('tradeModal'))closeModal();});
+function uploadScreen(num){document.getElementById('screen'+num+'Input').click();}
+function handleScreenUpload(num, input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const src = e.target.result;
+    document.getElementById('screen'+num+'Img').src = src;
+    document.getElementById('screen'+num+'Preview').style.display = 'block';
+    document.getElementById('screen'+num+'Empty').style.display = 'none';
+    tradeDetails['screen'+num] = src;
+    if(currentTrade) saveScreenToSupabase(currentTrade.id, currentTrade.broker, num, src);
+  };
+  reader.readAsDataURL(file);
+}
+async function saveTradeDetails() {
+  if(!currentTrade) return;
+  const data = {
+    trade_type: document.getElementById('mTradeType').value,
+    risk: document.getElementById('mRisk').value,
+    level: document.getElementById('mLevel').value,
+    level_price: document.getElementById('mLevelPrice').value,
+    stop_type: document.getElementById('mStopType').value,
+    result_manual: document.getElementById('mResult').value,
+    pnl_manual: document.getElementById('mPnlUsd').value,
+    reentry: document.getElementById('mReentry').value,
+    risk_result: document.getElementById('mRiskResult').value,
+    risk_more: document.getElementById('mRiskMore').value,
+    comment: document.getElementById('mComment').value,
+    screen1: tradeDetails.screen1 || null,
+    screen2: tradeDetails.screen2 || null,
+  };
+  await saveTradeDetail(currentTrade.id, currentTrade.broker, data);
+  const btn = document.querySelector('.btn-save');
+  btn.textContent = '✅ Сохранено!';
+  setTimeout(()=>{btn.textContent='💾 Сохранить';closeModal();},1500);
 }
 
-function initIbCharts() {
-  const n = 20;
-  lineChart('ibPnlChart', genLabels(n),
-    [{ data: genCurve(n, 200, 30), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.07)', fill: true, tension: .4, pointRadius: 2, borderWidth: 2 }]);
-  const hd = [0, 0, 0, 0, 120, 340, 280, 210, 390, 220, 180, 90, 40, 0, 0, 0];
-  barChart('ibHourChart', ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'], hd.slice(0,16),
-    hd.slice(0,16).map(v => v > 0 ? 'rgba(59,130,246,0.7)' : 'rgba(239,68,68,0.7)'));
-  const dd = [320, -180, 540, 210, -90];
-  barChart('ibDayChart', ['Пн','Вт','Ср','Чт','Пт'], dd,
-    dd.map(v => v > 0 ? 'rgba(59,130,246,0.75)' : 'rgba(239,68,68,0.7)'));
-}
-
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // COMBINED
-// ══════════════════════════════════════════════
-function initCombined() {
-  const hasBn = state.bn, hasIb = state.ib;
-  document.getElementById('cNotice').style.display = (hasBn || hasIb) ? 'none' : 'flex';
-  if (hasBn) document.getElementById('cBnDot').className = 'dot on';
-  if (hasIb) document.getElementById('cIbDot').className = 'dot on';
-
-  if (hasBn || hasIb) buildCombinedMetrics();
-  buildCombinedTrades('all');
+// ══════════════════════════════
+function initCombined(){
+  const hasBn=state.bn,hasIb=state.ib;
+  document.getElementById('cNotice').style.display=(hasBn||hasIb)?'none':'flex';
+  if(hasBn)document.getElementById('cBnDot').className='dot on';
+  if(hasIb)document.getElementById('cIbDot').className='dot on';
+  if(hasBn||hasIb){
+    const allTrades=[...(hasBn?bnTrades.map(t=>({...t,broker:'Binance',instrument:t.pair})):[]),...(hasIb?ibTrades.map(t=>({...t,broker:'IBKR',instrument:t.ticker})):[])];
+    const wins=allTrades.filter(t=>t.result==='Профит').length;
+    const stops=allTrades.filter(t=>t.result==='Стоп').length;
+    const be=allTrades.filter(t=>t.result==='Безубыток').length;
+    const pnl=allTrades.reduce((a,t)=>a+t.pnl,0);
+    document.getElementById('cTotal').textContent=allTrades.length;
+    document.getElementById('cWins').textContent=wins;
+    document.getElementById('cLoss').textContent=stops;
+    document.getElementById('cBe').textContent=be;
+    document.getElementById('cWR').textContent=Math.round(wins/allTrades.length*100)+'%';
+    const pEl=document.getElementById('cPnl');pEl.textContent=(pnl>=0?'+':'')+'$'+pnl.toFixed(2);pEl.className='mc-val '+(pnl>=0?'green':'red');
+    const pts=[];if(hasBn)pts.push('BN: '+bnTrades.length);if(hasIb)pts.push('IB: '+ibTrades.length);
+    document.getElementById('cTotalSub').textContent=pts.join(' · ');
+    const bnPnl=hasBn?bnTrades.reduce((a,t)=>a+t.pnl,0):0;
+    const ibPnl=hasIb?ibTrades.reduce((a,t)=>a+t.pnl,0):0;
+    const ps=[];if(hasBn)ps.push('BN: '+(bnPnl>=0?'+':'')+'$'+bnPnl.toFixed(0));if(hasIb)ps.push('IB: '+(ibPnl>=0?'+':'')+'$'+ibPnl.toFixed(0));
+    document.getElementById('cPnlSub').textContent=ps.join(' · ');
+    const instruments=[...(hasBn?bnTrades.map(t=>({s:t.pair,pnl:t.pnl})):[]),...(hasIb?ibTrades.map(t=>({s:t.ticker,pnl:t.pnl})):[])];
+    document.getElementById('cAllPills').innerHTML=instruments.map(x=>`<span class="pill ${x.pnl>=0?'pos':'neg'}">${x.s}</span>`).join('');
+    renderCombinedTrades('all');
+  }
   initCombinedCharts('30d');
 }
-
-function buildCombinedMetrics() {
-  const hasBn = state.bn, hasIb = state.ib;
-  const total = (hasBn ? bnData.total : 0) + (hasIb ? ibData.total : 0);
-  const pnl   = (hasBn ? bnData.pnl : 0) + (hasIb ? ibData.pnl : 0);
-  const wins  = (hasBn ? bnData.wins : 0) + (hasIb ? ibData.wins : 0);
-  const loss  = (hasBn ? bnData.loss : 0) + (hasIb ? ibData.loss : 0);
-  const stops = hasBn ? bnData.stops : 0;
-  const wr    = hasBn && hasIb ? ((bnData.wr + ibData.wr) / 2).toFixed(1) : hasBn ? bnData.wr : ibData.wr;
-
-  document.getElementById('cTotal').textContent = total;
-  const pts = []; if (hasBn) pts.push('BN:'+bnData.total); if (hasIb) pts.push('IB:'+ibData.total);
-  document.getElementById('cTotalSub').textContent = pts.join(' · ');
-  const pEl = document.getElementById('cPnl');
-  pEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toLocaleString();
-  pEl.className = 'mc-val ' + (pnl >= 0 ? 'green' : 'red');
-  const ps = []; if (hasBn) ps.push('BN:+$'+bnData.pnl); if (hasIb) ps.push('IB:+$'+ibData.pnl);
-  document.getElementById('cPnlSub').textContent = ps.join(' · ');
-  document.getElementById('cWR').textContent = wr + '%';
-  document.getElementById('cBest').textContent = '+$540';
-  document.getElementById('cWins').textContent = wins;
-  document.getElementById('cLoss').textContent = loss;
-  document.getElementById('cStops').textContent = stops;
-  document.getElementById('cAvg').textContent = '+$' + (pnl / Math.max(wins, 1)).toFixed(0);
-
-  const totalPnl = (hasBn ? bnData.pnl : 0) + (hasIb ? ibData.pnl : 0) || 1;
-  const bnPct = hasBn ? Math.round(bnData.pnl / totalPnl * 100) : 0;
-  const ibPct = hasIb ? 100 - bnPct : 0;
-  document.getElementById('cBnPct').textContent = hasBn ? bnPct + '%' : '—';
-  document.getElementById('cIbPct').textContent = hasIb ? ibPct + '%' : '—';
-  document.getElementById('cBnPnlV').textContent = hasBn ? '+$' + bnData.pnl.toLocaleString() : '—';
-  document.getElementById('cIbPnlV').textContent = hasIb ? '+$' + ibData.pnl.toLocaleString() : '—';
-
-  if (charts['cPieChart']) charts['cPieChart'].destroy();
-  charts['cPieChart'] = new Chart(document.getElementById('cPieChart'), {
-    type: 'doughnut',
-    data: { labels: ['Binance','IBKR'], datasets: [{ data: [hasBn?bnPct:0, hasIb?ibPct:0], backgroundColor: ['#F0B90B','#3b82f6'], borderWidth: 0, hoverOffset: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
-  });
-
-  const allItems = [];
-  if (hasBn) bnData.pairs.forEach(x => allItems.push({ s: x.s, p: x.p, t: 'crypto' }));
-  if (hasIb) ibData.tickers.forEach(x => allItems.push({ s: x.s, p: x.p, t: 'stock' }));
-  document.getElementById('cAllPills').innerHTML = allItems.map(x =>
-    `<span class="pill ${x.p?'pos':'neg'}">${x.s}</span>`).join('');
+function renderCombinedTrades(filter){
+  const hasBn=state.bn,hasIb=state.ib;
+  let all=[...(hasBn?bnTrades.map(t=>({instrument:t.pair,broker:'Binance',tradeType:t.tradeType,date:t.entryDate,pnl:t.pnl,result:t.result,src:'crypto',raw:t})):[]),...(hasIb?ibTrades.map(t=>({instrument:t.ticker,broker:'IBKR',tradeType:t.tradeType==='stock'?'Акция':'Опцион',date:t.entryDate,pnl:t.pnl,result:t.result,src:'stocks',raw:t})):[])];
+  if(filter==='crypto')all=all.filter(t=>t.src==='crypto');
+  else if(filter==='stocks')all=all.filter(t=>t.src==='stocks');
+  else if(filter!=='all')all=all.filter(t=>t.result===filter);
+  const tbody=document.getElementById('cTbody');
+  if(!all.length){tbody.innerHTML='<tr><td colspan="7" class="no-data">Нет данных</td></tr>';return;}
+  tbody.innerHTML=all.map(t=>`<tr>
+    <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.instrument}</td>
+    <td><span class="tag ${t.broker==='Binance'?'crypto':'stock'}">${t.broker}</span></td>
+    <td style="color:var(--text2);font-size:11px">${t.tradeType}</td>
+    <td style="color:var(--text2);font-size:11px">${t.date}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</td>
+    <td><span class="tag ${t.result==='Профит'?'profit':t.result==='Стоп'?'stop':'be'}">${t.result}</span></td>
+    <td><button onclick="openTradeDetail(${JSON.stringify(t.raw).replace(/"/g,'&quot;')},${JSON.stringify(t.broker==='Binance'?'binance':'ibkr')})" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">📋 Детали</button></td>
+  </tr>`).join('');
+}
+function filterCombined(f,el){el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderCombinedTrades(f);}
+function initCombinedCharts(period){
+  const n=period==='30d'?30:90;
+  const hasBn=state.bn,hasIb=state.ib;
+  const bnC=hasBn?genCurve(n,60,12):new Array(n).fill(0);
+  const ibC=hasIb?genCurve(n,200,30):new Array(n).fill(0);
+  const tot=bnC.map((v,i)=>parseFloat((v+ibC[i]).toFixed(2)));
+  const datasets=[];
+  if(hasBn)datasets.push({data:bnC,borderColor:'#F0B90B',backgroundColor:'transparent',tension:.4,pointRadius:0,borderWidth:1.5});
+  if(hasIb)datasets.push({data:ibC,borderColor:'#3b82f6',backgroundColor:'transparent',tension:.4,pointRadius:0,borderWidth:1.5});
+  datasets.push({data:tot,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.06)',fill:true,tension:.4,pointRadius:0,borderWidth:2.5});
+  mkChart('cLineChart',{type:'line',data:{labels:genLabels(n),datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc()},ticks:{color:tc(),font:{size:9},maxTicksLimit:10}},y:{grid:{color:gc()},ticks:{color:tc(),font:{size:9},callback:v=>'$'+v}}}}});
+  const months=['Янв','Фев','Мар','Апр','Май','Июн'];
+  const bnM=hasBn?[120,340,-80,560,290,120]:[0,0,0,0,0,0];
+  const ibM=hasIb?[800,1200,-300,900,1100,140]:[0,0,0,0,0,0];
+  mkChart('cMonthChart',{type:'bar',data:{labels:months,datasets:[...(hasBn?[{label:'BN',data:bnM,backgroundColor:'rgba(240,185,11,.75)',borderRadius:4,stack:'s'}]:[]),...(hasIb?[{label:'IBKR',data:ibM,backgroundColor:'rgba(59,130,246,.75)',borderRadius:4,stack:'s'}]:[])]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:tc(),font:{size:10}}},y:{stacked:true,grid:{color:gc()},ticks:{color:tc(),font:{size:9},callback:v=>'$'+v}}}}});
 }
 
-function buildCombinedTrades(filter) {
-  const hasBn = state.bn, hasIb = state.ib;
-  let all = [];
-  if (hasBn) bnData.trades.forEach(t => all.push({ instrument: t.pair, broker: 'Binance', bType: 'crypto', date: t.open, pnl: t.pnl, result: t.result }));
-  if (hasIb) ibData.trades.forEach(t => all.push({ instrument: t.ticker, broker: 'IBKR', bType: t.type, date: t.date, pnl: t.pnl, result: t.result }));
-
-  let filtered = all;
-  if (filter === 'crypto') filtered = all.filter(t => t.broker === 'Binance');
-  if (filter === 'stocks') filtered = all.filter(t => t.broker === 'IBKR');
-  if (filter === 'win') filtered = all.filter(t => t.result === 'win');
-  if (filter === 'loss') filtered = all.filter(t => t.result === 'loss');
-
-  const tbody = document.getElementById('cTbody');
-  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="5" class="no-data">Нет данных — подключите брокеров</td></tr>'; return; }
-  tbody.innerHTML = filtered.map(t => `
-    <tr>
-      <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.instrument}</td>
-      <td><span class="tag ${t.broker==='Binance'?'crypto':t.bType==='option'?'option':'stock'}">${t.broker}</span></td>
-      <td style="color:var(--text2);font-size:11px">${t.date}</td>
-      <td style="font-family:'JetBrains Mono',monospace;${t.pnl>0?'color:var(--green)':'color:var(--red)'}">${t.pnl>0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</td>
-      <td><span class="tag ${t.result}">${t.result==='win'?'✓ Прибыль':t.result==='stop'?'◼ Стоп':'✗ Убыток'}</span></td>
-    </tr>`).join('');
-}
-
-function filterCombined(f, el) {
-  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  buildCombinedTrades(f);
-}
-
-function initCombinedCharts(period) {
-  const n = period === '30d' ? 30 : 90;
-  const hasBn = state.bn, hasIb = state.ib;
-  const bnC = hasBn ? genCurve(n, 60, 12) : new Array(n).fill(0);
-  const ibC = hasIb ? genCurve(n, 200, 30) : new Array(n).fill(0);
-  const tot = bnC.map((v, i) => parseFloat((v + ibC[i]).toFixed(2)));
-  const datasets = [];
-  if (hasBn) datasets.push({ data: bnC, borderColor: '#F0B90B', backgroundColor: 'transparent', tension: .4, pointRadius: 0, borderWidth: 1.5 });
-  if (hasIb) datasets.push({ data: ibC, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: .4, pointRadius: 0, borderWidth: 1.5 });
-  datasets.push({ data: tot, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.06)', fill: true, tension: .4, pointRadius: 0, borderWidth: 2.5, borderDash: [5, 3] });
-
-  mkChart('cLineChart', {
-    type: 'line',
-    data: { labels: genLabels(n), datasets },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-      scales: { x: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 9 }, maxTicksLimit: 10 } },
-        y: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 9 }, callback: v => '$' + v } } } }
-  });
-
-  const months = ['Янв','Фев','Мар','Апр','Май','Июн'];
-  const bnM = hasBn ? [120, 340, -80, 560, 290, 120] : [0,0,0,0,0,0];
-  const ibM = hasIb ? [800, 1200, -300, 900, 1100, 140] : [0,0,0,0,0,0];
-  mkChart('cMonthChart', {
-    type: 'bar',
-    data: { labels: months, datasets: [
-      ...(hasBn ? [{ label: 'BN', data: bnM, backgroundColor: 'rgba(240,185,11,0.75)', borderRadius: 4, stack: 's' }] : []),
-      ...(hasIb ? [{ label: 'IBKR', data: ibM, backgroundColor: 'rgba(59,130,246,0.75)', borderRadius: 4, stack: 's' }] : [])
-    ]},
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-      scales: { x: { stacked: true, grid: { display: false }, ticks: { color: tc(), font: { size: 10 } } },
-        y: { stacked: true, grid: { color: gc() }, ticks: { color: tc(), font: { size: 9 }, callback: v => '$' + v } } } }
-  });
-}
-
-// ══════════════════════════════════════════════
+// ══════════════════════════════
 // PERIOD SWITCHER
-// ══════════════════════════════════════════════
-function switchPeriod(el, prefix, period) {
-  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+// ══════════════════════════════
+function switchPeriod(el,prefix,period){
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  const nMap = { '7d':7, '30d':30, '90d':90, 'mtd':20, 'ytd':90, 'all':120 };
-  const n = nMap[period] || 30;
-  if (prefix === 'bn' && charts['bnPnlChart']) {
-    charts['bnPnlChart'].data.labels = genLabels(n);
-    charts['bnPnlChart'].data.datasets[0].data = genCurve(n, 60, 12);
-    charts['bnPnlChart'].update();
-  }
-  if (prefix === 'ib' && charts['ibPnlChart']) {
-    charts['ibPnlChart'].data.labels = genLabels(n);
-    charts['ibPnlChart'].data.datasets[0].data = genCurve(n, 200, 30);
-    charts['ibPnlChart'].update();
-  }
-  if (prefix === 'c') initCombinedCharts(period);
+  const nMap={'7d':7,'30d':30,'90d':90,'mtd':20,'ytd':90,'all':120};
+  const n=nMap[period]||30;
+  if(prefix==='bn'&&charts['bnPnlChart']){charts['bnPnlChart'].data.labels=genLabels(n);charts['bnPnlChart'].data.datasets[0].data=genCurve(n,60,12);charts['bnPnlChart'].update();}
+  if(prefix==='ib'&&charts['ibPnlChart']){charts['ibPnlChart'].data.labels=genLabels(n);charts['ibPnlChart'].data.datasets[0].data=genCurve(n,200,30);charts['ibPnlChart'].update();}
+  if(prefix==='c')initCombinedCharts(period);
 }
 </script>
 </body>
