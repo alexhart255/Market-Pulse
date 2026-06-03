@@ -972,37 +972,22 @@ async function unlockApp() {
   const btn = document.querySelector('.lock-btn');
   btn.textContent = 'Проверяем...'; btn.disabled = true;
 
-  try {
-    // Берём хеш: сначала из localStorage, потом из файла
-    const storedHash = localStorage.getItem('tj_pwd_hash') || PRESET_PWD_HASH || null;
+  // Вычисляем хеш введённого пароля
+  const enteredHash = await hashPassword(pwd);
 
-    if (storedHash) {
-      const hash = await hashPassword(pwd);
-      if (hash !== storedHash) throw new Error('wrong password');
-      // Записываем в localStorage если там ещё нет
-      if (!localStorage.getItem('tj_pwd_hash')) {
-        localStorage.setItem('tj_pwd_hash', storedHash);
-      }
-    } else {
-      // Первый запуск без хеша — сохраняем введённый пароль
-      const hash = await hashPassword(pwd);
-      localStorage.setItem('tj_pwd_hash', hash);
-    }
+  // Сравниваем с сохранённым хешем
+  const savedHash = PRESET_PWD_HASH;
 
-    // Расшифровываем API ключи если есть
-    for (const [k, v] of Object.entries(ENCRYPTED_KEYS)) {
-      if (v) { try { KEYS[k] = await decryptText(v, pwd); } catch(e) {} }
-    }
-
-    // Успешный вход
+  if (enteredHash === savedHash) {
+    // Пароль верный — открываем приложение
     document.getElementById('lockError').classList.remove('show');
     if (remember) {
       localStorage.setItem(REMEMBER_KEY, 'true');
       localStorage.setItem(STORAGE_KEY, 'active');
     }
     showApp();
-
-  } catch(e) {
+  } else {
+    // Пароль неверный
     document.getElementById('lockError').classList.add('show');
     btn.textContent = 'Войти →'; btn.disabled = false;
     document.getElementById('lockInput').value = '';
