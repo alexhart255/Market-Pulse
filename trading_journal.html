@@ -934,27 +934,69 @@ async function fetchBinanceTrades(apiKey, secret) {
 
 function processBinanceTrades(apiData) {
   if (!apiData || !apiData.length) { loadBnData(); return; }
-  // Конвертируем формат Binance в наш формат
-  const processed = apiData.slice(0,50).map((t,i) => {
-    const entryDt = new Date(t.time);
-    const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+
+  // Группируем fills по orderId — один ордер = одна строка
+  const orderMap = {};
+  apiData.forEach(t => {
+    const key = t.orderId + '_' + t.symbol;
+    if (!orderMap[key]) {
+      orderMap[key] = {
+        orderId: t.orderId,
+        symbol: t.symbol,
+        side: t.side,
+        fills: [],
+        totalPnl: 0,
+        totalQty: 0,
+        firstTime: t.time,
+        lastTime: t.time,
+      };
+    }
+    const o = orderMap[key];
+    o.fills.push(t);
+    o.totalPnl += parseFloat(t.realizedPnl || 0);
+    o.totalQty += parseFloat(t.qty || 0);
+    if (t.time < o.firstTime) o.firstTime = t.time;
+    if (t.time > o.lastTime) o.lastTime = t.time;
+  });
+
+  // Конвертируем сгруппированные ордера
+  const processed = Object.values(orderMap).map(o => {
+    // Средневзвешенная цена входа
+    const totalValue = o.fills.reduce((a,f) => a + parseFloat(f.price)*parseFloat(f.qty), 0);
+    const avgPrice = totalValue / o.totalQty;
+    const entryDt = new Date(o.firstTime);
+    const exitDt = new Date(o.lastTime);
+
+    // Считаем время в сделке
+    const diffMs = exitDt - entryDt;
+    const diffH = Math.floor(diffMs/3600000);
+    const diffM = Math.floor((diffMs%3600000)/60000);
+    const duration = diffMs < 60000 ? 'менее 1м' : diffH > 0 ? diffH+'ч '+diffM+'м' : diffM+'м';
+
+    const pnl = parseFloat(o.totalPnl.toFixed(2));
+
     return {
-      id: 'bn_'+t.id,
-      pair: t.symbol,
-      tradeType: t.side==='BUY'?'Лонг':'Шорт',
+      id: 'bn_' + o.orderId,
+      pair: o.symbol,
+      tradeType: o.side === 'BUY' ? 'Лонг' : 'Шорт',
       entryDate: entryDt.toLocaleDateString('ru-RU'),
       weekDay: days[entryDt.getDay()],
       entryTime: entryDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
-      exitDate: entryDt.toLocaleDateString('ru-RU'),
-      exitTime: entryDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
-      duration: '—',
-      entryPrice: parseFloat(t.price),
-      exitPrice: parseFloat(t.price),
+      exitDate: exitDt.toLocaleDateString('ru-RU'),
+      exitTime: exitDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
+      duration: duration,
+      entryPrice: parseFloat(avgPrice.toFixed(4)),
+      exitPrice: parseFloat(avgPrice.toFixed(4)),
       priceChange: 0,
-      pnl: parseFloat(t.realizedPnl||0),
-      result: parseFloat(t.realizedPnl||0)>0?'Профит':parseFloat(t.realizedPnl||0)<0?'Стоп':'Безубыток',
+      pnl: pnl,
+      result: pnl > 0 ? 'Профит' : pnl < 0 ? 'Стоп' : 'Безубыток',
     };
   });
+
+  // Сортируем по времени — новые сверху
+  processed.sort((a,b) => new Date(b.entryDate+' '+b.entryTime) - new Date(a.entryDate+' '+a.entryTime));
+
   // Заменяем демо-данные реальными
   bnTrades.length = 0;
   processed.forEach(t => bnTrades.push(t));
