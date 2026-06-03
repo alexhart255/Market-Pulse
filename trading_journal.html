@@ -515,10 +515,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
       <div>
         <div class="slabel">Ввести вручную</div>
         <div class="detail-grid">
-          <div class="detail-field">
-            <div class="detail-label">Тип сделки</div>
-            <select class="select-field" id="mTradeType"><option value="">—</option><option>Лонг</option><option>Шорт</option></select>
-          </div>
+
           <div class="detail-field">
             <div class="detail-label">Риск соотношение</div>
             <input class="input-field" id="mRisk" placeholder="напр. 1/3" />
@@ -535,10 +532,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <div class="detail-label">% Stop — ATR или Технический</div>
             <select class="select-field" id="mStopType"><option value="">—</option><option>ATR</option><option>Технический</option></select>
           </div>
-          <div class="detail-field">
-            <div class="detail-label">Результат сделки</div>
-            <select class="select-field" id="mResult"><option value="">—</option><option>Профит</option><option>Стоп</option><option>Безубыток</option></select>
-          </div>
+
 
           <div class="detail-field">
             <div class="detail-label">Возможность перезахода?</div>
@@ -1234,12 +1228,10 @@ async function openTradeDetail(trade, broker) {
     `<div class="detail-field"><div class="detail-label">${f.l}</div><div class="detail-value ${f.c||'neutral'}">${f.v}</div></div>`
   ).join('');
   // Fill manual fields from saved data
-  document.getElementById('mTradeType').value = savedDetails.trade_type || '';
   document.getElementById('mRisk').value = savedDetails.risk || '';
   document.getElementById('mLevel').value = savedDetails.level || '';
   document.getElementById('mLevelPrice').value = savedDetails.level_price || '';
   document.getElementById('mStopType').value = savedDetails.stop_type || '';
-  document.getElementById('mResult').value = savedDetails.result_manual || '';
   document.getElementById('mReentry').value = savedDetails.reentry || '';
   document.getElementById('mRiskResult').value = savedDetails.risk_result || '';
   document.getElementById('mRiskMore').value = savedDetails.risk_more || '';
@@ -1273,12 +1265,10 @@ async function saveTradeDetails() {
   const btn = document.querySelector('.btn-save');
   btn.textContent = '⏳ Сохраняем...'; btn.disabled = true;
   const data = {
-    trade_type: document.getElementById('mTradeType').value,
     risk: document.getElementById('mRisk').value,
     level: document.getElementById('mLevel').value,
     level_price: document.getElementById('mLevelPrice').value,
     stop_type: document.getElementById('mStopType').value,
-    result_manual: document.getElementById('mResult').value,
     reentry: document.getElementById('mReentry').value,
     risk_result: document.getElementById('mRiskResult').value,
     risk_more: document.getElementById('mRiskMore').value,
