@@ -523,10 +523,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <div class="detail-label">Результат сделки</div>
             <select class="select-field" id="mResult"><option value="">—</option><option>Профит</option><option>Стоп</option><option>Безубыток</option></select>
           </div>
-          <div class="detail-field">
-            <div class="detail-label">Результат в $ (если авто недоступно)</div>
-            <input class="input-field" id="mPnlUsd" placeholder="напр. 142.50" />
-          </div>
+
           <div class="detail-field">
             <div class="detail-label">Возможность перезахода?</div>
             <select class="select-field" id="mReentry"><option value="">—</option><option>Да</option><option>Нет</option></select>
@@ -613,19 +610,29 @@ function initSupabase() {
 }
 async function saveTradeDetail(tradeId, broker, data) {
   const db = initSupabase();
-  const { error } = await db.from('tj_trade_details').upsert({ trade_id: tradeId, broker, ...data });
+  const { error } = await db.from('tj_trade_details')
+    .upsert({ trade_id: tradeId, broker, ...data, updated_at: new Date().toISOString() },
+            { onConflict: 'trade_id,broker' });
   if (error) console.error('Save error:', error);
+  else console.log('✅ Детали сохранены:', tradeId);
 }
 async function loadTradeDetail(tradeId, broker) {
   const db = initSupabase();
-  const { data } = await db.from('tj_trade_details').select('*').eq('trade_id', tradeId).eq('broker', broker).single();
-  return data;
+  try {
+    const { data, error } = await db.from('tj_trade_details')
+      .select('*').eq('trade_id', tradeId).eq('broker', broker).maybeSingle();
+    if (error) { console.error('Load error:', error); return {}; }
+    return data || {};
+  } catch(e) { return {}; }
 }
 async function saveScreenToSupabase(tradeId, broker, screenNum, base64) {
   const db = initSupabase();
-  const key = `screen${screenNum}`;
-  const { error } = await db.from('tj_trade_details').upsert({ trade_id: tradeId, broker, [key]: base64 }, { onConflict: 'trade_id,broker' });
+  const key = 'screen'+screenNum;
+  const { error } = await db.from('tj_trade_details')
+    .upsert({ trade_id: tradeId, broker, [key]: base64, updated_at: new Date().toISOString() },
+            { onConflict: 'trade_id,broker' });
   if (error) console.error('Screen save error:', error);
+  else console.log('✅ Скрин сохранён:', tradeId, 'screen'+screenNum);
 }
 
 // ══════════════════════════════
@@ -945,6 +952,7 @@ function processBinanceTrades(apiData) {
         orderId: t.orderId,
         symbol: t.symbol,
         side: t.side,
+        positionSide: t.positionSide || 'BOTH',
         fills: [],
         totalPnl: 0,
         totalQty: 0,
@@ -960,41 +968,72 @@ function processBinanceTrades(apiData) {
     if (t.time > o.lastTime) o.lastTime = t.time;
   });
 
-  // Конвертируем сгруппированные ордера
-  const processed = Object.values(orderMap).map(o => {
-    // Средневзвешенная цена входа
-    const totalValue = o.fills.reduce((a,f) => a + parseFloat(f.price)*parseFloat(f.qty), 0);
-    const avgPrice = totalValue / o.totalQty;
-    const entryDt = new Date(o.firstTime);
-    const exitDt = new Date(o.lastTime);
+  // Находим пары ордеров: открытие + закрытие по символу
+  // Группируем по символу и сопоставляем BUY-открытие с SELL-закрытием
+  const symbols = [...new Set(Object.values(orderMap).map(o => o.symbol))];
+  const tradeMap = {};
+  symbols.forEach(sym => {
+    const symOrders = Object.values(orderMap)
+      .filter(o => o.symbol === sym)
+      .sort((a,b) => a.firstTime - b.firstTime);
+    // Для каждой пары открытие/закрытие формируем одну сделку
+    let openOrder = null;
+    symOrders.forEach(o => {
+      const pnl = parseFloat(o.totalPnl.toFixed(2));
+      if (!openOrder) {
+        openOrder = o;
+      } else if (pnl !== 0) {
+        // Это закрывающий ордер
+        tradeMap[openOrder.orderId+'_'+sym] = { entry: openOrder, exit: o };
+        openOrder = null;
+      } else {
+        openOrder = o;
+      }
+    });
+    // Если остался незакрытый ордер
+    if (openOrder) tradeMap[openOrder.orderId+'_'+sym+'_open'] = { entry: openOrder, exit: null };
+  });
 
-    // Считаем время в сделке — точное время
+  // Конвертируем пары ордеров в сделки
+  const processed = Object.values(tradeMap).map(({entry, exit}) => {
+    // Средневзвешенная цена входа
+    const entryValue = entry.fills.reduce((a,f) => a + parseFloat(f.price)*parseFloat(f.qty), 0);
+    const entryPrice = entryValue / entry.totalQty;
+    // Цена выхода (если есть)
+    let exitPrice = entryPrice;
+    if (exit) {
+      const exitValue = exit.fills.reduce((a,f) => a + parseFloat(f.price)*parseFloat(f.qty), 0);
+      exitPrice = exitValue / exit.totalQty;
+    }
+    const entryDt = new Date(entry.firstTime);
+    const exitDt = exit ? new Date(exit.lastTime) : new Date(entry.lastTime);
+    // Точное время в сделке
     const diffMs = exitDt - entryDt;
     const diffD = Math.floor(diffMs/86400000);
     const diffH = Math.floor((diffMs%86400000)/3600000);
     const diffM = Math.floor((diffMs%3600000)/60000);
     const diffS = Math.floor((diffMs%60000)/1000);
     let duration = '';
-    if (diffD > 0) duration = diffD+'д '+diffH+'ч '+diffM+'м';
+    if (!exit) duration = 'Открыта';
+    else if (diffD > 0) duration = diffD+'д '+diffH+'ч '+diffM+'м';
     else if (diffH > 0) duration = diffH+'ч '+diffM+'м';
     else if (diffM > 0) duration = diffM+'м '+diffS+'с';
-    else duration = diffS+'с';
-
-    const pnl = parseFloat(o.totalPnl.toFixed(2));
-
+    else duration = diffS > 0 ? diffS+'с' : '< 1с';
+    const pnl = exit ? parseFloat(exit.totalPnl.toFixed(2)) : 0;
+    const priceChange = entryPrice > 0 ? parseFloat(((exitPrice - entryPrice) / entryPrice * 100).toFixed(2)) : 0;
     return {
-      id: 'bn_' + o.orderId,
-      pair: o.symbol,
-      tradeType: o.side === 'BUY' ? 'Лонг' : 'Шорт',
+      id: 'bn_' + entry.orderId,
+      pair: entry.symbol,
+      tradeType: entry.side === 'BUY' ? 'Лонг' : 'Шорт',
       entryDate: entryDt.toLocaleDateString('ru-RU'),
       weekDay: days[entryDt.getDay()],
       entryTime: entryDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
       exitDate: exitDt.toLocaleDateString('ru-RU'),
       exitTime: exitDt.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}),
       duration: duration,
-      entryPrice: parseFloat(avgPrice.toFixed(4)),
-      exitPrice: parseFloat(avgPrice.toFixed(4)),
-      priceChange: 0,
+      entryPrice: parseFloat(entryPrice.toFixed(4)),
+      exitPrice: parseFloat(exitPrice.toFixed(4)),
+      priceChange: priceChange,
       pnl: pnl,
       result: pnl > 0 ? 'Профит' : pnl < 0 ? 'Стоп' : 'Безубыток',
     };
@@ -1123,6 +1162,20 @@ function initIbCharts(){
 // ══════════════════════════════
 // TRADE DETAIL MODAL
 // ══════════════════════════════
+function restoreScreen(num, src) {
+  const preview = document.getElementById('screen'+num+'Preview');
+  const empty = document.getElementById('screen'+num+'Empty');
+  const img = document.getElementById('screen'+num+'Img');
+  if (src) {
+    img.src = src;
+    preview.style.display = 'block';
+    empty.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    empty.style.display = 'flex';
+  }
+}
+
 async function openTradeDetail(trade, broker) {
   currentTrade = { ...trade, broker };
   const savedDetails = await loadTradeDetail(trade.id, broker) || {};
@@ -1152,23 +1205,22 @@ async function openTradeDetail(trade, broker) {
   document.getElementById('modalAutoFields').innerHTML = autoFields.map(f=>
     `<div class="detail-field"><div class="detail-label">${f.l}</div><div class="detail-value ${f.c||'neutral'}">${f.v}</div></div>`
   ).join('');
-  // Fill manual fields
+  // Fill manual fields from saved data
   document.getElementById('mTradeType').value = savedDetails.trade_type || '';
   document.getElementById('mRisk').value = savedDetails.risk || '';
   document.getElementById('mLevel').value = savedDetails.level || '';
   document.getElementById('mLevelPrice').value = savedDetails.level_price || '';
   document.getElementById('mStopType').value = savedDetails.stop_type || '';
   document.getElementById('mResult').value = savedDetails.result_manual || '';
-  document.getElementById('mPnlUsd').value = savedDetails.pnl_manual || '';
   document.getElementById('mReentry').value = savedDetails.reentry || '';
   document.getElementById('mRiskResult').value = savedDetails.risk_result || '';
   document.getElementById('mRiskMore').value = savedDetails.risk_more || '';
   document.getElementById('mComment').value = savedDetails.comment || '';
-  // Screens
-  if(savedDetails.screen1){document.getElementById('screen1Img').src=savedDetails.screen1;document.getElementById('screen1Preview').style.display='block';document.getElementById('screen1Empty').style.display='none';}
-  else {document.getElementById('screen1Preview').style.display='none';document.getElementById('screen1Empty').style.display='flex';}
-  if(savedDetails.screen2){document.getElementById('screen2Img').src=savedDetails.screen2;document.getElementById('screen2Preview').style.display='block';document.getElementById('screen2Empty').style.display='none';}
-  else {document.getElementById('screen2Preview').style.display='none';document.getElementById('screen2Empty').style.display='flex';}
+  // Restore screens from saved data
+  tradeDetails.screen1 = savedDetails.screen1 || null;
+  tradeDetails.screen2 = savedDetails.screen2 || null;
+  restoreScreen(1, savedDetails.screen1);
+  restoreScreen(2, savedDetails.screen2);
   document.getElementById('tradeModal').classList.add('open');
 }
 function closeModal(){document.getElementById('tradeModal').classList.remove('open');currentTrade=null;}
@@ -1197,7 +1249,7 @@ async function saveTradeDetails() {
     level_price: document.getElementById('mLevelPrice').value,
     stop_type: document.getElementById('mStopType').value,
     result_manual: document.getElementById('mResult').value,
-    pnl_manual: document.getElementById('mPnlUsd').value,
+
     reentry: document.getElementById('mReentry').value,
     risk_result: document.getElementById('mRiskResult').value,
     risk_more: document.getElementById('mRiskMore').value,
