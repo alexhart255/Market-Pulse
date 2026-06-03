@@ -1329,8 +1329,17 @@ function lockApp() {
   document.getElementById('lockScreen').classList.add('active');
 }
 
+// Предустановленный хеш пароля (задан через setupKeys)
+const PRESET_PWD_HASH = 'b16bf4a5ef11a8ab0b931e27254a6c1a5e55a332ad8b654240a679905d0010fc';
+
 // Запуск при загрузке страницы
-window.addEventListener('load', () => checkAutoLogin());
+window.addEventListener('load', async () => {
+  // Устанавливаем хеш если его ещё нет в localStorage
+  if (!localStorage.getItem('tj_pwd_hash') && PRESET_PWD_HASH) {
+    localStorage.setItem('tj_pwd_hash', PRESET_PWD_HASH);
+  }
+  await checkAutoLogin();
+});
 
 // ══════════════════════════════════════════════
 const state = { bn: false, ib: false };
