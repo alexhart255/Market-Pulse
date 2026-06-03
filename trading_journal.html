@@ -1023,18 +1023,30 @@ function processBinanceTrades(apiData) {
     }
     const entryDt = new Date(entry.firstTime);
     const exitDt = exit ? new Date(exit.lastTime) : new Date(entry.lastTime);
-    // Точное время в сделке
+    // Точное время в сделке — годы, месяцы, дни, часы, минуты
     const diffMs = exitDt - entryDt;
-    const diffD = Math.floor(diffMs/86400000);
+    const diffTotalD = Math.floor(diffMs/86400000);
+    const diffY = Math.floor(diffTotalD/365);
+    const diffMo = Math.floor((diffTotalD%365)/30);
+    const diffD = diffTotalD%30;
     const diffH = Math.floor((diffMs%86400000)/3600000);
-    const diffM = Math.floor((diffMs%3600000)/60000);
-    const diffS = Math.floor((diffMs%60000)/1000);
+    const diffMin = Math.floor((diffMs%3600000)/60000);
     let duration = '';
-    if (!exit) duration = 'Открыта';
-    else if (diffD > 0) duration = diffD+'д '+diffH+'ч '+diffM+'м';
-    else if (diffH > 0) duration = diffH+'ч '+diffM+'м';
-    else if (diffM > 0) duration = diffM+'м '+diffS+'с';
-    else duration = diffS > 0 ? diffS+'с' : '< 1с';
+    if (!exit) {
+      duration = 'Открыта';
+    } else if (diffY > 0) {
+      duration = diffY+'г '+diffMo+'мес '+diffD+'д';
+    } else if (diffMo > 0) {
+      duration = diffMo+'мес '+diffD+'д '+diffH+'ч';
+    } else if (diffTotalD > 0) {
+      duration = diffTotalD+'д '+diffH+'ч '+diffMin+'м';
+    } else if (diffH > 0) {
+      duration = diffH+'ч '+diffMin+'м';
+    } else if (diffMin > 0) {
+      duration = diffMin+'м';
+    } else {
+      duration = Math.floor((diffMs%60000)/1000)+'с';
+    }
     const pnl = exit ? parseFloat(exit.totalPnl.toFixed(2)) : 0;
     const priceChange = entryPrice > 0 ? parseFloat(((exitPrice - entryPrice) / entryPrice * 100).toFixed(2)) : 0;
     return {
