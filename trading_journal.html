@@ -79,7 +79,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
 .main-tab:hover{color:var(--text1)}.main-tab.active{color:var(--text1)}
 .main-tab.active.bn-col{border-bottom-color:var(--bn)}.main-tab.active.ib-col{border-bottom-color:var(--ib)}.main-tab.active.all-col{border-bottom-color:var(--green)}
 .tab-content{display:none}.tab-content.active{display:flex;flex-direction:column;gap:16px}
-.dash-body{padding:16px 20px;display:flex;flex-direction:column;gap:16px;max-width:1100px;margin:0 auto;width:100%}
+.dash-body{padding:16px 20px;display:flex;flex-direction:column;gap:16px;width:100%}
 
 /* COMPONENTS */
 .slabel{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
@@ -310,8 +310,9 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
     </div>
     <!-- TRADES -->
     <div id="bn-trades" class="tab-content">
-      <div class="card" style="padding:12px 16px">
-        <div class="card-header"><span class="card-title">История сделок</span>
+      <div style="padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="slabel" style="margin:0">История сделок</span>
           <div class="tabs">
             <button class="tab active bn-tab" onclick="filterBnTrades('all',this)">Все</button>
             <button class="tab bn-tab" onclick="filterBnTrades('Профит',this)">Профит</button>
@@ -319,7 +320,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <button class="tab bn-tab" onclick="filterBnTrades('Безубыток',this)">Безубыток</button>
           </div>
         </div>
-        <div style="overflow-x:auto">
+        <div style="overflow-x:auto;width:100%">
         <table class="tt" id="bnTable" style="min-width:1400px">
           <thead><tr>
             <th>Тикер</th><th>Тип</th><th>Вход</th><th>Выход</th>
@@ -406,8 +407,9 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
     </div>
     <!-- TRADES -->
     <div id="ib-trades" class="tab-content">
-      <div class="card" style="padding:12px 16px">
-        <div class="card-header"><span class="card-title">История сделок</span>
+      <div style="padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span class="slabel" style="margin:0">История сделок</span>
           <div class="tabs">
             <button class="tab active ib-tab" onclick="filterIbTrades('all',this)">Все</button>
             <button class="tab ib-tab" onclick="filterIbTrades('stock',this)">Акции</button>
@@ -416,7 +418,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <button class="tab ib-tab" onclick="filterIbTrades('Стоп',this)">Стоп</button>
           </div>
         </div>
-        <div style="overflow-x:auto">
+        <div style="overflow-x:auto;width:100%">
         <table class="tt" id="ibTable" style="min-width:1600px">
           <thead><tr>
             <th>Тикер</th><th>Тип</th><th>Дата входа</th><th>День</th>
