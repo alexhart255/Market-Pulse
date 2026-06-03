@@ -48,7 +48,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
 /* HOME */
 .home{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:40px}
 .home-logo{display:flex;align-items:center;gap:12px}
-.home-logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--bn),var(--ib));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.home-logo-icon{width:48px;height:48px;background:linear-gradient(135deg,#ef4444,#22c55e);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
 .home-logo-text{font-size:22px;font-weight:700;letter-spacing:-.5px}
 .home-logo-sub{font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
 .home-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:580px}
@@ -222,7 +222,14 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
 <div class="home">
   <button onclick="lockApp()" style="position:fixed;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;z-index:100">🔒 Выйти</button>
   <div class="home-logo">
-    <div class="home-logo-icon">📊</div>
+    <div class="home-logo-icon" style="background:linear-gradient(135deg,#1a1a2e,#16213e)">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Trading chart icon">
+        <rect x="3" y="14" width="6" height="11" rx="1.5" fill="#ef4444"/>
+        <rect x="11" y="8" width="6" height="17" rx="1.5" fill="#22c55e"/>
+        <rect x="19" y="4" width="6" height="21" rx="1.5" fill="#22c55e"/>
+        <path d="M4 13 L10 9 L16 11 L22 5" stroke="#f0f2f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+      </svg>
+    </div>
     <div><div class="home-logo-text">Trading Journal</div><div class="home-logo-sub">Pro Dashboard</div></div>
   </div>
   <div class="home-cards">
