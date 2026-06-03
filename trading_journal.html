@@ -968,11 +968,17 @@ function processBinanceTrades(apiData) {
     const entryDt = new Date(o.firstTime);
     const exitDt = new Date(o.lastTime);
 
-    // Считаем время в сделке
+    // Считаем время в сделке — точное время
     const diffMs = exitDt - entryDt;
-    const diffH = Math.floor(diffMs/3600000);
+    const diffD = Math.floor(diffMs/86400000);
+    const diffH = Math.floor((diffMs%86400000)/3600000);
     const diffM = Math.floor((diffMs%3600000)/60000);
-    const duration = diffMs < 60000 ? 'менее 1м' : diffH > 0 ? diffH+'ч '+diffM+'м' : diffM+'м';
+    const diffS = Math.floor((diffMs%60000)/1000);
+    let duration = '';
+    if (diffD > 0) duration = diffD+'д '+diffH+'ч '+diffM+'м';
+    else if (diffH > 0) duration = diffH+'ч '+diffM+'м';
+    else if (diffM > 0) duration = diffM+'м '+diffS+'с';
+    else duration = diffS+'с';
 
     const pnl = parseFloat(o.totalPnl.toFixed(2));
 
@@ -994,8 +1000,8 @@ function processBinanceTrades(apiData) {
     };
   });
 
-  // Сортируем по времени — новые сверху
-  processed.sort((a,b) => new Date(b.entryDate+' '+b.entryTime) - new Date(a.entryDate+' '+a.entryTime));
+  // Сортируем по времени — старые сверху (первая сделка = первая строка)
+  processed.sort((a,b) => new Date(a.entryDate+' '+a.entryTime) - new Date(b.entryDate+' '+b.entryTime));
 
   // Заменяем демо-данные реальными
   bnTrades.length = 0;
@@ -1028,7 +1034,7 @@ function renderBnTrades(filter){
     <td><span class="tag ${t.tradeType==='Лонг'?'long':'short'}">${t.tradeType}</span></td>
     <td style="color:var(--text2);font-size:11px">${t.entryDate}<br><span style="color:var(--text3)">${t.entryTime}</span></td>
     <td style="color:var(--text2);font-size:11px">${t.exitDate}<br><span style="color:var(--text3)">${t.exitTime}</span></td>
-    <td style="color:var(--text2);font-size:11px">${t.duration}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.duration}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice.toLocaleString()}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice.toLocaleString()}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
