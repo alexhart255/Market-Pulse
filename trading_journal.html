@@ -290,7 +290,15 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Кривая PnL</span>
-          <div class="tabs"><button class="tab active bn-tab" onclick="switchPeriod(this,'bn','7d')">7д</button><button class="tab bn-tab" onclick="switchPeriod(this,'bn','30d')">30д</button><button class="tab bn-tab" onclick="switchPeriod(this,'bn','90d')">3м</button></div>
+          <div class="tabs">
+            <button class="tab active bn-tab" onclick="switchPeriod(this,'bn','1d')">1д</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','7d')">7д</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','1m')">1м</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','3m')">3м</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','6m')">6м</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','12m')">12м</button>
+            <button class="tab bn-tab" onclick="switchPeriod(this,'bn','all')">Всё</button>
+          </div>
         </div>
         <div style="position:relative;height:180px"><canvas id="bnPnlChart" role="img" aria-label="Binance PnL">PnL Binance</canvas></div>
       </div>
@@ -367,7 +375,15 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Кривая PnL</span>
-          <div class="tabs"><button class="tab active ib-tab" onclick="switchPeriod(this,'ib','mtd')">С нач. месяца</button><button class="tab ib-tab" onclick="switchPeriod(this,'ib','ytd')">С нач. года</button><button class="tab ib-tab" onclick="switchPeriod(this,'ib','all')">Всё</button></div>
+          <div class="tabs">
+            <button class="tab active ib-tab" onclick="switchPeriod(this,'ib','1d')">1д</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','7d')">7д</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','1m')">1м</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','3m')">3м</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','6m')">6м</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','12m')">12м</button>
+            <button class="tab ib-tab" onclick="switchPeriod(this,'ib','all')">Всё</button>
+          </div>
         </div>
         <div style="position:relative;height:180px"><canvas id="ibPnlChart" role="img" aria-label="IBKR PnL">PnL IBKR</canvas></div>
       </div>
@@ -1071,8 +1087,8 @@ function renderBnTrades(filter){
   tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')">
     <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.pair}</td>
     <td><span class="tag ${t.tradeType==='Лонг'?'long':'short'}">${t.tradeType}</span></td>
-    <td style="color:var(--text2);font-size:11px">${t.entryDate}<br><span style="color:var(--text3)">${t.entryTime}</span></td>
-    <td style="color:var(--text2);font-size:11px">${t.exitDate}<br><span style="color:var(--text3)">${t.exitTime}</span></td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryDate}<br>${t.entryTime}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitDate}<br>${t.exitTime}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.duration}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice.toLocaleString()}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice.toLocaleString()}</td>
@@ -1136,12 +1152,12 @@ function renderIbTrades(filter){
   tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')">
     <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.ticker}</td>
     <td><span class="tag ${t.tradeType}">${t.tradeType==='stock'?'Акция':'Опцион'}</span></td>
-    <td style="color:var(--text2);font-size:11px">${t.entryDate}</td>
-    <td style="color:var(--text2);font-size:11px">${t.weekDay}</td>
-    <td style="color:var(--text2);font-size:11px">${t.entryTime}</td>
-    <td style="color:var(--text2);font-size:11px">${t.exitDate}</td>
-    <td style="color:var(--text2);font-size:11px">${t.exitTime}</td>
-    <td style="color:var(--text2);font-size:11px">${t.duration}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryDate}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.weekDay}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryTime}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitDate}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitTime}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.duration}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
@@ -1242,6 +1258,8 @@ function handleScreenUpload(num, input) {
 }
 async function saveTradeDetails() {
   if(!currentTrade) return;
+  const btn = document.querySelector('.btn-save');
+  btn.textContent = '⏳ Сохраняем...'; btn.disabled = true;
   const data = {
     trade_type: document.getElementById('mTradeType').value,
     risk: document.getElementById('mRisk').value,
@@ -1249,7 +1267,6 @@ async function saveTradeDetails() {
     level_price: document.getElementById('mLevelPrice').value,
     stop_type: document.getElementById('mStopType').value,
     result_manual: document.getElementById('mResult').value,
-
     reentry: document.getElementById('mReentry').value,
     risk_result: document.getElementById('mRiskResult').value,
     risk_more: document.getElementById('mRiskMore').value,
@@ -1257,10 +1274,23 @@ async function saveTradeDetails() {
     screen1: tradeDetails.screen1 || null,
     screen2: tradeDetails.screen2 || null,
   };
-  await saveTradeDetail(currentTrade.id, currentTrade.broker, data);
-  const btn = document.querySelector('.btn-save');
-  btn.textContent = '✅ Сохранено!';
-  setTimeout(()=>{btn.textContent='💾 Сохранить';closeModal();},1500);
+  try {
+    const db = initSupabase();
+    const { error } = await db.from('tj_trade_details')
+      .upsert(
+        { trade_id: currentTrade.id, broker: currentTrade.broker, ...data, updated_at: new Date().toISOString() },
+        { onConflict: 'trade_id,broker' }
+      );
+    if (error) throw error;
+    btn.textContent = '✅ Сохранено!';
+    btn.style.background = '#22c55e'; btn.style.color = '#000';
+    setTimeout(()=>{btn.textContent='💾 Сохранить';btn.style.background='';btn.style.color='';btn.disabled=false;closeModal();},1500);
+  } catch(e) {
+    console.error('Save error:', e);
+    btn.textContent = '❌ Ошибка сохранения';
+    btn.style.background = '#ef4444'; btn.disabled = false;
+    setTimeout(()=>{btn.textContent='💾 Сохранить';btn.style.background='';},3000);
+  }
 }
 
 // ══════════════════════════════
@@ -1337,7 +1367,7 @@ function initCombinedCharts(period){
 function switchPeriod(el,prefix,period){
   el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  const nMap={'7d':7,'30d':30,'90d':90,'mtd':20,'ytd':90,'all':120};
+  const nMap={'1d':1,'7d':7,'1m':30,'3m':90,'6m':180,'12m':365,'all':730,'mtd':30,'ytd':180};
   const n=nMap[period]||30;
   if(prefix==='bn'&&charts['bnPnlChart']){charts['bnPnlChart'].data.labels=genLabels(n);charts['bnPnlChart'].data.datasets[0].data=genCurve(n,60,12);charts['bnPnlChart'].update();}
   if(prefix==='ib'&&charts['ibPnlChart']){charts['ibPnlChart'].data.labels=genLabels(n);charts['ibPnlChart'].data.datasets[0].data=genCurve(n,200,30);charts['ibPnlChart'].update();}
