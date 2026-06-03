@@ -319,14 +319,25 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <button class="tab bn-tab" onclick="filterBnTrades('Безубыток',this)">Безубыток</button>
           </div>
         </div>
-        <table class="tt" id="bnTable">
+        <div style="overflow-x:auto">
+        <table class="tt" id="bnTable" style="min-width:1400px">
           <thead><tr>
             <th>Тикер</th><th>Тип</th><th>Вход</th><th>Выход</th>
             <th>Время в сделке</th><th>Цена входа</th><th>Цена выхода</th>
-            <th>Изм. цены %</th><th>PnL $</th><th>Результат</th><th>Детали</th>
+            <th>Изм. %</th><th>PnL $</th><th>Результат</th>
+            <th style="color:var(--bn)">Риск</th>
+            <th style="color:var(--bn)">Уровень</th>
+            <th style="color:var(--bn)">Цена уровня</th>
+            <th style="color:var(--bn)">Стоп тип</th>
+            <th style="color:var(--bn)">Перезаход</th>
+            <th style="color:var(--bn)">Рез. в рисках</th>
+            <th style="color:var(--bn)">Ещё сходил</th>
+            <th style="color:var(--bn)">Комментарий</th>
+            <th>Детали</th>
           </tr></thead>
-          <tbody><tr><td colspan="11" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
+          <tbody><tr><td colspan="19" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -405,15 +416,26 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <button class="tab ib-tab" onclick="filterIbTrades('Стоп',this)">Стоп</button>
           </div>
         </div>
-        <table class="tt" id="ibTable">
+        <div style="overflow-x:auto">
+        <table class="tt" id="ibTable" style="min-width:1600px">
           <thead><tr>
             <th>Тикер</th><th>Тип</th><th>Дата входа</th><th>День</th>
             <th>Вр. входа</th><th>Дата выхода</th><th>Вр. выхода</th>
             <th>Время в сделке</th><th>Цена входа</th><th>Цена выхода</th>
-            <th>Изм. %</th><th>PnL $</th><th>Результат</th><th>Детали</th>
+            <th>Изм. %</th><th>PnL $</th><th>Результат</th>
+            <th style="color:var(--ib)">Риск</th>
+            <th style="color:var(--ib)">Уровень</th>
+            <th style="color:var(--ib)">Цена уровня</th>
+            <th style="color:var(--ib)">Стоп тип</th>
+            <th style="color:var(--ib)">Перезаход</th>
+            <th style="color:var(--ib)">Рез. в рисках</th>
+            <th style="color:var(--ib)">Ещё сходил</th>
+            <th style="color:var(--ib)">Комментарий</th>
+            <th>Детали</th>
           </tr></thead>
-          <tbody><tr><td colspan="14" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
+          <tbody><tr><td colspan="22" class="no-data">Подключите API на вкладке ⚙ Подключение</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -1086,23 +1108,45 @@ function loadBnData(){
   document.getElementById('bnPills').innerHTML=pairs.map(p=>{const t=bnTrades.filter(x=>x.pair===p);const pnl=t.reduce((a,x)=>a+x.pnl,0);return`<span class="pill ${pnl>=0?'pos':'neg'}">${p}</span>`;}).join('');
   renderBnTrades('all');
 }
-function renderBnTrades(filter){
+async function renderBnTrades(filter){
   let trades=filter==='all'?bnTrades:bnTrades.filter(t=>t.result===filter);
   const tbody=document.querySelector('#bnTable tbody');
   if(!trades.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">Нет сделок</td></tr>';return;}
-  tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')">
-    <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.pair}</td>
+  // Load manual details for all trades from Supabase
+  const db = initSupabase();
+  const tradeIds = trades.map(t => t.id);
+  let detailsMap = {};
+  try {
+    const { data } = await db.from('tj_trade_details')
+      .select('*').in('trade_id', tradeIds).eq('broker','binance');
+    if (data) data.forEach(d => detailsMap[d.trade_id] = d);
+  } catch(e) {}
+
+  const mc = 'font-family:\'JetBrains Mono\',monospace;font-size:11px';
+  tbody.innerHTML=trades.map(t=>{
+    const d = detailsMap[t.id] || {};
+    const manualCell = (v) => `<td style="${mc};color:${v?'var(--text1)':'var(--text3)'}">${v||'—'}</td>`;
+    return `<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')">
+    <td style="font-weight:600;${mc}">${t.pair}</td>
     <td><span class="tag ${t.tradeType==='Лонг'?'long':'short'}">${t.tradeType}</span></td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryDate}<br>${t.entryTime}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitDate}<br>${t.exitTime}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.duration}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice.toLocaleString()}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice.toLocaleString()}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl.toFixed(2)}</td>
+    <td style="${mc};color:var(--text1)">${t.entryDate}<br>${t.entryTime}</td>
+    <td style="${mc};color:var(--text1)">${t.exitDate}<br>${t.exitTime}</td>
+    <td style="${mc};color:var(--text1)">${t.duration}</td>
+    <td style="${mc}">$${t.entryPrice.toLocaleString()}</td>
+    <td style="${mc}">$${t.exitPrice.toLocaleString()}</td>
+    <td style="${mc};${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
+    <td style="${mc};font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl.toFixed(2)}</td>
     <td><span class="tag ${t.result==='Профит'?'profit':t.result==='Стоп'?'stop':'be'}">${t.result}</span></td>
-    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">📋 Детали</button></td>
-  </tr>`).join('');
+    ${manualCell(d.risk)}
+    ${manualCell(d.level)}
+    ${manualCell(d.level_price)}
+    ${manualCell(d.stop_type)}
+    ${manualCell(d.reentry)}
+    ${manualCell(d.risk_result)}
+    ${manualCell(d.risk_more)}
+    <td style="${mc};color:var(--text2);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.comment||''}">${d.comment||'—'}</td>
+    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'binance')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">✏️ Изменить</button></td>
+  </tr>`;}).join('');
 }
 function filterBnTrades(f,el){el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderBnTrades(f);}
 function initBnCharts(){
@@ -1148,29 +1192,51 @@ function loadIbData(){
   document.getElementById('ibPills').innerHTML=tickers.map(p=>{const t=ibTrades.filter(x=>x.ticker===p);const pnl=t.reduce((a,x)=>a+x.pnl,0);return`<span class="pill ${pnl>=0?'pos':'neg'}">${p}</span>`;}).join('');
   renderIbTrades('all');
 }
-function renderIbTrades(filter){
+async function renderIbTrades(filter){
   let trades=ibTrades;
   if(filter==='stock')trades=ibTrades.filter(t=>t.tradeType==='stock');
   else if(filter==='option')trades=ibTrades.filter(t=>t.tradeType==='option');
   else if(filter!=='all')trades=ibTrades.filter(t=>t.result===filter);
   const tbody=document.querySelector('#ibTable tbody');
   if(!trades.length){tbody.innerHTML='<tr><td colspan="14" class="no-data">Нет сделок</td></tr>';return;}
-  tbody.innerHTML=trades.map(t=>`<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')">
-    <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${t.ticker}</td>
+  // Load manual details for IBKR trades
+  const db2 = initSupabase();
+  const ibIds = trades.map(t => t.id);
+  let ibDetailsMap = {};
+  try {
+    const { data } = await db2.from('tj_trade_details')
+      .select('*').in('trade_id', ibIds).eq('broker','ibkr');
+    if (data) data.forEach(d => ibDetailsMap[d.trade_id] = d);
+  } catch(e) {}
+
+  const mc2 = 'font-family:\'JetBrains Mono\',monospace;font-size:11px';
+  tbody.innerHTML=trades.map(t=>{
+    const d = ibDetailsMap[t.id] || {};
+    const manualCell = (v) => `<td style="${mc2};color:${v?'var(--text1)':'var(--text3)'}">${v||'—'}</td>`;
+    return `<tr onclick="openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')">
+    <td style="font-weight:600;${mc2}">${t.ticker}</td>
     <td><span class="tag ${t.tradeType}">${t.tradeType==='stock'?'Акция':'Опцион'}</span></td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryDate}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.weekDay}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.entryTime}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitDate}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.exitTime}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text1)">${t.duration}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.entryPrice}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">$${t.exitPrice}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:11px;${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl}</td>
+    <td style="${mc2};color:var(--text1)">${t.entryDate}</td>
+    <td style="${mc2};color:var(--text1)">${t.weekDay}</td>
+    <td style="${mc2};color:var(--text1)">${t.entryTime}</td>
+    <td style="${mc2};color:var(--text1)">${t.exitDate}</td>
+    <td style="${mc2};color:var(--text1)">${t.exitTime}</td>
+    <td style="${mc2};color:var(--text1)">${t.duration}</td>
+    <td style="${mc2}">$${t.entryPrice}</td>
+    <td style="${mc2}">$${t.exitPrice}</td>
+    <td style="${mc2};${t.priceChange>0?'color:var(--green)':t.priceChange<0?'color:var(--red)':''}">${t.priceChange>0?'+':''}${t.priceChange.toFixed(2)}%</td>
+    <td style="${mc2};font-weight:600;${t.pnl>0?'color:var(--green)':t.pnl<0?'color:var(--red)':''}">${t.pnl>0?'+':''}$${t.pnl}</td>
     <td><span class="tag ${t.result==='Профит'?'profit':t.result==='Стоп'?'stop':'be'}">${t.result}</span></td>
-    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">📋 Детали</button></td>
-  </tr>`).join('');
+    ${manualCell(d.risk)}
+    ${manualCell(d.level)}
+    ${manualCell(d.level_price)}
+    ${manualCell(d.stop_type)}
+    ${manualCell(d.reentry)}
+    ${manualCell(d.risk_result)}
+    ${manualCell(d.risk_more)}
+    <td style="${mc2};color:var(--text2);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.comment||''}">${d.comment||'—'}</td>
+    <td><button onclick="event.stopPropagation();openTradeDetail(${JSON.stringify(t).replace(/"/g,'&quot;')},'ibkr')" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer;font-size:11px">✏️ Изменить</button></td>
+  </tr>`;}).join('');
 }
 function filterIbTrades(f,el){el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderIbTrades(f);}
 function initIbCharts(){
