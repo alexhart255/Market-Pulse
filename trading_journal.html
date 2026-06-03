@@ -545,6 +545,46 @@
 </div>
 </div>
 
+<div id="homeScreen" class="screen">
+<div class="home">
+  <div class="home-logo">
+    <div class="home-logo-icon">📊</div>
+    <div>
+      <div class="home-logo-text">Trading Journal</div>
+      <div class="home-logo-sub">Pro Dashboard</div>
+    </div>
+  </div>
+
+  <div class="home-cards">
+    <div class="hcard" onclick="openDash('binance')">
+      <div class="hcard-icon bn">₿</div>
+      <div class="hcard-name">Binance</div>
+      <div class="hcard-desc">Криптовалютные фьючерсы</div>
+      <span class="hcard-badge badge-bn">Futures</span>
+    </div>
+    <div class="hcard" onclick="openDash('ibkr')">
+      <div class="hcard-icon ib">📈</div>
+      <div class="hcard-name">Interactive Brokers</div>
+      <div class="hcard-desc">Акции и опционы</div>
+      <span class="hcard-badge badge-ib">Stocks / Options</span>
+    </div>
+    <div class="hcard hcard-combined" onclick="openDash('combined')">
+      <div class="hcard-icon all" style="font-size:20px">🔀</div>
+      <div class="hcard-info">
+        <div class="hcard-name">Общий портфель <span class="hcard-badge badge-all" style="margin-left:8px">Авто</span></div>
+        <div class="hcard-desc" style="margin-top:4px">Binance + IBKR вместе. Ключи не нужны — данные из подключённых брокеров.</div>
+      </div>
+      <span style="color:var(--text3);font-size:20px">›</span>
+    </div>
+  </div>
+
+  <button onclick="lockApp()" style="position:fixed;top:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);padding:6px 14px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;display:flex;align-items:center;gap:6px;z-index:100">🔒 Выйти</button>
+  <div class="home-note">
+    🔒 API ключи только для чтения — торговые операции недоступны
+  </div>
+</div>
+</div>
+
 
 <!-- ══════════════════════════════════════════════
      BINANCE DASHBOARD
