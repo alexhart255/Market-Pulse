@@ -7,6 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
 :root {
@@ -125,6 +127,18 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
 .tag.stock{background:rgba(59,130,246,.12);color:var(--ib)}
 .tag.option{background:rgba(168,85,247,.12);color:#a855f7}
 .no-data{text-align:center;color:var(--text3);padding:24px;font-size:12px}
+
+/* FILTER + PDF TOOLBAR */
+.trades-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.period-select{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);padding:7px 12px;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer}
+.period-select:focus{outline:none;border-color:rgba(240,185,11,.5)}
+.btn-pdf{display:flex;align-items:center;gap:6px;padding:7px 16px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text1);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.btn-pdf:hover{background:var(--bg3);border-color:var(--border2)}
+.btn-pdf.bn{border-color:rgba(240,185,11,.3);color:var(--bn)}
+.btn-pdf.bn:hover{background:rgba(240,185,11,.1)}
+.btn-pdf.ib{border-color:rgba(59,130,246,.3);color:var(--ib)}
+.btn-pdf.ib:hover{background:rgba(59,130,246,.1)}
+.trades-count{font-size:11px;color:var(--text3);margin-left:auto}
 
 /* TRADE DETAIL MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
@@ -318,14 +332,31 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
     <!-- TRADES -->
     <div id="bn-trades" class="tab-content">
       <div style="padding:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span class="slabel" style="margin:0">История сделок</span>
+        <div class="trades-toolbar">
           <div class="tabs">
             <button class="tab active bn-tab" onclick="filterBnTrades('all',this)">Все</button>
             <button class="tab bn-tab" onclick="filterBnTrades('Профит',this)">Профит</button>
             <button class="tab bn-tab" onclick="filterBnTrades('Стоп',this)">Стоп</button>
             <button class="tab bn-tab" onclick="filterBnTrades('Безубыток',this)">Безубыток</button>
           </div>
+          <select class="period-select" id="bnPeriodSelect" onchange="applyBnPeriod()">
+            <option value="all">За всё время</option>
+            <option value="today">Сегодня</option>
+            <option value="week">Эта неделя</option>
+            <option value="month">Этот месяц</option>
+            <option value="3months">3 месяца</option>
+            <option value="6months">6 месяцев</option>
+            <option value="year">Этот год</option>
+            <option value="custom">Свой период...</option>
+          </select>
+          <div id="bnCustomPeriod" style="display:none;gap:6px;align-items:center">
+            <input type="date" id="bnDateFrom" class="period-select" style="width:130px"/>
+            <span style="color:var(--text3);font-size:12px">—</span>
+            <input type="date" id="bnDateTo" class="period-select" style="width:130px"/>
+            <button class="btn-pdf" onclick="applyBnPeriod()" style="padding:7px 12px">Применить</button>
+          </div>
+          <span class="trades-count" id="bnTradesCount"></span>
+          <button class="btn-pdf bn" onclick="exportPDF('binance')">📄 Экспорт PDF</button>
         </div>
         <div style="overflow-x:auto;width:100%">
         <table class="tt" id="bnTable" style="min-width:1400px">
@@ -415,8 +446,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
     <!-- TRADES -->
     <div id="ib-trades" class="tab-content">
       <div style="padding:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span class="slabel" style="margin:0">История сделок</span>
+        <div class="trades-toolbar">
           <div class="tabs">
             <button class="tab active ib-tab" onclick="filterIbTrades('all',this)">Все</button>
             <button class="tab ib-tab" onclick="filterIbTrades('stock',this)">Акции</button>
@@ -424,6 +454,24 @@ body{font-family:'Syne',sans-serif;background:var(--bg0);color:var(--text1);min-
             <button class="tab ib-tab" onclick="filterIbTrades('Профит',this)">Профит</button>
             <button class="tab ib-tab" onclick="filterIbTrades('Стоп',this)">Стоп</button>
           </div>
+          <select class="period-select" id="ibPeriodSelect" onchange="applyIbPeriod()">
+            <option value="all">За всё время</option>
+            <option value="today">Сегодня</option>
+            <option value="week">Эта неделя</option>
+            <option value="month">Этот месяц</option>
+            <option value="3months">3 месяца</option>
+            <option value="6months">6 месяцев</option>
+            <option value="year">Этот год</option>
+            <option value="custom">Свой период...</option>
+          </select>
+          <div id="ibCustomPeriod" style="display:none;gap:6px;align-items:center">
+            <input type="date" id="ibDateFrom" class="period-select" style="width:130px"/>
+            <span style="color:var(--text3);font-size:12px">—</span>
+            <input type="date" id="ibDateTo" class="period-select" style="width:130px"/>
+            <button class="btn-pdf" onclick="applyIbPeriod()" style="padding:7px 12px">Применить</button>
+          </div>
+          <span class="trades-count" id="ibTradesCount"></span>
+          <button class="btn-pdf ib" onclick="exportPDF('ibkr')">📄 Экспорт PDF</button>
         </div>
         <div style="overflow-x:auto;width:100%">
         <table class="tt" id="ibTable" style="min-width:1600px">
@@ -1118,9 +1166,15 @@ function loadBnData(){
   renderBnTrades('all');
 }
 async function renderBnTrades(filter){
+  bnCurrentFilter = filter;
   let trades=filter==='all'?bnTrades:bnTrades.filter(t=>t.result===filter);
+  const bnDateFrom = document.getElementById('bnDateFrom')?.value;
+  const bnDateTo = document.getElementById('bnDateTo')?.value;
+  trades = filterByPeriod(trades, bnCurrentPeriod, bnDateFrom, bnDateTo);
+  const countEl = document.getElementById('bnTradesCount');
+  if(countEl) countEl.textContent = trades.length+' сделок';
   const tbody=document.querySelector('#bnTable tbody');
-  if(!trades.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">Нет сделок</td></tr>';return;}
+  if(!trades.length){tbody.innerHTML='<tr><td colspan="19" class="no-data">Нет сделок за выбранный период</td></tr>';return;}
   // Load manual details for all trades from Supabase
   const db = initSupabase();
   const tradeIds = trades.map(t => t.id);
@@ -1202,10 +1256,16 @@ function loadIbData(){
   renderIbTrades('all');
 }
 async function renderIbTrades(filter){
+  ibCurrentFilter = filter;
   let trades=ibTrades;
   if(filter==='stock')trades=ibTrades.filter(t=>t.tradeType==='stock');
   else if(filter==='option')trades=ibTrades.filter(t=>t.tradeType==='option');
   else if(filter!=='all')trades=ibTrades.filter(t=>t.result===filter);
+  const ibDateFrom = document.getElementById('ibDateFrom')?.value;
+  const ibDateTo = document.getElementById('ibDateTo')?.value;
+  trades = filterByPeriod(trades, ibCurrentPeriod, ibDateFrom, ibDateTo);
+  const ibCountEl = document.getElementById('ibTradesCount');
+  if(ibCountEl) ibCountEl.textContent = trades.length+' сделок';
   const tbody=document.querySelector('#ibTable tbody');
   if(!trades.length){tbody.innerHTML='<tr><td colspan="14" class="no-data">Нет сделок</td></tr>';return;}
   // Load manual details for IBKR trades
@@ -1436,6 +1496,197 @@ function initCombinedCharts(period){
   const bnM=hasBn?[120,340,-80,560,290,120]:[0,0,0,0,0,0];
   const ibM=hasIb?[800,1200,-300,900,1100,140]:[0,0,0,0,0,0];
   mkChart('cMonthChart',{type:'bar',data:{labels:months,datasets:[...(hasBn?[{label:'BN',data:bnM,backgroundColor:'rgba(240,185,11,.75)',borderRadius:4,stack:'s'}]:[]),...(hasIb?[{label:'IBKR',data:ibM,backgroundColor:'rgba(59,130,246,.75)',borderRadius:4,stack:'s'}]:[])]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:tc(),font:{size:10}}},y:{stacked:true,grid:{color:gc()},ticks:{color:tc(),font:{size:9},callback:v=>'$'+v}}}}});
+}
+
+// ══════════════════════════════
+// PERIOD FILTER FOR TRADES TABLE
+// ══════════════════════════════
+let bnCurrentFilter = 'all';
+let bnCurrentPeriod = 'all';
+let ibCurrentFilter = 'all';
+let ibCurrentPeriod = 'all';
+
+function getDateRange(period) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch(period) {
+    case 'today':
+      return { from: today, to: new Date(today.getTime() + 86400000) };
+    case 'week':
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay() + 1);
+      return { from: weekStart, to: new Date(weekStart.getTime() + 7*86400000) };
+    case 'month':
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: new Date(now.getFullYear(), now.getMonth()+1, 1) };
+    case '3months':
+      return { from: new Date(now.getFullYear(), now.getMonth()-2, 1), to: now };
+    case '6months':
+      return { from: new Date(now.getFullYear(), now.getMonth()-5, 1), to: now };
+    case 'year':
+      return { from: new Date(now.getFullYear(), 0, 1), to: new Date(now.getFullYear()+1, 0, 1) };
+    default:
+      return null;
+  }
+}
+
+function parseTradeDate(dateStr) {
+  // Format: DD.MM.YYYY
+  if (!dateStr) return null;
+  const parts = dateStr.split('.');
+  if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+  return new Date(dateStr);
+}
+
+function filterByPeriod(trades, period, dateFrom, dateTo) {
+  if (period === 'all') return trades;
+  if (period === 'custom') {
+    if (!dateFrom || !dateTo) return trades;
+    const from = new Date(dateFrom);
+    const to = new Date(dateTo);
+    to.setDate(to.getDate() + 1);
+    return trades.filter(t => {
+      const d = parseTradeDate(t.entryDate || t.date);
+      return d >= from && d <= to;
+    });
+  }
+  const range = getDateRange(period);
+  if (!range) return trades;
+  return trades.filter(t => {
+    const d = parseTradeDate(t.entryDate || t.date);
+    return d >= range.from && d < range.to;
+  });
+}
+
+function applyBnPeriod() {
+  bnCurrentPeriod = document.getElementById('bnPeriodSelect').value;
+  const customDiv = document.getElementById('bnCustomPeriod');
+  customDiv.style.display = bnCurrentPeriod === 'custom' ? 'flex' : 'none';
+  renderBnTrades(bnCurrentFilter);
+}
+function applyIbPeriod() {
+  ibCurrentPeriod = document.getElementById('ibPeriodSelect').value;
+  const customDiv = document.getElementById('ibCustomPeriod');
+  customDiv.style.display = ibCurrentPeriod === 'custom' ? 'flex' : 'none';
+  renderIbTrades(ibCurrentFilter);
+}
+
+// ══════════════════════════════
+// PDF EXPORT
+// ══════════════════════════════
+async function exportPDF(broker) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const isBn = broker === 'binance';
+  const trades = isBn ? bnTrades : ibTrades;
+  const period = isBn ? bnCurrentPeriod : ibCurrentPeriod;
+  const dateFrom = isBn ? document.getElementById('bnDateFrom')?.value : document.getElementById('ibDateFrom')?.value;
+  const dateTo = isBn ? document.getElementById('bnDateTo')?.value : document.getElementById('ibDateTo')?.value;
+  const filtered = filterByPeriod(trades, period, dateFrom, dateTo);
+
+  // Load manual details from Supabase
+  const db = initSupabase();
+  let detailsMap = {};
+  try {
+    const ids = filtered.map(t => t.id);
+    const { data } = await db.from('tj_trade_details').select('*').in('trade_id', ids).eq('broker', broker);
+    if (data) data.forEach(d => detailsMap[d.trade_id] = d);
+  } catch(e) {}
+
+  // Header
+  doc.setFillColor(10, 11, 14);
+  doc.rect(0, 0, 297, 210, 'F');
+  doc.setTextColor(240, 242, 247);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(isBn ? 'Binance Futures — История сделок' : 'Interactive Brokers — История сделок', 14, 16);
+
+  // Period info
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(139, 146, 168);
+  const periodLabels = { all:'За всё время', today:'Сегодня', week:'Эта неделя', month:'Этот месяц', '3months':'3 месяца', '6months':'6 месяцев', year:'Этот год', custom:`${dateFrom} — ${dateTo}` };
+  doc.text(`Период: ${periodLabels[period]||period}   Сделок: ${filtered.length}   Дата отчёта: ${new Date().toLocaleDateString('ru-RU')}`, 14, 22);
+
+  // Stats summary
+  const wins = filtered.filter(t=>t.result==='Профит').length;
+  const stops = filtered.filter(t=>t.result==='Стоп').length;
+  const be = filtered.filter(t=>t.result==='Безубыток').length;
+  const totalPnl = filtered.reduce((a,t)=>a+t.pnl,0);
+  const wr = filtered.length ? Math.round(wins/filtered.length*100) : 0;
+  doc.setFontSize(9);
+  doc.setTextColor(34, 197, 94);
+  doc.text(`Профит: ${wins}  |  `, 14, 28);
+  doc.setTextColor(239, 68, 68);
+  doc.text(`Стоп: ${stops}  |  `, 50, 28);
+  doc.setTextColor(139, 146, 168);
+  doc.text(`Безубыток: ${be}  |  Винрейт: ${wr}%  |  `, 72, 28);
+  doc.setTextColor(totalPnl >= 0 ? 34 : 239, totalPnl >= 0 ? 197 : 68, totalPnl >= 0 ? 94 : 68);
+  doc.text(`PnL: ${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`, 145, 28);
+
+  // Table
+  const headers = isBn
+    ? [['Тикер','Тип','Дата входа','Вр. входа','Дата выхода','Вр. выхода','Время в сделке','Вход $','Выход $','Изм. %','PnL $','Результат','Риск','Уровень','Стоп','Перезаход','Рез. риск','Комментарий']]
+    : [['Тикер','Тип','Дата входа','День','Вр. входа','Дата выхода','Вр. выхода','Время','Вход $','Выход $','Изм. %','PnL $','Результат','Риск','Уровень','Стоп','Перезаход','Рез. риск','Комментарий']];
+
+  const rows = filtered.map(t => {
+    const d = detailsMap[t.id] || {};
+    const pnlStr = (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2);
+    if (isBn) return [
+      t.pair, t.tradeType, t.entryDate, t.entryTime,
+      t.exitDate, t.exitTime, t.duration,
+      '$'+t.entryPrice, '$'+t.exitPrice,
+      (t.priceChange >= 0 ? '+' : '')+t.priceChange.toFixed(2)+'%',
+      pnlStr, t.result,
+      d.risk||'', d.level||'', d.stop_type||'',
+      d.reentry||'', d.risk_result||'',
+      (d.comment||'').substring(0,40)
+    ];
+    return [
+      t.ticker, t.tradeType==='stock'?'Акция':'Опцион',
+      t.entryDate, t.weekDay, t.entryTime,
+      t.exitDate, t.exitTime, t.duration,
+      '$'+t.entryPrice, '$'+t.exitPrice,
+      (t.priceChange >= 0 ? '+' : '')+t.priceChange.toFixed(2)+'%',
+      pnlStr, t.result,
+      d.risk||'', d.level||'', d.stop_type||'',
+      d.reentry||'', d.risk_result||'',
+      (d.comment||'').substring(0,40)
+    ];
+  });
+
+  doc.autoTable({
+    head: headers,
+    body: rows,
+    startY: 33,
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [220,225,235], fillColor: [17,19,24], lineColor: [30,34,48], lineWidth: 0.3 },
+    headStyles: { fillColor: [24,27,34], textColor: [139,146,168], fontStyle: 'bold', fontSize: 7 },
+    alternateRowStyles: { fillColor: [17,19,24] },
+    didParseCell: (data) => {
+      if (data.section === 'body') {
+        const val = String(data.cell.raw || '');
+        if (val === 'Профит' || val.startsWith('+$')) { data.cell.styles.textColor = [34,197,94]; }
+        else if (val === 'Стоп' || (val.startsWith('$') && val.includes('-')) || val.startsWith('-$')) { data.cell.styles.textColor = [239,68,68]; }
+        else if (val === 'Безубыток') { data.cell.styles.textColor = [139,146,168]; }
+      }
+    },
+    margin: { left: 5, right: 5 },
+  });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(85,94,120);
+    doc.text(`Trading Journal Pro Dashboard  —  Стр. ${i} из ${pageCount}`, 14, 205);
+    doc.text(new Date().toLocaleString('ru-RU'), 240, 205);
+  }
+
+  // Save
+  const filename = `${isBn ? 'Binance' : 'IBKR'}_${periodLabels[period]||period}_${new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')}.pdf`;
+  doc.save(filename);
 }
 
 // ══════════════════════════════
