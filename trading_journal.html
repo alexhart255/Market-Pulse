@@ -1015,13 +1015,15 @@ async function hashPassword(pwd) {
 }
 
 function showApp() {
+  const homeScreen = document.getElementById('homeScreen');
+  if (!homeScreen) return;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('homeScreen').classList.add('active');
+  homeScreen.classList.add('active');
   // Подставляем ключи в поля ввода если они расшифрованы
-  if (KEYS.bn_api)    document.getElementById('bnApiKey').value    = KEYS.bn_api;
-  if (KEYS.bn_secret) document.getElementById('bnSecretKey').value = KEYS.bn_secret;
-  if (KEYS.ib_acc)    document.getElementById('ibAcc').value       = KEYS.ib_acc;
-  if (KEYS.ib_token)  document.getElementById('ibTok').value       = KEYS.ib_token;
+  if (KEYS.bn_api)    { const el = document.getElementById('bnApiKey');    if(el) el.value = KEYS.bn_api; }
+  if (KEYS.bn_secret) { const el = document.getElementById('bnSecretKey'); if(el) el.value = KEYS.bn_secret; }
+  if (KEYS.ib_acc)    { const el = document.getElementById('ibAcc');       if(el) el.value = KEYS.ib_acc; }
+  if (KEYS.ib_token)  { const el = document.getElementById('ibTok');       if(el) el.value = KEYS.ib_token; }
 }
 
 // Проверяем при загрузке — если "запомнить" было нажато ранее
@@ -1029,12 +1031,13 @@ async function checkAutoLogin() {
   const remember = localStorage.getItem(REMEMBER_KEY);
   const session  = localStorage.getItem(STORAGE_KEY);
   if (remember && session) {
-    // Сессия есть — показываем приложение без пароля
-    // Ключи уже в ENCRYPTED_KEYS — расшифруем при первом подключении
-    document.getElementById('rememberMe').checked = true;
-    // Тихо показываем приложение
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('homeScreen').classList.add('active');
+    const rememberEl = document.getElementById('rememberMe');
+    if (rememberEl) rememberEl.checked = true;
+    const homeScreen = document.getElementById('homeScreen');
+    if (homeScreen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      homeScreen.classList.add('active');
+    }
     return true;
   }
   return false;
@@ -1064,7 +1067,9 @@ async function setupKeys() {
 
   console.log('=== СКОПИРУЙ ЭТО В КОД (замени ENCRYPTED_KEYS) ===');
   console.log(JSON.stringify(result, null, 2));
-  alert('✅ Готово! Скопируй зашифрованные ключи из консоли (F12) и вставь в файл в переменную ENCRYPTED_KEYS. Инструкция в README.');
+  console.log('=== ГОТОВО! Скопируй это и пришли разработчику ===');
+  console.log(JSON.stringify({keys: result, hash: hash}, null, 2));
+  alert('✅ Пароль задан! Скопируй текст из консоли (вкладка Консоль) и пришли его — ключи будут вставлены в файл.');
 }
 
 // ══════════════════════════════════════════════
