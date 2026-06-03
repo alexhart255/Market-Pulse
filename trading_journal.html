@@ -973,37 +973,38 @@ async function unlockApp() {
   btn.textContent = 'Проверяем...'; btn.disabled = true;
 
   try {
-    // Проверяем пароль: если ключи уже зашифрованы — пробуем расшифровать
-    const hasKeys = Object.values(ENCRYPTED_KEYS).some(v => v !== null);
-    if (hasKeys) {
-      // Проверяем первый доступный ключ
-      const testKey = Object.entries(ENCRYPTED_KEYS).find(([,v]) => v !== null);
-      await decryptText(testKey[1], pwd); // бросит ошибку если пароль неверный
-      // Расшифровываем все ключи
-      for (const [k, v] of Object.entries(ENCRYPTED_KEYS)) {
-        if (v) KEYS[k] = await decryptText(v, pwd);
+    // Берём хеш: сначала из localStorage, потом из файла
+    const storedHash = localStorage.getItem('tj_pwd_hash') || PRESET_PWD_HASH || null;
+
+    if (storedHash) {
+      const hash = await hashPassword(pwd);
+      if (hash !== storedHash) throw new Error('wrong password');
+      // Записываем в localStorage если там ещё нет
+      if (!localStorage.getItem('tj_pwd_hash')) {
+        localStorage.setItem('tj_pwd_hash', storedHash);
       }
+    } else {
+      // Первый запуск без хеша — сохраняем введённый пароль
+      const hash = await hashPassword(pwd);
+      localStorage.setItem('tj_pwd_hash', hash);
     }
-    // Если ключей нет — просто проверяем хеш пароля
-    else {
-      const stored = localStorage.getItem('tj_pwd_hash');
-      if (stored) {
-        const hash = await hashPassword(pwd);
-        if (hash !== stored) throw new Error('wrong');
-      }
+
+    // Расшифровываем API ключи если есть
+    for (const [k, v] of Object.entries(ENCRYPTED_KEYS)) {
+      if (v) { try { KEYS[k] = await decryptText(v, pwd); } catch(e) {} }
     }
 
     // Успешный вход
     document.getElementById('lockError').classList.remove('show');
     if (remember) {
       localStorage.setItem(REMEMBER_KEY, 'true');
-      localStorage.setItem(STORAGE_KEY, await encryptText(pwd + '_verified', pwd));
+      localStorage.setItem(STORAGE_KEY, 'active');
     }
     showApp();
 
   } catch(e) {
     document.getElementById('lockError').classList.add('show');
-    btn.textContent = 'Войти'; btn.disabled = false;
+    btn.textContent = 'Войти →'; btn.disabled = false;
     document.getElementById('lockInput').value = '';
     document.getElementById('lockInput').focus();
   }
