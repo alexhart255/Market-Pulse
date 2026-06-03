@@ -6,6 +6,7 @@
 <title>Trading Journal — Binance & IBKR</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
 
@@ -953,6 +954,64 @@ const EMAILJS_PUBLIC_KEY  = 'Svv-_bIIo0xsVCtVP';
 const OWNER_EMAIL         = 'krebs015@gmail.com'; // твой email для получения кодов
 
 // ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://lboflhhaufrzmetbvqnk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_KtPemBjjIqwLQid2mVey3g_8lEO3Fh6';
+let supabaseClient = null;
+
+function initSupabase() {
+  if (!supabaseClient) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return supabaseClient;
+}
+
+// Сохранить сделки Binance в облако
+async function saveBnTradesToCloud(trades) {
+  const db = initSupabase();
+  const rows = trades.map(t => ({
+    pair: t.pair, type: t.type,
+    open_time: t.open, close_time: t.close,
+    pnl: t.pnl, result: t.result
+  }));
+  const { error } = await db.from('tj_binance_trades').upsert(rows);
+  if (error) console.error('Supabase BN error:', error);
+  else console.log('✅ Binance сделки сохранены в облако:', rows.length);
+}
+
+// Сохранить сделки IBKR в облако
+async function saveIbTradesToCloud(trades) {
+  const db = initSupabase();
+  const rows = trades.map(t => ({
+    ticker: t.ticker, trade_type: t.type,
+    trade_date: t.date, quantity: t.qty,
+    pnl: t.pnl, result: t.result
+  }));
+  const { error } = await db.from('tj_ibkr_trades').upsert(rows);
+  if (error) console.error('Supabase IB error:', error);
+  else console.log('✅ IBKR сделки сохранены в облако:', rows.length);
+}
+
+// Загрузить сделки Binance из облака
+async function loadBnTradesFromCloud() {
+  const db = initSupabase();
+  const { data, error } = await db.from('tj_binance_trades')
+    .select('*').order('open_time', { ascending: false }).limit(100);
+  if (error) { console.error('Supabase load BN error:', error); return null; }
+  return data;
+}
+
+// Загрузить сделки IBKR из облака
+async function loadIbTradesFromCloud() {
+  const db = initSupabase();
+  const { data, error } = await db.from('tj_ibkr_trades')
+    .select('*').order('trade_date', { ascending: false }).limit(100);
+  if (error) { console.error('Supabase load IB error:', error); return null; }
+  return data;
+}
+
+// ══════════════════════════════════════════════
 // ENCRYPTED API KEYS CONFIG
 // Замени на свои зашифрованные ключи после запуска encryptKeys()
 // ══════════════════════════════════════════════
@@ -1509,6 +1568,8 @@ function connectBinance() {
 }
 
 function loadBnData() {
+  // Сохраняем в облако автоматически
+  saveBnTradesToCloud(bnData.trades);
   document.getElementById('bnTotal').textContent = bnData.total;
   document.getElementById('bnWR').textContent = bnData.wr + '%';
   document.getElementById('bnPF').textContent = bnData.pf;
@@ -1578,6 +1639,8 @@ function connectIBKR() {
 }
 
 function loadIbData() {
+  // Сохраняем в облако автоматически
+  saveIbTradesToCloud(ibData.trades);
   document.getElementById('ibTotal').textContent = ibData.total;
   document.getElementById('ibWR').textContent = ibData.wr + '%';
   document.getElementById('ibPF').textContent = ibData.pf;
