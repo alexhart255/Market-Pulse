@@ -1589,12 +1589,6 @@ async function exportPDF(broker) {
     if (data) data.forEach(d => detailsMap[d.trade_id] = d);
   } catch(e) {}
 
-  const periodLabels = {
-    all:'Za vse vremya', today:'Segodnya', week:'Eta nedelya',
-    month:'Etot mesyats', '3months':'3 mesyatsa',
-    '6months':'6 mesyatsev', year:'Etot god',
-    custom: dateFrom && dateTo ? dateFrom+' -- '+dateTo : 'Svoy period'
-  };
   const periodLabelsRu = {
     all:'За всё время', today:'Сегодня', week:'Эта неделя',
     month:'Этот месяц', '3months':'3 месяца',
@@ -1608,132 +1602,114 @@ async function exportPDF(broker) {
   const totalPnl = filtered.reduce((a,t)=>a+t.pnl,0);
   const wr = filtered.length ? Math.round(wins/filtered.length*100) : 0;
 
-  // Transliterate Cyrillic for jsPDF (which doesn't support Cyrillic natively)
-  function tr(s) {
-    if (!s) return '';
-    const map = {
-      'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
-      'К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F',
-      'Х':'Kh','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya',
-      'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
-      'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
-      'х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
-    };
-    return String(s).split('').map(c => map[c] !== undefined ? map[c] : c).join('');
-  }
+  // Build rows data
+  const bnHeaders = ['Тикер','Тип','Дата входа','Время входа','Дата выхода','Время выхода','Время в сделке','Цена входа','Цена выхода','Изм. %','PnL $','Результат','Риск','Уровень','Цена ур.','Стоп тип','Перезаход','Рез. риск','Ещё сходил','Комментарий'];
+  const ibHeaders = ['Тикер','Тип','Дата входа','День','Вр. входа','Дата выхода','Вр. выхода','Время в сделке','Цена входа','Цена выхода','Изм. %','PnL $','Результат','Риск','Уровень','Стоп тип','Перезаход','Рез. риск','Ещё сходил','Комментарий'];
+  const headers = isBn ? bnHeaders : ibHeaders;
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  // Dark background
-  doc.setFillColor(10, 11, 14);
-  doc.rect(0, 0, 297, 210, 'F');
-
-  // Title
-  doc.setTextColor(240, 242, 247);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text(tr(isBn ? 'Binance Futures — Istoriya sdelok' : 'Interactive Brokers — Istoriya sdelok'), 10, 14);
-
-  // Meta
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(139, 146, 168);
-  doc.text('Period: ' + (periodLabels[period]||period) + '   Sdelok: ' + filtered.length + '   Data: ' + new Date().toLocaleDateString('ru-RU'), 10, 20);
-
-  // Stats boxes
-  const stats = [
-    { label: 'PROFIT', val: String(wins), color: [34,197,94] },
-    { label: 'STOP', val: String(stops), color: [239,68,68] },
-    { label: 'BREAKEVEN', val: String(be), color: [139,146,168] },
-    { label: 'WINRATE', val: wr+'%', color: [245,158,11] },
-    { label: 'PnL', val: (totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2), color: totalPnl>=0?[34,197,94]:[239,68,68] },
-  ];
-  let sx = 10;
-  stats.forEach(s => {
-    doc.setFillColor(24, 27, 34);
-    doc.roundedRect(sx, 23, 45, 12, 2, 2, 'F');
-    doc.setFontSize(7); doc.setTextColor(139,146,168);
-    doc.text(s.label, sx+3, 28);
-    doc.setFontSize(11); doc.setFont('helvetica','bold');
-    doc.setTextColor(...s.color);
-    doc.text(s.val, sx+3, 33);
-    doc.setFont('helvetica','normal');
-    sx += 48;
-  });
-
-  // Table headers
-  const bnCols = ['Ticker','Type','Entry','Exit','Duration','Entry $','Exit $','Chg%','PnL $','Result','Risk','Level','Lv.Price','Stop','Re-entry','Risk res.','More','Comment'];
-  const ibCols = ['Ticker','Type','Date','Day','Time in','Date out','Time out','Duration','Entry $','Exit $','Chg%','PnL $','Result','Risk','Level','Stop','Re-entry','Risk res.','More','Comment'];
-  const cols = isBn ? bnCols : ibCols;
-
-  const rows = filtered.map(t => {
+  const dataRows = filtered.map(t => {
     const d = detailsMap[t.id] || {};
     const pnlStr = (t.pnl>=0?'+':'')+'$'+t.pnl.toFixed(2);
     const chgStr = (t.priceChange>=0?'+':'')+t.priceChange.toFixed(2)+'%';
-    if (isBn) return [
-      t.pair, tr(t.tradeType),
-      t.entryDate+' '+t.entryTime, t.exitDate+' '+t.exitTime,
-      t.duration, '$'+t.entryPrice, '$'+t.exitPrice,
-      chgStr, pnlStr, tr(t.result),
-      d.risk||'', d.level||'', d.level_price||'', tr(d.stop_type||''),
-      tr(d.reentry||''), d.risk_result||'', d.risk_more||'',
-      tr((d.comment||'').substring(0,30))
-    ];
-    return [
-      t.ticker, t.tradeType==='stock'?'Stock':'Option',
-      t.entryDate, tr(t.weekDay), t.entryTime,
-      t.exitDate, t.exitTime, t.duration,
-      '$'+t.entryPrice, '$'+t.exitPrice,
-      chgStr, pnlStr, tr(t.result),
-      d.risk||'', d.level||'', tr(d.stop_type||''),
-      tr(d.reentry||''), d.risk_result||'', d.risk_more||'',
-      tr((d.comment||'').substring(0,30))
-    ];
+    if (isBn) return [t.pair, t.tradeType, t.entryDate, t.entryTime, t.exitDate, t.exitTime, t.duration, '$'+t.entryPrice, '$'+t.exitPrice, chgStr, pnlStr, t.result, d.risk||'—', d.level||'—', d.level_price||'—', d.stop_type||'—', d.reentry||'—', d.risk_result||'—', d.risk_more||'—', (d.comment||'').substring(0,25)];
+    return [t.ticker, t.tradeType==='stock'?'Акция':'Опцион', t.entryDate, t.weekDay, t.entryTime, t.exitDate, t.exitTime, t.duration, '$'+t.entryPrice, '$'+t.exitPrice, chgStr, pnlStr, t.result, d.risk||'—', d.level||'—', d.stop_type||'—', d.reentry||'—', d.risk_result||'—', d.risk_more||'—', (d.comment||'').substring(0,25)];
   });
 
-  doc.autoTable({
-    head: [cols],
-    body: rows,
-    startY: 38,
-    theme: 'grid',
-    styles: {
-      fontSize: 7, cellPadding: 1.5,
-      textColor: [220,225,235],
-      fillColor: [17,19,24],
-      lineColor: [30,34,48], lineWidth: 0.2,
-      font: 'helvetica'
-    },
-    headStyles: { fillColor: [24,27,34], textColor: [139,146,168], fontStyle: 'bold', fontSize: 6.5 },
-    alternateRowStyles: { fillColor: [13,14,18] },
-    didParseCell: (data) => {
-      if (data.section === 'body') {
-        const val = String(data.cell.raw || '');
-        if (val==='Profit'||val==='Profil'||val.startsWith('+$')) data.cell.styles.textColor=[34,197,94];
-        else if (val==='Stop'||val.startsWith('-$')) data.cell.styles.textColor=[239,68,68];
-        else if (val==='Bezubytok'||val==='Breakeven') data.cell.styles.textColor=[139,146,168];
-        else if (val.startsWith('+') && val.includes('%')) data.cell.styles.textColor=[34,197,94];
-        else if (val.startsWith('-') && val.includes('%')) data.cell.styles.textColor=[239,68,68];
-      }
-    },
-    margin: { left: 5, right: 5 },
-    columnStyles: { 17: { cellWidth: 40 } }
+  // Canvas-based PDF with full Cyrillic support
+  const cols = headers.length;
+  const rowH = 18;
+  const headerH = 22;
+  const topPad = 80;
+  const sidePad = 20;
+  const pageW = 1684; // A4 landscape 200dpi
+  const colW = Math.floor((pageW - sidePad*2) / cols);
+  const totalH = topPad + headerH + dataRows.length * rowH + 40;
+
+  // Create canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = pageW;
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a0b0e';
+  ctx.fillRect(0, 0, pageW, totalH);
+
+  // Title
+  ctx.fillStyle = '#f0f2f7';
+  ctx.font = 'bold 28px Arial';
+  ctx.fillText(isBn ? '₿ Binance Futures — История сделок' : '📈 Interactive Brokers — История сделок', sidePad, 32);
+
+  // Meta
+  ctx.fillStyle = '#8b92a8';
+  ctx.font = '16px Arial';
+  ctx.fillText('Период: '+(periodLabelsRu[period]||period)+'   Сделок: '+filtered.length+'   Дата: '+new Date().toLocaleDateString('ru-RU'), sidePad, 52);
+
+  // Stats
+  const statsData = [
+    {label:'Профит', val:String(wins), color:'#22c55e'},
+    {label:'Стоп', val:String(stops), color:'#ef4444'},
+    {label:'Безубыток', val:String(be), color:'#8b92a8'},
+    {label:'Винрейт', val:wr+'%', color:'#f59e0b'},
+    {label:'PnL', val:(totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2), color:totalPnl>=0?'#22c55e':'#ef4444'},
+  ];
+  let sx = sidePad;
+  statsData.forEach(s => {
+    ctx.fillStyle = '#111318';
+    ctx.beginPath(); ctx.roundRect(sx, 58, 180, 36, 6); ctx.fill();
+    ctx.fillStyle = '#8b92a8'; ctx.font = '11px Arial';
+    ctx.fillText(s.label, sx+8, 70);
+    ctx.fillStyle = s.color; ctx.font = 'bold 18px Arial';
+    ctx.fillText(s.val, sx+8, 87);
+    sx += 190;
+  });
+
+  // Table header
+  const tY = topPad + 10;
+  ctx.fillStyle = '#181b22';
+  ctx.fillRect(sidePad, tY, pageW - sidePad*2, headerH);
+  ctx.fillStyle = '#8b92a8';
+  ctx.font = 'bold 11px Arial';
+  headers.forEach((h, i) => {
+    ctx.fillText(h, sidePad + i*colW + 4, tY + 15, colW - 6);
+  });
+
+  // Table rows
+  dataRows.forEach((row, ri) => {
+    const y = tY + headerH + ri * rowH;
+    ctx.fillStyle = ri%2===0 ? '#111318' : '#0d0e12';
+    ctx.fillRect(sidePad, y, pageW - sidePad*2, rowH);
+    ctx.font = '11px Arial';
+    row.forEach((cell, ci) => {
+      const val = String(cell||'');
+      // Color
+      if (val==='Профит'||val.startsWith('+$')) ctx.fillStyle='#22c55e';
+      else if (val==='Стоп'||val.startsWith('-$')) ctx.fillStyle='#ef4444';
+      else if (val==='Безубыток') ctx.fillStyle='#8b92a8';
+      else if (val.startsWith('+')&&val.includes('%')) ctx.fillStyle='#22c55e';
+      else if (val.startsWith('-')&&val.includes('%')) ctx.fillStyle='#ef4444';
+      else ctx.fillStyle='#e0e4f0';
+      ctx.fillText(val, sidePad + ci*colW + 4, y + 13, colW - 6);
+    });
+    // Row separator
+    ctx.fillStyle='#1e2230';
+    ctx.fillRect(sidePad, y+rowH-1, pageW-sidePad*2, 1);
   });
 
   // Footer
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i=1; i<=pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7); doc.setTextColor(85,94,120);
-    doc.setFillColor(10,11,14);
-    doc.rect(0,203,297,7,'F');
-    doc.text('Trading Journal Pro Dashboard', 10, 207);
-    doc.text('Str. '+i+' iz '+pageCount, 148, 207, {align:'center'});
-    doc.text(new Date().toLocaleString('ru-RU'), 292, 207, {align:'right'});
-  }
+  ctx.fillStyle = '#555e78';
+  ctx.font = '13px Arial';
+  ctx.fillText('Trading Journal Pro Dashboard  ·  '+new Date().toLocaleString('ru-RU'), sidePad, totalH-12);
 
-  const filename = (isBn?'Binance':'IBKR')+'_'+(periodLabels[period]||period)+'_'+new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')+'.pdf';
-  doc.save(filename);
+  // Convert canvas to PDF using jsPDF
+  const { jsPDF } = window.jspdf;
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  const pdfW = 297; const pdfH = Math.round(totalH / pageW * pdfW);
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [pdfW, Math.max(pdfH, 210)] });
+  doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+  const fname = (isBn?'Binance':'IBKR')+'_'+(periodLabelsRu[period]||period).replace(/ /g,'_')+'_'+new Date().toLocaleDateString('ru-RU').replace(/\./g,'-')+'.pdf';
+  doc.save(fname);
 }
 
 
