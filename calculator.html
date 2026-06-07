@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор позиции v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #080c14;
+    --surface: #0d1421;
+    --card:    #111927;
+    --border:  #1e2d42;
+    --accent:  #00e5ff;
+    --green:   #00ff88;
+    --red:     #ff3b5c;
+    --orange:  #ffaa00;
+    --yellow:  #00cc66;
+    --muted:   #4a6080;
+    --text:    #c8dff5;
+    --bright:  #eaf4ff;
+    --fs:      12px;   /* base font scale — shrinks on small screens */
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{opacity:1;filter:invert(1);cursor:pointer;}
+
+  html,body{height:100%;overflow:hidden;}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:'Syne',sans-serif;font-size:var(--fs);
+  }
+  body::before{
+    content:'';position:fixed;inset:0;
+    background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);
+    background-size:40px 40px;pointer-events:none;z-index:0;
+  }
+
+  /* ── APP SHELL ── */
+  .app{
+    position:relative;z-index:1;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    height:100dvh;
+    overflow:hidden;
+  }
+
+  /* ── HEADER ── */
+  .hdr{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 16px;border-bottom:1px solid var(--border);
+    background:rgba(8,12,20,.95);backdrop-filter:blur(6px);
+    position:relative;z-index:2;flex-shrink:0;
+  }
+  .logo{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;}
+  .logo span{color:var(--muted);}
+  .hdr-sub{font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+  /* ── TOP STRIP: deposit/risk ── */
+  .top-strip{
+    background:#0a1628;border-bottom:1px solid #1e3a5a;
+    padding:8px 16px;display:flex;align-items:center;gap:16px;flex-shrink:0;
+  }
+  .strip-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+  .strip-field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:90px;}
+  .strip-field label{font-size:9px;color:var(--muted);}
+  .strip-field input{
+    width:100%;background:#080c14;border:1px solid var(--border);border-radius:5px;
+    color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;
+    padding:4px 8px;outline:none;text-align:center;
+  }
+  .strip-field input:focus{border-color:var(--accent);}
+  .strip-badge{
+    background:#0d1e30;border:1px solid #1e2d42;border-radius:5px;
+    padding:4px 10px;text-align:center;white-space:nowrap;
+  }
+  .strip-badge .sb-label{font-size:9px;color:var(--muted);}
+  .strip-badge .sb-val{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;}
+  .strip-div{width:1px;height:32px;background:var(--border);flex-shrink:0;}
+
+  /* ── THREE COLUMNS ── */
+  .cols{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    overflow:hidden;
+    flex:1;
+    min-height:0;
+  }
+  .col{
+    overflow-y:auto;overflow-x:hidden;
+    padding:10px 10px;
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .col:last-child{border-right:none;}
+
+  /* scrollbar */
+  .col::-webkit-scrollbar{width:4px;}
+  .col::-webkit-scrollbar-track{background:transparent;}
+  .col::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  /* ── CARDS inside columns ── */
+  .card{
+    background:#0d1e30;border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;flex-shrink:0;
+  }
+  .card-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:8px;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .field{display:flex;flex-direction:column;gap:3px;margin-bottom:7px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:10px;color:var(--muted);}
+  .field input[type=number], .field input[type=text]{
+    width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;
+    color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;
+    padding:5px 8px;outline:none;text-align:center;
+  }
+  .field input:focus{border-color:var(--accent);}
+  .field .hint{font-size:9px;color:var(--muted);margin-top:2px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+
+  /* direction buttons */
+  .dir-row{display:flex;gap:6px;margin-bottom:8px;}
+  .dir-btn{
+    flex:1;padding:6px;border-radius:6px;
+    border:1px solid var(--border);background:transparent;
+    color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;
+  }
+  .dir-btn.long{background:#061610;border:2px solid var(--green);color:var(--green);}
+  .dir-btn.short{background:#160608;border:2px solid var(--red);color:var(--red);}
+
+  /* stop mode buttons */
+  .stop-btns{display:flex;gap:5px;margin-bottom:8px;}
+  .stop-btn{
+    flex:1;padding:5px 4px;border-radius:6px;
+    border:1px solid var(--border);background:transparent;
+    color:var(--muted);font-family:'Syne',sans-serif;font-size:9px;font-weight:700;cursor:pointer;
+  }
+
+  /* selects */
+  select{
+    width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;
+    color:var(--text);font-family:'Syne',sans-serif;font-size:11px;
+    padding:5px 8px;outline:none;margin-bottom:6px;
+  }
+
+  /* checkboxes */
+  .chk-label{display:flex;align-items:center;gap:7px;cursor:pointer;margin-bottom:7px;font-size:11px;color:var(--text);}
+  .chk-label input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;}
+
+  /* sub-blocks inside options */
+  .sub-block{background:#060e1a;border-radius:7px;padding:8px 10px;margin-bottom:7px;}
+  .sub-block .sb-title{font-size:9px;color:var(--muted);margin-bottom:6px;}
+
+  /* risk indicator */
+  .risk-indicator{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#080c14;border:1px solid var(--border);border-radius:7px;padding:8px 12px;
+  }
+  .risk-indicator .ri-label{font-size:10px;color:var(--muted);}
+  .risk-indicator .ri-val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--green);}
+
+  /* result panel */
+  .result-panel{
+    background:#060e1a;border:1px solid var(--border);border-radius:10px;
+    padding:12px 14px;font-family:'Space Mono',monospace;font-size:11px;
+    line-height:1.9;color:var(--text);flex:1;min-height:0;overflow-y:auto;
+  }
+  .result-panel::-webkit-scrollbar{width:3px;}
+  .result-panel::-webkit-scrollbar-thumb{background:var(--border);}
+
+  .copy-btn{
+    width:100%;padding:9px;border-radius:7px;
+    border:1px solid var(--accent);background:rgba(0,229,255,.07);
+    color:var(--accent);font-family:'Space Mono',monospace;font-size:11px;
+    font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;margin-top:7px;
+  }
+  .copy-btn:hover{background:rgba(0,229,255,.18);}
+
+  /* comm preview badge */
+  .comm-preview{
+    background:#0a1628;border:1px solid #1e3a5a;border-radius:5px;
+    padding:5px 8px;display:flex;justify-content:space-between;align-items:center;
+    margin-top:6px;
+  }
+
+  /* ── RESPONSIVE ── */
+  /* large: 3 cols fit fine */
+  @media (max-width: 1100px) {
+    :root{--fs:11px;}
+  }
+  /* medium: 2 cols, col3 goes below */
+  @media (max-width: 820px) {
+    html,body{height:auto;overflow:auto;}
+    .app{height:auto;overflow:visible;}
+    .cols{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;}
+    .col{overflow-y:visible;border-right:none;border-bottom:1px solid var(--border);}
+    .col:last-child{grid-column:1/-1;border-bottom:none;}
+    .top-strip{flex-wrap:wrap;}
+  }
+  /* small: 1 col */
+  @media (max-width: 540px) {
+    .cols{grid-template-columns:1fr;}
+    .col:last-child{grid-column:1;}
+  }
+
+  .warn-bar{
+    background:#08111e;border-top:1px solid var(--border);
+    padding:5px 16px;font-size:9px;color:var(--muted);flex-shrink:0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div>
+      <div class="logo">Market<span> // </span>Pulse</div>
+      <div class="hdr-sub">Калькулятор позиции v2</div>
+    </div>
+    <div style="font-size:9px;color:var(--muted);letter-spacing:1px;">RISK MANAGEMENT CALCULATOR</div>
+  </div>
+
+  <!-- TOP STRIP: депозит и дневной риск -->
+  <div class="top-strip">
+    <div class="strip-label">🏦 Депозит и риск</div>
+    <div class="strip-field">
+      <label>Депозит ($)</label>
+      <input id="dep_deposit" type="number" value="100000" min="1" step="1000"
+        style="color:var(--bright);" oninput="depCalc()">
+    </div>
+    <div class="strip-field" style="max-width:110px;">
+      <label>Риск сегодня (%)</label>
+      <input id="dep_riskPct" type="number" value="1" min="0.1" max="100" step="0.1"
+        style="color:var(--orange);" oninput="depCalc()">
+    </div>
+    <div class="strip-badge">
+      <div class="sb-label">Сумма риска</div>
+      <div class="sb-val" id="dep_totalRisk" style="color:var(--orange);">$1 000</div>
+    </div>
+    <div class="strip-div"></div>
+    <div class="strip-field" style="max-width:90px;">
+      <label>Сделок сегодня</label>
+      <input id="dep_trades" type="number" value="3" min="1" max="20" step="1"
+        style="color:var(--green);" oninput="depCalc()">
+    </div>
+    <div class="strip-badge">
+      <div class="sb-label">Риск на сделку</div>
+      <div class="sb-val" id="dep_perTrade" style="color:var(--green);">$333</div>
+    </div>
+    <input id="cv_riskAmt" type="number" value="333.33" style="display:none;" oninput="cvCalc()">
+  </div>
+
+  <!-- THREE COLUMNS -->
+  <div class="cols">
+
+    <!-- ═══ КОЛОНКА 1: параметры ═══ -->
+    <div class="col">
+
+      <!-- Направление -->
+      <div class="card">
+        <div class="card-title">🎯 Направление и соотношение</div>
+        <div class="dir-row">
+          <button id="cv_dirLong"  class="dir-btn long"  onclick="cvSetDir('long')">▲ ЛОНГ</button>
+          <button id="cv_dirShort" class="dir-btn"       onclick="cvSetDir('short')">▼ ШОРТ</button>
+        </div>
+        <div class="field">
+          <label>Соотношение Тейк / Риск (1:X)</label>
+          <input id="cv_ratio" type="number" value="3" min="0.5" max="20" step="0.5" oninput="cvCalc()">
+        </div>
+      </div>
+
+      <!-- Параметры -->
+      <div class="card">
+        <div class="card-title">📍 Параметры</div>
+        <div class="field">
+          <label>Инструмент (тикер)</label>
+          <input id="cv_instrument" type="text" placeholder="BTC, LIN, ES..." maxlength="20"
+            style="color:var(--accent);text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase();cvCalc()">
+        </div>
+        <div class="field">
+          <label>Цена уровня ($)</label>
+          <input id="cv_level" type="number" value="24.51" step="0.0001" oninput="cvCalc()">
+          <div id="cv_tvxHint" class="hint">ТВХ = уровень + люфт</div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>ATR</label>
+            <input id="cv_globalAtr" type="number" value="0.22" step="0.01" min="0.0001"
+              style="color:var(--accent);" oninput="cvCalc()">
+          </div>
+          <div class="field">
+            <label>Люфт % от стопа</label>
+            <input id="cv_lyuftPct" type="number" value="20" min="1" max="100" step="1" oninput="cvCalc()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Стоп-лосс -->
+      <div class="card">
+        <div class="card-title">🛑 Режим стоп-лосса</div>
+        <div class="stop-btns">
+          <button id="cv_stopATR"  class="stop-btn" onclick="cvSetStop('atr')"
+            style="border-width:2px;border-color:var(--accent);background:rgba(0,229,255,.08);color:var(--accent);">ATR</button>
+          <button id="cv_stopTech" class="stop-btn" onclick="cvSetStop('tech')">Технический</button>
+          <button id="cv_stopDist" class="stop-btn" onclick="cvSetStop('dist')">Дистанция</button>
+        </div>
+        <div id="cv_atrBlock">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:5px;">ATR берётся из блока «Параметры»</div>
+          <div class="field">
+            <label>Стоп % от ATR</label>
+            <input id="cv_stopPct" type="number" value="20" min="1" max="100" step="1" oninput="cvCalc()">
+          </div>
+        </div>
+        <div id="cv_techBlock" style="display:none;">
+          <div class="field">
+            <label>Цена стоп-лосса ($)</label>
+            <input id="cv_techStop" type="number" value="24.00" step="0.0001"
+              style="color:#ff7090;" oninput="cvCalc()">
+          </div>
+        </div>
+        <div id="cv_distBlock" style="display:none;">
+          <div style="display:flex;gap:5px;margin-bottom:7px;">
+            <button id="cv_distModePoints" class="stop-btn" onclick="cvSetDistMode('points')"
+              style="border-width:2px;border-color:var(--red);background:rgba(255,59,92,.08);color:var(--red);">Пункты ($)</button>
+            <button id="cv_distModeTicks"  class="stop-btn" onclick="cvSetDistMode('ticks')">Тики</button>
+          </div>
+          <div id="cv_distPointsBlock">
+            <div class="field">
+              <label>Дистанция стопа ($)</label>
+              <input id="cv_stopDistVal" type="number" value="0.5" min="0.0001" step="0.0001"
+                style="color:#ff7090;" oninput="cvCalc()">
+            </div>
+          </div>
+          <div id="cv_distTicksBlock" style="display:none;">
+            <div class="row2">
+              <div class="field">
+                <label>Кол-во тиков</label>
+                <input id="cv_stopTicks" type="number" value="10" min="1" step="1"
+                  style="color:#ff7090;" oninput="cvCalc()">
+              </div>
+              <div class="field">
+                <label>Размер тика ($)</label>
+                <input id="cv_tickSize" type="number" value="0.01" min="0.00001" step="0.00001" oninput="cvCalc()">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Риск индикатор -->
+      <div class="card">
+        <div class="card-title">💵 Риск на сделку</div>
+        <div class="risk-indicator">
+          <span class="ri-label">Задано сверху ↑</span>
+          <span class="ri-val" id="dep_riskIndicator">$333.33</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ КОЛОНКА 2: опции ═══ -->
+    <div class="col">
+
+      <!-- Контракты -->
+      <div class="card">
+        <div class="card-title">⚙️ Опции</div>
+
+        <label class="chk-label">
+          <input type="checkbox" id="cv_useLots" onchange="cvToggleLots()">
+          Расчёт контрактов (фьючерсы)
+        </label>
+        <div id="cv_lotsBlock" style="display:none;" class="sub-block">
+          <div class="sb-title">Выбери инструмент — стоимость пункта подставится автоматически</div>
+          <select id="cv_futInstrument" onchange="cvApplyInstrument()">
+            <optgroup label="── Металлы ──">
+              <option value="GC">GC — Gold ($100/пункт)</option>
+              <option value="MGC">MGC — Micro Gold ($10/пункт)</option>
+              <option value="SI">SI — Silver ($5000/пункт)</option>
+              <option value="SIL">SIL — Micro Silver ($1000/пункт)</option>
+            </optgroup>
+            <optgroup label="── Энергетика ──">
+              <option value="CL">CL — Crude Oil ($1000/пункт)</option>
+              <option value="MCL">MCL — Micro Crude ($100/пункт)</option>
+              <option value="NG">NG — Natural Gas ($10000/пункт)</option>
+            </optgroup>
+            <optgroup label="── Индексы ──">
+              <option value="ES">ES — E-mini S&P 500 ($50/пункт)</option>
+              <option value="MES">MES — Micro S&P 500 ($5/пункт)</option>
+              <option value="NQ">NQ — E-mini Nasdaq ($20/пункт)</option>
+              <option value="MNQ">MNQ — Micro Nasdaq ($2/пункт)</option>
+              <option value="YM">YM — E-mini Dow ($5/пункт)</option>
+              <option value="MYM">MYM — Micro Dow ($0.50/пункт)</option>
+              <option value="RTY">RTY — E-mini Russell ($50/пункт)</option>
+              <option value="M2K">M2K — Micro Russell ($5/пункт)</option>
+            </optgroup>
+            <optgroup label="── Валюты ──">
+              <option value="6E">6E — Euro FX</option>
+              <option value="6B">6B — British Pound</option>
+              <option value="6J">6J — Japanese Yen</option>
+              <option value="6A">6A — Australian Dollar</option>
+            </optgroup>
+            <optgroup label="── Крипто (CFD) ──">
+              <option value="BTCUSD">BTCUSD — Bitcoin</option>
+              <option value="ETHUSD">ETHUSD — Ethereum</option>
+              <option value="BNBUSDT">BNBUSDT — BNB</option>
+              <option value="SOLUSD">SOLUSD — Solana</option>
+              <option value="XRPUSD">XRPUSD — Ripple</option>
+              <option value="ADAUSD">ADAUSD — Cardano</option>
+              <option value="DOGEUSD">DOGEUSD — Dogecoin</option>
+              <option value="LTCUSD">LTCUSD — Litecoin</option>
+              <option value="XMRUSD">XMRUSD — Monero</option>
+              <option value="DASHUSD">DASHUSD — Dash</option>
+              <option value="NEOUSD">NEOUSD — NEO</option>
+            </optgroup>
+            <optgroup label="── Другое ──">
+              <option value="CUSTOM">Ввести вручную</option>
+            </optgroup>
+          </select>
+          <div id="cv_instrInfo" style="font-size:10px;color:var(--muted);margin-bottom:6px;"></div>
+          <div id="cv_customBlock" style="display:none;">
+            <div class="field">
+              <label>Стоимость 1 пункта ($)</label>
+              <input id="cv_customPointVal" type="number" value="1" min="0.001" step="0.001" oninput="cvCalc()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Плечо -->
+        <label class="chk-label">
+          <input type="checkbox" id="cv_useLev" onchange="document.getElementById('cv_levBlock').style.display=this.checked?'flex':'none';cvCalc()">
+          Использовать плечо
+        </label>
+        <div id="cv_levBlock" style="display:none;align-items:center;gap:8px;margin-bottom:7px;">
+          <label style="font-size:10px;color:var(--muted);white-space:nowrap;">Плечо x</label>
+          <input id="cv_lev" type="number" value="10" min="1" max="150" step="1"
+            style="width:70px;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+            oninput="cvCalc()">
+        </div>
+
+        <!-- Binance -->
+        <label class="chk-label">
+          <input type="checkbox" id="cv_useBin" onchange="cvToggleCommission()">
+          Комиссии Binance Futures
+        </label>
+        <div id="cv_binBlock" style="display:none;margin-bottom:7px;">
+          <select id="cv_binType" onchange="cvCalc()">
+            <option value="maker">Maker — 0.02%</option>
+            <option value="taker">Taker — 0.05%</option>
+          </select>
+        </div>
+
+        <!-- 4PropTrader CFD -->
+        <label class="chk-label">
+          <input type="checkbox" id="cv_useManualComm" onchange="cvToggleManualComm()">
+          Комиссия 4PropTrader CFD
+        </label>
+        <div id="cv_manualCommBlock" style="display:none;" class="sub-block">
+          <div class="row2">
+            <div class="field">
+              <label>Маржа на сделку ($)</label>
+              <input id="cv_commMargin" type="number" value="500" min="0.01" step="1"
+                oninput="cvUpdateCommPreview();cvCalc()">
+            </div>
+            <div class="field">
+              <label>Комиссия % от маржи</label>
+              <input id="cv_commPct4p" type="number" value="1" min="0.01" max="100" step="0.1"
+                style="color:var(--orange);" oninput="cvUpdateCommPreview();cvCalc()">
+            </div>
+          </div>
+          <div class="comm-preview">
+            <span style="font-size:9px;color:var(--muted);">Комиссия RT:</span>
+            <span id="cv_commPreview" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--orange);">$5.00</span>
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-top:5px;">Round Turn · маржу смотришь на платформе</div>
+        </div>
+
+        <!-- IB -->
+        <label class="chk-label">
+          <input type="checkbox" id="cv_useIB" onchange="cvToggleIB()">
+          Комиссия Interactive Brokers
+        </label>
+        <div id="cv_ibBlock" style="display:none;" class="sub-block">
+          <div class="field">
+            <label>$ за акцию</label>
+            <input id="cv_commPerShare" type="number" value="0.005" min="0.0001" step="0.0001" oninput="cvCalc()">
+          </div>
+          <div style="font-size:9px;color:var(--muted);">IB Fixed · вход + выход · мин. $1/ордер</div>
+        </div>
+
+        <!-- Частичное закрытие -->
+        <label class="chk-label" style="margin-bottom:0;">
+          <input type="checkbox" id="cv_usePartial" onchange="cvTogglePartial()">
+          Частичное закрытие позиции
+        </label>
+      </div>
+
+      <!-- Частичное закрытие конфиг -->
+      <div id="cv_partialBlock" style="display:none;" class="card">
+        <div class="card-title">📊 Частичное закрытие</div>
+        <div class="field">
+          <label>Количество ТП</label>
+          <select id="cv_numTP" onchange="cvRenderPartial();cvCalc()">
+            <option value="2">2 ТП</option>
+            <option value="3">3 ТП</option>
+            <option value="4" selected>4 ТП</option>
+            <option value="5">5 ТП</option>
+          </select>
+        </div>
+        <div id="cv_partialInputs"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══ КОЛОНКА 3: результаты ═══ -->
+    <div class="col">
+      <div id="cv_result" class="result-panel">
+        <div style="color:var(--muted);text-align:center;padding:40px 0;">Заполните параметры ←</div>
+      </div>
+      <button id="cv_copyBtn" class="copy-btn" onclick="cvCopy()" style="display:none;">
+        📋 СКОПИРОВАТЬ ДЛЯ TRADINGVIEW
+      </button>
+    </div>
+
+  </div><!-- /cols -->
+
+  <div class="warn-bar">
+    ⚠️ <strong style="color:var(--accent);">Важно:</strong> Калькулятор не является финансовой рекомендацией. Всегда проверяйте расчёты перед открытием сделки.
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════════
+// 🧮 КАЛЬКУЛЯТОР ПОЗИЦИИ
+// ════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// КАЛЬКУЛЯТОР v2 — по логике TradingView
+// ═══════════════════════════════════════════════════════
+let cvDir       = 'long';
+let cvStopMode  = 'atr';
+let cvDistMode  = 'points';
+let cvCopyText  = '';
+
+function depCalc() {
+  const deposit = parseFloat(document.getElementById('dep_deposit').value) || 0;
+  const riskPct = parseFloat(document.getElementById('dep_riskPct').value) || 1;
+  const trades  = parseInt(document.getElementById('dep_trades').value)    || 1;
+
+  const totalRisk = deposit * riskPct / 100;
+  const perTrade  = totalRisk / trades;
+
+  function fmtMoney(n) {
+    return '$' + n.toLocaleString('ru-RU', {maximumFractionDigits: 2});
+  }
+
+  document.getElementById('dep_totalRisk').textContent = fmtMoney(totalRisk);
+  document.getElementById('dep_perTrade').textContent  = fmtMoney(perTrade);
+
+  // Обновляем индикатор в блоке "Риск на сделку"
+  const indicator = document.getElementById('dep_riskIndicator');
+  if (indicator) indicator.textContent = fmtMoney(perTrade);
+
+  // Подставляем значение в скрытый input для cvCalc()
+  const riskInput = document.getElementById('cv_riskAmt');
+  if (riskInput) riskInput.value = perTrade.toFixed(2);
+
+  cvCalc();
+}
+
+function calcInit() {
+  cvRenderPartial();
+  depCalc();
+}
+
+// ── Направление ──
+function cvSetDir(d) {
+  cvDir = d;
+  const bl = document.getElementById('cv_dirLong');
+  const bs = document.getElementById('cv_dirShort');
+  bl.style.borderWidth  = d === 'long' ? '2px' : '1px';
+  bl.style.borderColor  = d === 'long' ? 'var(--green)' : 'var(--border)';
+  bl.style.background   = d === 'long' ? '#061610' : 'transparent';
+  bl.style.color        = d === 'long' ? 'var(--green)' : 'var(--muted)';
+  bs.style.borderWidth  = d === 'short' ? '2px' : '1px';
+  bs.style.borderColor  = d === 'short' ? 'var(--red)' : 'var(--border)';
+  bs.style.background   = d === 'short' ? '#160608' : 'transparent';
+  bs.style.color        = d === 'short' ? 'var(--red)' : 'var(--muted)';
+  const hint = document.getElementById('cv_tvxHint');
+  if (hint) hint.textContent = d === 'long' ? 'ТВХ = уровень + люфт' : 'ТВХ = уровень − люфт';
+  cvCalc();
+}
+
+// ── Режим стопа ──
+function cvSetStop(m) {
+  cvStopMode = m;
+  const ids    = ['cv_stopATR','cv_stopTech','cv_stopDist'];
+  const modes  = ['atr','tech','dist'];
+  const colors = ['var(--accent)','var(--orange)','var(--red)'];
+  const bgs    = ['rgba(0,229,255,.08)','rgba(255,170,0,.08)','rgba(255,59,92,.08)'];
+  ids.forEach((id, i) => {
+    const btn = document.getElementById(id);
+    const active = modes[i] === m;
+    btn.style.borderWidth = active ? '2px' : '1px';
+    btn.style.borderColor = active ? colors[i] : 'var(--border)';
+    btn.style.background  = active ? bgs[i] : 'transparent';
+    btn.style.color       = active ? colors[i] : 'var(--muted)';
+  });
+  document.getElementById('cv_atrBlock').style.display  = m === 'atr'  ? 'block' : 'none';
+  document.getElementById('cv_techBlock').style.display = m === 'tech' ? 'block' : 'none';
+  document.getElementById('cv_distBlock').style.display = m === 'dist' ? 'block' : 'none';
+  cvCalc();
+}
+
+// ── Режим дистанции ──
+function cvSetDistMode(m) {
+  cvDistMode = m;
+  const bp = document.getElementById('cv_distModePoints');
+  const bt = document.getElementById('cv_distModeTicks');
+  bp.style.borderWidth = m === 'points' ? '2px' : '1px';
+  bp.style.borderColor = m === 'points' ? 'var(--red)' : 'var(--border)';
+  bp.style.background  = m === 'points' ? 'rgba(255,59,92,.08)' : 'transparent';
+  bp.style.color       = m === 'points' ? 'var(--red)' : 'var(--muted)';
+  bt.style.borderWidth = m === 'ticks' ? '2px' : '1px';
+  bt.style.borderColor = m === 'ticks' ? 'var(--orange)' : 'var(--border)';
+  bt.style.background  = m === 'ticks' ? 'rgba(255,170,0,.08)' : 'transparent';
+  bt.style.color       = m === 'ticks' ? 'var(--orange)' : 'var(--muted)';
+  document.getElementById('cv_distPointsBlock').style.display = m === 'points' ? 'block' : 'none';
+  document.getElementById('cv_distTicksBlock').style.display  = m === 'ticks'  ? 'block' : 'none';
+  cvCalc();
+}
+
+
+// ── Спецификации фьючерсных инструментов ──
+const CV_INSTRUMENTS = {
+  // Металлы
+  GC:  { name: 'Gold (GC)',           pointVal: 100,   step: 0.01, tickSize: 0.10,     tickVal: 10,    info: '1 контракт = 100 унций · 1 пункт = $100 · мин. шаг 0.01' },
+  MGC: { name: 'Micro Gold (MGC)',    pointVal: 10,    step: 0.01, tickSize: 0.10,     tickVal: 1,     info: '1 контракт = 10 унций · 1 пункт = $10 · мин. шаг 0.01' },
+  SI:  { name: 'Silver (SI)',         pointVal: 5000,  step: 0.01, tickSize: 0.005,    tickVal: 25,    info: '1 контракт = 5000 унций · 1 пункт = $5000 · мин. шаг 0.01' },
+  SIL: { name: 'Micro Silver (SIL)',  pointVal: 1000,  step: 0.01, tickSize: 0.005,    tickVal: 5,     info: '1 контракт = 1000 унций · 1 пункт = $1000 · мин. шаг 0.01' },
+  // Энергетика
+  CL:  { name: 'Crude Oil (CL)',      pointVal: 1000,  step: 0.01, tickSize: 0.01,     tickVal: 10,    info: '1 контракт = 1000 баррелей · 1 пункт = $1000 · мин. шаг 0.01' },
+  MCL: { name: 'Micro Crude (MCL)',   pointVal: 100,   step: 0.01, tickSize: 0.01,     tickVal: 1,     info: '1 контракт = 100 баррелей · 1 пункт = $100 · мин. шаг 0.01' },
+  NG:  { name: 'Natural Gas (NG)',    pointVal: 10000, step: 0.01, tickSize: 0.001,    tickVal: 10,    info: '1 контракт = 10 000 MMBtu · 1 пункт = $10 000 · мин. шаг 0.01' },
+  // Индексы
+  ES:  { name: 'E-mini S&P (ES)',     pointVal: 50,    step: 0.01, tickSize: 0.25,     tickVal: 12.5,  info: '1 пункт = $50 · мин. шаг 0.01' },
+  MES: { name: 'Micro S&P (MES)',     pointVal: 5,     step: 0.01, tickSize: 0.25,     tickVal: 1.25,  info: '1 пункт = $5 · мин. шаг 0.01' },
+  NQ:  { name: 'E-mini Nasdaq (NQ)',  pointVal: 20,    step: 0.01, tickSize: 0.25,     tickVal: 5,     info: '1 пункт = $20 · мин. шаг 0.01' },
+  MNQ: { name: 'Micro Nasdaq (MNQ)', pointVal: 2,     step: 0.01, tickSize: 0.25,     tickVal: 0.5,   info: '1 пункт = $2 · мин. шаг 0.01' },
+  YM:  { name: 'E-mini Dow (YM)',     pointVal: 5,     step: 0.01, tickSize: 1,        tickVal: 5,     info: '1 пункт = $5 · мин. шаг 0.01' },
+  MYM: { name: 'Micro Dow (MYM)',     pointVal: 0.5,   step: 0.01, tickSize: 1,        tickVal: 0.5,   info: '1 пункт = $0.50 · мин. шаг 0.01' },
+  RTY: { name: 'E-mini Russell (RTY)',pointVal: 50,    step: 0.01, tickSize: 0.10,     tickVal: 5,     info: '1 пункт = $50 · мин. шаг 0.01' },
+  M2K: { name: 'Micro Russell (M2K)',pointVal: 5,     step: 0.01, tickSize: 0.10,     tickVal: 0.5,   info: '1 пункт = $5 · мин. шаг 0.01' },
+  // Валюты
+  '6E': { name: 'Euro FX (6E)',        pointVal: 125000, step: 0.01, tickSize: 0.0001,   tickVal: 12.5,  info: '1 контракт = 125 000 EUR · мин. шаг 0.01' },
+  '6B': { name: 'British Pound (6B)', pointVal: 62500,  step: 0.01, tickSize: 0.0001,   tickVal: 6.25,  info: '1 контракт = 62 500 GBP · мин. шаг 0.01' },
+  '6J': { name: 'Japanese Yen (6J)',  pointVal: 12500000, step: 0.01, tickSize: 0.000001, tickVal: 12.5, info: '1 контракт = 12 500 000 JPY · мин. шаг 0.01' },
+  '6A': { name: 'Australian $ (6A)',  pointVal: 100000, step: 0.01, tickSize: 0.0001,   tickVal: 10,    info: '1 контракт = 100 000 AUD · мин. шаг 0.01' },
+  // Крипто CFD
+  BTCUSD:  { name: 'Bitcoin (BTCUSD)',  pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  ETHUSD:  { name: 'Ethereum (ETHUSD)',pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  BNBUSDT: { name: 'BNB (BNBUSDT)',    pointVal: 1, step: 0.01, tickSize: 0.5,     tickVal: 0.5,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  SOLUSD:  { name: 'Solana (SOLUSD)',  pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  XRPUSD:  { name: 'Ripple (XRPUSD)', pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  ADAUSD:  { name: 'Cardano (ADAUSD)', pointVal: 1, step: 0.01, tickSize: 0.00001, tickVal: 0.00001, info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  DOGEUSD: { name: 'Dogecoin (DOGE)',  pointVal: 1, step: 0.01, tickSize: 0.001,   tickVal: 0.001,   info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  LTCUSD:  { name: 'Litecoin (LTCUSD)',pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  XMRUSD:  { name: 'Monero (XMRUSD)', pointVal: 1, step: 0.01, tickSize: 1,       tickVal: 1,       info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  DASHUSD: { name: 'Dash (DASHUSD)',   pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  NEOUSD:  { name: 'NEO (NEOUSD)',     pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
+  CUSTOM: { name: 'Ручной ввод', pointVal: null, step: 0.01, tickSize: null, tickVal: null, info: 'Введи стоимость 1 пункта вручную' },
+};
+
+function cvApplyInstrument() {
+  const key = document.getElementById('cv_futInstrument').value;
+  const spec = CV_INSTRUMENTS[key];
+  const infoEl = document.getElementById('cv_instrInfo');
+  const customEl = document.getElementById('cv_customBlock');
+  if (spec) {
+    infoEl.textContent = spec.info;
+    customEl.style.display = key === 'CUSTOM' ? 'block' : 'none';
+  }
+  cvCalc();
+}
+
+function cvGetPointVal() {
+  const key = document.getElementById('cv_futInstrument') ?
+    document.getElementById('cv_futInstrument').value : null;
+  if (!key) return null;
+  if (key === 'CUSTOM') {
+    return parseFloat(document.getElementById('cv_customPointVal').value) || 1;
+  }
+  const spec = CV_INSTRUMENTS[key];
+  return spec ? spec.pointVal : null;
+}
+
+
+function cvUpdateCommPreview() {
+  const margin  = parseFloat(document.getElementById('cv_commMargin').value)  || 0;
+  const pct     = parseFloat(document.getElementById('cv_commPct4p').value)   || 1;
+  const amount  = margin * pct / 100;
+  const el = document.getElementById('cv_commPreview');
+  if (el) el.textContent = '$' + amount.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function cvToggleLots() {
+  const on = document.getElementById('cv_useLots').checked;
+  document.getElementById('cv_lotsBlock').style.display = on ? 'block' : 'none';
+  if (on) cvApplyInstrument();
+  cvCalc();
+}
+
+function cvToggleCommission() {
+  const on = document.getElementById('cv_useBin').checked;
+  document.getElementById('cv_binBlock').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('cv_useManualComm').checked = false;
+    document.getElementById('cv_manualCommBlock').style.display = 'none';
+    document.getElementById('cv_useIB').checked = false;
+    document.getElementById('cv_ibBlock').style.display = 'none';
+  }
+  cvCalc();
+}
+
+function cvToggleManualComm() {
+  const on = document.getElementById('cv_useManualComm').checked;
+  document.getElementById('cv_manualCommBlock').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('cv_useBin').checked = false;
+    document.getElementById('cv_binBlock').style.display = 'none';
+    document.getElementById('cv_useIB').checked = false;
+    document.getElementById('cv_ibBlock').style.display = 'none';
+  }
+  cvCalc();
+}
+
+function cvToggleIB() {
+  const on = document.getElementById('cv_useIB').checked;
+  document.getElementById('cv_ibBlock').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('cv_useBin').checked = false;
+    document.getElementById('cv_binBlock').style.display = 'none';
+    document.getElementById('cv_useManualComm').checked = false;
+    document.getElementById('cv_manualCommBlock').style.display = 'none';
+  }
+  cvCalc();
+}
+
+function cvTogglePartial() {
+  document.getElementById('cv_partialBlock').style.display =
+    document.getElementById('cv_usePartial').checked ? 'block' : 'none';
+  cvCalc();
+}
+
+function cvRenderPartial() {
+  const n = parseInt(document.getElementById('cv_numTP').value) || 4;
+  const defaults = [{r:3,p:25},{r:4,p:25},{r:5,p:25},{r:6,p:25},{r:7,p:0}];
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const d = defaults[i] || {r: i+3, p: Math.floor(100/n)};
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} соотн. 1:</div>
+        <input id="cv_r${i}" type="number" value="${d.r}" min="0.5" step="0.5"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--accent);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">ТП${i+1} доля %</div>
+        <input id="cv_p${i}" type="number" value="${d.p}" min="0" max="100" step="1"
+          style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--green);font-family:'Space Mono',monospace;font-size:13px;outline:none;text-align:center;"
+          onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'" oninput="cvCalc()">
+      </div>
+    </div>`;
+  }
+  document.getElementById('cv_partialInputs').innerHTML = html;
+}
+
+function cvFmt(v, d) {
+  if (isNaN(v) || !isFinite(v)) return '—';
+  const fixed = v.toFixed(d);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+}
+
+function cvRow(label, value, color) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #0f1e30;">
+    <span style="color:#4a6080;">${label}</span>
+    <span style="color:${color || 'var(--bright)'};font-weight:700;">${value}</span>
+  </div>`;
+}
+
+function cvSec(title) {
+  return `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;border-top:1px solid var(--border);padding-top:10px;">${title}</div>`;
+}
+
+function cvErr(msg) {
+  document.getElementById('cv_result').innerHTML =
+    `<div style="color:var(--red);text-align:center;padding:40px 20px;font-size:13px;">⚠️ ${msg}</div>`;
+}
+
+function cvCopy() {
+  if (!cvCopyText) return;
+  navigator.clipboard.writeText(cvCopyText).then(() => {
+    const btn = document.getElementById('cv_copyBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ СКОПИРОВАНО!';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    btn.style.background = 'rgba(0,255,136,.08)';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+      btn.style.background = 'rgba(0,229,255,.07)';
+    }, 2000);
+  });
+}
+
+function cvCalc() {
+  const isLong = cvDir === 'long';
+  const ratio  = parseFloat(document.getElementById('cv_ratio').value) || 3;
+  const level  = parseFloat(document.getElementById('cv_level').value) || 0;
+
+  // Эффективный риск — всегда берётся из верхнего блока депозита
+  const effectiveRisk = parseFloat(document.getElementById('cv_riskAmt').value) || 0;
+  if (effectiveRisk <= 0) return cvErr('Укажите риск больше нуля');
+  if (level <= 0) return cvErr('Укажите цену уровня');
+
+  // Стоп и ТВХ
+  let tvh, stopLoss, actualStop, buffer, stopSource, atrUsed = 0, stopPctUsed = 0;
+
+  // Глобальный ATR (из блока "Параметры")
+  const globalAtr  = parseFloat(document.getElementById('cv_globalAtr').value) || 0.22;
+  const lyuftPct   = (parseFloat(document.getElementById('cv_lyuftPct').value) || 20) / 100;
+  // ATR-стоп используется как база для люфта во всех режимах
+  const stopPctGlobal = (parseFloat(document.getElementById('cv_stopPct').value) || 20) / 100;
+  const stopAtrGlobal = globalAtr * stopPctGlobal;
+
+  if (cvStopMode === 'tech') {
+    const techStop = parseFloat(document.getElementById('cv_techStop').value) || 0;
+    buffer     = stopAtrGlobal * lyuftPct;
+    tvh        = isLong ? level + buffer : level - buffer;
+    stopLoss   = techStop;
+    actualStop = Math.abs(tvh - stopLoss);
+    stopSource = 'Технический';
+    atrUsed = globalAtr; stopPctUsed = lyuftPct * 100;
+  } else if (cvStopMode === 'dist') {
+    buffer = stopAtrGlobal * lyuftPct;
+    tvh    = isLong ? level + buffer : level - buffer;
+    let dist;
+    if (cvDistMode === 'ticks') {
+      const ticks    = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+      const tickSize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+      dist = ticks * tickSize;
+    } else {
+      dist = parseFloat(document.getElementById('cv_stopDistVal').value) || 0;
+    }
+    actualStop = dist;
+    stopLoss   = isLong ? tvh - dist : tvh + dist;
+    stopSource = 'Дистанция';
+    atrUsed = globalAtr; stopPctUsed = lyuftPct * 100;
+  } else {
+    // ATR
+    buffer     = stopAtrGlobal * lyuftPct;
+    tvh        = isLong ? level + buffer : level - buffer;
+    stopLoss   = isLong ? tvh - stopAtrGlobal : tvh + stopAtrGlobal;
+    actualStop = Math.abs(tvh - stopLoss);
+    stopSource = 'ATR';
+    atrUsed = globalAtr; stopPctUsed = stopPctGlobal * 100;
+  }
+
+  if (actualStop <= 0) return cvErr('Стоп-лосс равен нулю — проверь параметры');
+
+  // Позиция
+  const posSize = effectiveRisk / actualStop;
+  const volUSD  = posSize * tvh;
+
+  // Плечо
+  const useLev = document.getElementById('cv_useLev').checked;
+  const lev    = parseInt(document.getElementById('cv_lev').value) || 10;
+
+  // Контракты (фьючерсы / крипто CFD)
+  const useLots = document.getElementById('cv_useLots').checked;
+  let lots = 0, riskPerLot = 0, realRisk = 0;
+  if (useLots) {
+    const pointVal = cvGetPointVal();
+    if (pointVal && pointVal > 0) {
+      const instrKey = document.getElementById('cv_futInstrument').value;
+      const spec = CV_INSTRUMENTS[instrKey];
+      const step = (spec && spec.step) ? spec.step : 1;
+      riskPerLot = actualStop * pointVal;
+      const rawContracts = riskPerLot > 0 ? effectiveRisk / riskPerLot : 0;
+      // округляем вниз до шага инструмента
+      lots = Math.floor(rawContracts / step) * step;
+      lots = parseFloat(lots.toFixed(10)); // убираем float мусор
+      realRisk = lots * riskPerLot;
+    }
+  }
+
+  // Комиссии
+  const useBin        = document.getElementById('cv_useBin').checked;
+  const useManualComm = document.getElementById('cv_useManualComm').checked;
+  const useIB         = document.getElementById('cv_useIB').checked;
+  const binType       = document.getElementById('cv_binType').value;
+  const commMargin    = parseFloat(document.getElementById('cv_commMargin').value)   || 0;
+  const commPct4p     = parseFloat(document.getElementById('cv_commPct4p').value)    || 1;
+  const commPerShare  = parseFloat(document.getElementById('cv_commPerShare').value) || 0.005;
+
+  // Binance: % от объёма за сторону
+  let binRate = 0;
+  if (useBin) binRate = binType === 'maker' ? 0.0002 : 0.0005;
+
+  // 4PropTrader CFD: маржа × % Round Turn
+  const commFixed4p = commMargin * commPct4p / 100;
+
+  // IB: $ за акцию × кол-во, минимум $1 за ордер (за каждую сторону)
+  function ibComm(shares) { return Math.max(shares * commPerShare, 1); }
+
+  const useComm = useBin || useManualComm || useIB;
+
+  // ТП
+  const takeVal      = actualStop * ratio;
+  const takeProfit   = isLong ? tvh + takeVal : tvh - takeVal;
+  const profitBrutto = posSize * takeVal;
+  const profitInRisks = profitBrutto / effectiveRisk;
+
+  // ТП с комиссией
+  let tpWithComm = takeProfit;
+  let entryComm = 0, exitComm = 0, stopComm = 0, totalComm = 0, profitNetto = profitBrutto;
+
+  if (useComm) {
+    const targetNet = effectiveRisk * ratio; // чистая цель всегда = риск × ratio
+
+    if (useBin) {
+      // Binance: % от объёма
+      // ТП сдвигается: нетто после комиссии входа и выхода = targetNet
+      entryComm  = volUSD * binRate;
+      if (isLong) {
+        tpWithComm = (targetNet + posSize * tvh + entryComm) / (posSize * (1 - binRate));
+      } else {
+        tpWithComm = (posSize * tvh - targetNet - entryComm) / (posSize * (1 + binRate));
+      }
+      exitComm  = posSize * tpWithComm * binRate;
+      stopComm  = posSize * stopLoss * binRate;
+
+    } else if (useIB) {
+      // IB: фиксированная $ за акцию, мин $1
+      // entryComm известна сразу, exitComm = то же самое (posSize не меняется)
+      entryComm = ibComm(posSize);
+      exitComm  = ibComm(posSize);
+      stopComm  = ibComm(posSize);
+      // ТП сдвигается: нетто = targetNet → ТП = вход + (targetNet + все_комиссии) / posSize
+      const totalCommIB = entryComm + exitComm;
+      const needBrutto  = targetNet + totalCommIB;
+      tpWithComm = isLong ? tvh + needBrutto / posSize : tvh - needBrutto / posSize;
+
+    } else {
+      // 4PropTrader CFD: Round Turn = фиксированная сумма (маржа × %)
+      // RT = вход + выход вместе, делим пополам для отображения
+      entryComm = commFixed4p / 2;
+      exitComm  = commFixed4p / 2;
+      stopComm  = commFixed4p / 2;
+      // ТП сдвигается: нетто = targetNet → нужно заработать targetNet + RT комиссия
+      const needBrutto4p = targetNet + commFixed4p;
+      tpWithComm = isLong ? tvh + needBrutto4p / posSize : tvh - needBrutto4p / posSize;
+    }
+
+    totalComm   = entryComm + exitComm;
+    profitNetto = targetNet; // всегда чисто = риск × ratio
+  }
+
+  // Частичное закрытие
+  const usePartial = document.getElementById('cv_usePartial').checked;
+  let partHTML = '', partTxt = '', partTotalProfit = 0;
+  if (usePartial) {
+    const n = parseInt(document.getElementById('cv_numTP').value) || 4;
+    partHTML = cvSec('📊 ЧАСТИЧНОЕ ЗАКРЫТИЕ');
+    for (let i = 0; i < n; i++) {
+      const ri  = parseFloat(document.getElementById('cv_r' + i)?.value) || (i + 3);
+      const pi  = parseFloat(document.getElementById('cv_p' + i)?.value) || 25;
+      const pct = pi / 100;
+      const partSize  = posSize * pct;
+      const partTakeV = actualStop * ri;
+      let partTP = isLong ? tvh + partTakeV : tvh - partTakeV;
+      if (useComm && useBin) {
+        const partNet   = effectiveRisk * ri * pct;
+        const partEntry = partSize * tvh * binRate;
+        if (isLong) partTP = (partNet + partSize * tvh + partEntry) / (partSize * (1 - binRate));
+        else        partTP = (partSize * tvh - partNet - partEntry) / (partSize * (1 + binRate));
+      }
+      const partProfit = partSize * Math.abs(partTP - tvh);
+      partTotalProfit += partProfit;
+      partHTML += cvRow(`ТП${i+1} (1:${ri} | ${pi}%) → цена`,
+        `$${cvFmt(partTP,4)} | +$${cvFmt(partProfit,2)}`, 'var(--green)');
+      partTxt += `ТП${i+1} (1:${ri} | ${pi}%) → ${cvFmt(partTP,4)} | +$${cvFmt(partProfit,2)}
+`;
+    }
+    const partR = partTotalProfit / effectiveRisk;
+    partHTML += cvRow('Итого профит', `$${cvFmt(partTotalProfit,2)}`, 'var(--green)');
+    partHTML += cvRow('Профит в рисках', `${cvFmt(partR,2)}R`, 'var(--accent)');
+  }
+
+  // HTML результата
+  const dirColor  = isLong ? 'var(--green)' : 'var(--red)';
+  const dirLabel  = isLong ? '🟢 ЛОНГ' : '🔴 ШОРТ';
+  const depDisp   = parseFloat(document.getElementById('dep_deposit').value) || 0;
+  const pctDisp   = parseFloat(document.getElementById('dep_riskPct').value) || 0;
+  const tradesDisp = parseInt(document.getElementById('dep_trades').value) || 1;
+  const riskLabel = `Депозит $${cvFmt(depDisp,0)} × ${pctDisp}% ÷ ${tradesDisp} сделок`;
+
+  let html = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:20px;font-weight:800;color:${dirColor};">${dirLabel}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">1:${ratio}  ·  Стоп: ${stopSource}${cvStopMode==='dist'&&cvDistMode==='ticks'?' (тики)':''}</div>
+    </div>`;
+
+  html += cvSec('✅ ПАРАМЕТРЫ');
+  html += cvRow('Уровень', '$' + cvFmt(level, 4));
+  html += cvRow('ATR (глобальный)', cvFmt(atrUsed, 4));
+  html += cvRow(`Люфт ТВХ (${Math.round(lyuftPct*100)}% от стопа)`, (isLong ? '+' : '−') + '$' + cvFmt(buffer, 6));
+  html += cvRow('Риск', `$${cvFmt(effectiveRisk,2)} (${riskLabel})`);
+  if (cvStopMode === 'atr') {
+    html += cvRow(`Стоп ${stopPctUsed}% от ATR`, '$' + cvFmt(actualStop,6));
+  } else if (cvStopMode === 'tech') {
+    html += cvRow('Размер стопа (от ТВХ)', '$' + cvFmt(actualStop,6));
+  } else if (cvDistMode === 'ticks') {
+    const ticks = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+    const tsize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+    html += cvRow(`Тики: ${ticks} × $${cvFmt(tsize,5)}`, '$' + cvFmt(actualStop,6));
+  } else {
+    html += cvRow('Дистанция стопа', '$' + cvFmt(actualStop,6));
+  }
+  html += cvRow('Тейк (значение)', '$' + cvFmt(takeVal,6));
+
+  html += cvSec('✅ ОБЪЁМ');
+  html += cvRow('Количество монет/акций', cvFmt(posSize, 4));
+  html += cvRow('Объём ($)', '$' + cvFmt(volUSD, 2));
+  if (useLev) html += cvRow(`Объём с плечом x${lev} ($)`, '$' + cvFmt(volUSD / lev, 2));
+  if (useLots) {
+    const instrKey = document.getElementById('cv_futInstrument').value;
+    const instrName = CV_INSTRUMENTS[instrKey] ? CV_INSTRUMENTS[instrKey].name : instrKey;
+    html += cvRow(`Контракты (${instrName})`, lots > 0 ? lots.toString() : '0 (риск слишком мал)', lots > 0 ? 'var(--accent)' : 'var(--orange)');
+    html += cvRow('Риск на 1 контракт', '$' + cvFmt(riskPerLot, 2));
+    html += cvRow('Реальный риск (контракты)',
+      '$' + cvFmt(realRisk, 2), realRisk > effectiveRisk ? 'var(--orange)' : 'var(--green)');
+  }
+
+  html += cvSec('✅ ВХОД И ВЫХОД');
+  html += cvRow('ТВХ (вход)', '$' + cvFmt(tvh, 4), 'var(--accent)');
+  if (useComm) {
+    const tpLabel = useBin ? 'ТП + комиссия Binance' : useIB ? 'ТП + комиссия IB' : 'ТП + комиссия 4PropTrader';
+    html += cvRow(tpLabel, '$' + cvFmt(tpWithComm, 4), 'var(--green)');
+  } else {
+    html += cvRow('ТП', '$' + cvFmt(takeProfit, 4), 'var(--green)');
+  }
+  html += cvRow('СЛ', '$' + cvFmt(stopLoss, 4), 'var(--red)');
+
+  if (useComm) {
+    const commLabel = useBin
+      ? `💰 КОМИССИИ BINANCE (${binType === 'maker' ? 'Maker 0.02%' : 'Taker 0.05%'})`
+      : useIB
+        ? `💰 КОМИССИЯ IB ($${commPerShare}/акцию, мин $1)`
+        : `💰 КОМИССИЯ 4PROPTRADER CFD (${commPct4p}% от маржи $${commMargin})`;
+    html += cvSec(commLabel);
+    html += cvRow('Вход',              '$' + cvFmt(entryComm, 4));
+    html += cvRow('Выход (по ТП)',     '$' + cvFmt(exitComm,  4));
+    html += cvRow('Выход (по СЛ)',     '$' + cvFmt(stopComm,  4));
+    html += cvRow('Итого', '$' + cvFmt(totalComm, 4));
+  }
+
+  if (usePartial) {
+    html += partHTML;
+  } else {
+    html += cvSec('✅ РЕЗУЛЬТАТ');
+    if (useComm) {
+      html += cvRow('Профит брутто', '$' + cvFmt(profitBrutto, 2), 'var(--green)');
+      html += cvRow('Профит нетто',  '$' + cvFmt(profitNetto, 2),  'var(--green)');
+    } else {
+      html += cvRow('Профит', '$' + cvFmt(profitBrutto, 2), 'var(--green)');
+    }
+    html += cvRow('Профит в рисках', cvFmt(profitInRisks, 2) + 'R', 'var(--accent)');
+    html += cvRow('Убыток (риск)',    '$' + cvFmt(effectiveRisk, 2), 'var(--red)');
+  }
+
+  document.getElementById('cv_result').innerHTML = html;
+
+  // Копируемый текст — формат TradingView
+  const instrEl = document.getElementById('cv_instrument');
+  const instr = instrEl ? (instrEl.value.trim() || '—') : '—';
+  const dirSymbol = isLong ? '🟢' : '🔴';
+
+  let txt = `КАЛЬКУЛЯТОР ПОЗИЦИИ\n\n`;
+  txt += `Инструмент → ${instr}\n`;
+  txt += `Стратегия  → ${isLong ? 'Лонг' : 'Шорт'} ${ratio}/1 ${dirSymbol}\n\n`;
+
+  txt += `✅  ПАРАМЕТРЫ:\n`;
+  txt += `Уровень → ${cvFmt(level,4)}\n`;
+  txt += `Риск → $${cvFmt(effectiveRisk,2)} (${riskLabel})\n`;
+  txt += `Режим стопа: ${stopSource}\n`;
+  txt += `ATR → ${cvFmt(atrUsed,4)}\n`;
+  if (cvStopMode === 'atr') {
+    txt += `Стоп ${stopPctUsed}% от ATR → ${cvFmt(actualStop,6)}\n`;
+  } else if (cvStopMode === 'dist' && cvDistMode === 'ticks') {
+    const ticks = parseFloat(document.getElementById('cv_stopTicks').value) || 10;
+    const tsize = parseFloat(document.getElementById('cv_tickSize').value) || 0.01;
+    txt += `Тики: ${ticks} × $${cvFmt(tsize,5)} = $${cvFmt(actualStop,6)}\n`;
+  } else if (cvStopMode === 'dist') {
+    txt += `Дистанция стопа → ${cvFmt(actualStop,6)}\n`;
+  } else {
+    txt += `Размер стопа → ${cvFmt(actualStop,6)}\n`;
+  }
+  txt += `Люфт ${Math.round(lyuftPct*100)}% от Стопа → ${cvFmt(buffer,6)}\n`;
+  txt += `Тейк (значение) → ${cvFmt(takeVal,6)}\n\n`;
+
+  txt += `✅  ОБЪЁМ:\n`;
+  txt += `Количество → ${cvFmt(posSize,4)}\n`;
+  txt += `Объём ($) → $${cvFmt(volUSD,2)}\n`;
+  if (useLev) txt += `С плечом x${lev} → $${cvFmt(volUSD/lev,2)}\n`;
+  if (useLots) {
+    const instrKey2 = document.getElementById('cv_futInstrument').value;
+    const instrName2 = CV_INSTRUMENTS[instrKey2] ? CV_INSTRUMENTS[instrKey2].name : instrKey2;
+    txt += `Контракты (${instrName2}) → ${lots}\n`;
+    txt += `Риск на 1 контракт → $${cvFmt(riskPerLot,2)}\n`;
+    txt += `Реальный риск → $${cvFmt(realRisk,2)}\n`;
+  }
+  txt += `\n`;
+
+  txt += `✅  ВХОД И ВЫХОД:\n`;
+  txt += `ТВХ → ${cvFmt(tvh,4)}\n`;
+  txt += `ТП  → ${cvFmt(useComm ? tpWithComm : takeProfit, 4)}\n`;
+  txt += `СЛ  → ${cvFmt(stopLoss,4)}\n\n`;
+
+  if (useComm) {
+    txt += `✅  КОМИССИИ:\n`;
+    if (useBin) txt += `Тип: Binance ${binType === 'maker' ? 'Maker 0.02%' : 'Taker 0.05%'}\n`;
+    else if (useIB) txt += `Тип: Interactive Brokers $${commPerShare}/акцию (мин $1)\n`;
+    else txt += `Тип: 4PropTrader CFD ${commPct4p}% от маржи $${commMargin}\n`;
+    txt += `Вход  → $${cvFmt(entryComm,4)}\n`;
+    txt += `Выход → $${cvFmt(exitComm,4)}\n`;
+    txt += `СЛ    → $${cvFmt(stopComm,4)}\n`;
+    txt += `Итого → $${cvFmt(totalComm,4)}\n\n`;
+  }
+
+  if (usePartial) {
+    txt += `✅  ЧАСТИЧНОЕ ЗАКРЫТИЕ:\n${partTxt}\n`;
+  } else {
+    txt += `✅  РЕЗУЛЬТАТ:\n`;
+    if (useComm) {
+      txt += `Профит → $${cvFmt(profitBrutto,2)} минус комиссия\n`;
+      txt += `Профит в рисках → ${cvFmt(profitInRisks,2)}R\n`;
+      txt += `Убыток → $${cvFmt(effectiveRisk,2)} + комиссия\n`;
+    } else {
+      txt += `Профит → $${cvFmt(profitBrutto,2)}\n`;
+      txt += `Профит в рисках → ${cvFmt(profitInRisks,2)}R\n`;
+      txt += `Убыток → $${cvFmt(effectiveRisk,2)}\n`;
+    }
+  }
+  cvCopyText = txt;
+  document.getElementById('cv_copyBtn').style.display = 'block';
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', function() {
+  calcInit();
+});
+</script>
+</body>
+</html>
