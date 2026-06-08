@@ -742,47 +742,92 @@
           <div class="sb-title">Выбери инструмент — стоимость пункта подставится автоматически</div>
           <select id="cv_futInstrument" onchange="cvApplyInstrument()">
             <optgroup label="── Металлы ──">
-              <option value="GC">GC — Gold ($100/пункт)</option>
-              <option value="MGC">MGC — Micro Gold ($10/пункт)</option>
-              <option value="SI">SI — Silver ($5000/пункт)</option>
-              <option value="SIL">SIL — Micro Silver ($1000/пункт)</option>
+              <option value="XAUUSD">XAUUSD — Gold / Золото</option>
+              <option value="XAGUSD">XAGUSD — Silver / Серебро</option>
+              <option value="XPDUSD">XPDUSD — Palladium / Палладий</option>
+              <option value="XPTUSD">XPTUSD — Platinum / Платина</option>
             </optgroup>
-            <optgroup label="── Энергетика ──">
-              <option value="CL">CL — Crude Oil ($1000/пункт)</option>
-              <option value="MCL">MCL — Micro Crude ($100/пункт)</option>
-              <option value="NG">NG — Natural Gas ($10000/пункт)</option>
+            <optgroup label="── Сырьё ──">
+              <option value="BRENT">BRENT — Brent Crude Oil / Нефть Брент</option>
+              <option value="NATGAS">NATGAS — Natural Gas / Природный газ</option>
             </optgroup>
             <optgroup label="── Индексы ──">
-              <option value="ES">ES — E-mini S&P 500 ($50/пункт)</option>
-              <option value="MES">MES — Micro S&P 500 ($5/пункт)</option>
-              <option value="NQ">NQ — E-mini Nasdaq ($20/пункт)</option>
-              <option value="MNQ">MNQ — Micro Nasdaq ($2/пункт)</option>
-              <option value="YM">YM — E-mini Dow ($5/пункт)</option>
-              <option value="MYM">MYM — Micro Dow ($0.50/пункт)</option>
-              <option value="RTY">RTY — E-mini Russell ($50/пункт)</option>
-              <option value="M2K">M2K — Micro Russell ($5/пункт)</option>
+              <option value="S&P500">S&P500 — S&P 500 Index</option>
+              <option value="NQ100">NQ100 — Nasdaq 100 Index</option>
+              <option value="NIKKEI225">NIKKEI225 — Nikkei 225 Japan</option>
+              <option value="WS30">WS30 — Dow Jones 30</option>
+              <option value="ASX200">ASX200 — Australia 200</option>
+              <option value="FRA40">FRA40 — France 40</option>
+              <option value="FTSE100">FTSE100 — UK 100</option>
+              <option value="GER40">GER40 — Germany 40</option>
+              <option value="HK50">HK50 — Hong Kong 50</option>
             </optgroup>
-            <optgroup label="── Валюты ──">
-              <option value="6E">6E — Euro FX</option>
-              <option value="6B">6B — British Pound</option>
-              <option value="6J">6J — Japanese Yen</option>
-              <option value="6A">6A — Australian Dollar</option>
+            <optgroup label="── Форекс мажоры ──">
+              <option value="EURUSD">EURUSD — Euro / US Dollar</option>
+              <option value="GBPUSD">GBPUSD — British Pound / US Dollar</option>
+              <option value="AUDUSD">AUDUSD — Australian Dollar / US Dollar</option>
+              <option value="USDCAD">USDCAD — US Dollar / Canadian Dollar</option>
+              <option value="USDCHF">USDCHF — US Dollar / Swiss Franc</option>
+              <option value="USDJPY">USDJPY — US Dollar / Japanese Yen</option>
             </optgroup>
-            <optgroup label="── Крипто (CFD) ──">
-              <option value="BTCUSD">BTCUSD — Bitcoin</option>
-              <option value="ETHUSD">ETHUSD — Ethereum</option>
-              <option value="BNBUSDT">BNBUSDT — BNB</option>
-              <option value="SOLUSD">SOLUSD — Solana</option>
-              <option value="XRPUSD">XRPUSD — Ripple</option>
-              <option value="ADAUSD">ADAUSD — Cardano</option>
-              <option value="DOGEUSD">DOGEUSD — Dogecoin</option>
-              <option value="LTCUSD">LTCUSD — Litecoin</option>
-              <option value="XMRUSD">XMRUSD — Monero</option>
-              <option value="DASHUSD">DASHUSD — Dash</option>
-              <option value="NEOUSD">NEOUSD — NEO</option>
+            <optgroup label="── Форекс миноры ──">
+              <option value="AUDCAD">AUDCAD — Australian / Canadian Dollar</option>
+              <option value="AUDCHF">AUDCHF — Australian / Swiss Franc</option>
+              <option value="AUDJPY">AUDJPY — Australian / Japanese Yen</option>
+              <option value="AUDNZD">AUDNZD — Australian / New Zealand Dollar</option>
+              <option value="CADCHF">CADCHF — Canadian / Swiss Franc</option>
+              <option value="CADJPY">CADJPY — Canadian / Japanese Yen</option>
+              <option value="CHFJPY">CHFJPY — Swiss Franc / Japanese Yen</option>
+              <option value="EURAUD">EURAUD — Euro / Australian Dollar</option>
+              <option value="EURCAD">EURCAD — Euro / Canadian Dollar</option>
+              <option value="EURCHF">EURCHF — Euro / Swiss Franc</option>
+              <option value="EURGBP">EURGBP — Euro / British Pound</option>
+              <option value="EURJPY">EURJPY — Euro / Japanese Yen</option>
+              <option value="EURNZD">EURNZD — Euro / New Zealand Dollar</option>
+              <option value="GBPAUD">GBPAUD — British Pound / Australian Dollar</option>
+              <option value="GBPCAD">GBPCAD — British Pound / Canadian Dollar</option>
+              <option value="GBPCHF">GBPCHF — British Pound / Swiss Franc</option>
+              <option value="GBPJPY">GBPJPY — British Pound / Japanese Yen</option>
+              <option value="GBPNZD">GBPNZD — British Pound / New Zealand Dollar</option>
+              <option value="NZDCAD">NZDCAD — New Zealand / Canadian Dollar</option>
+              <option value="NZDCHF">NZDCHF — New Zealand / Swiss Franc</option>
+              <option value="NZDJPY">NZDJPY — New Zealand / Japanese Yen</option>
+              <option value="NZDUSD">NZDUSD — New Zealand / US Dollar</option>
             </optgroup>
-            <optgroup label="── Другое ──">
-              <option value="CUSTOM">Ввести вручную</option>
+            <optgroup label="── Акции США ──">
+              <option value="ALIBABA">ALIBABA — Alibaba Group</option>
+              <option value="AMAZON">AMAZON — Amazon Inc</option>
+              <option value="AMD">AMD — Advanced Micro Devices</option>
+              <option value="APPLE">APPLE — Apple Inc</option>
+              <option value="ATNT">ATNT — AT&T Inc</option>
+              <option value="BOA">BOA — Bank of America</option>
+              <option value="FERRARI">FERRARI — Ferrari NV</option>
+              <option value="GOOGLE">GOOGLE — Alphabet Inc</option>
+              <option value="INTEL">INTEL — Intel Corp</option>
+              <option value="JPM">JPM — JPMorgan Chase</option>
+              <option value="META">META — Meta / Facebook</option>
+              <option value="MICRON">MICRON — Micron Technology</option>
+              <option value="MSFT">MSFT — Microsoft Corp</option>
+              <option value="NETFLIX">NETFLIX — Netflix Inc</option>
+              <option value="NVIDIA">NVIDIA — NVIDIA Corp</option>
+              <option value="PFIZER">PFIZER — Pfizer Inc</option>
+              <option value="QCOM">QCOM — Qualcomm Inc</option>
+              <option value="TSLA">TSLA — Tesla Inc</option>
+              <option value="VISA">VISA — Visa Inc</option>
+              <option value="ZM">ZM — Zoom Video</option>
+            </optgroup>
+            <optgroup label="── Криптовалюта ──">
+              <option value="BTCUSD">BTCUSD — Bitcoin / Биткоин</option>
+              <option value="ETHUSD">ETHUSD — Ethereum / Эфириум</option>
+              <option value="BNBUSDT">BNBUSDT — Binance Coin / БНБ</option>
+              <option value="SOLUSD">SOLUSD — Solana / Солана</option>
+              <option value="XRPUSD">XRPUSD — Ripple / Риппл</option>
+              <option value="ADAUSD">ADAUSD — Cardano / Кардано</option>
+              <option value="DOGEUSD">DOGEUSD — Dogecoin / Догкоин</option>
+              <option value="LTCUSD">LTCUSD — Litecoin / Лайткоин</option>
+              <option value="XMRUSD">XMRUSD — Monero / Монеро</option>
+              <option value="DASHUSD">DASHUSD — Dash / Дэш</option>
+              <option value="NEOUSD">NEOUSD — NEO / Нео</option>
             </optgroup>
           </select>
           <div id="cv_instrInfo" style="font-size:10px;color:var(--muted);margin-bottom:6px;"></div>
@@ -4346,67 +4391,105 @@ function cvSetDistMode(m) {
 }
 
 
-// ── Спецификации фьючерсных инструментов ──
+// ── Инструменты 4PropTrader CFD — реальные pip value ──
 const CV_INSTRUMENTS = {
   // Металлы
-  GC:  { name: 'Gold (GC)',           pointVal: 100,   step: 0.01, tickSize: 0.10,     tickVal: 10,    info: '1 контракт = 100 унций · 1 пункт = $100 · мин. шаг 0.01' },
-  MGC: { name: 'Micro Gold (MGC)',    pointVal: 10,    step: 0.01, tickSize: 0.10,     tickVal: 1,     info: '1 контракт = 10 унций · 1 пункт = $10 · мин. шаг 0.01' },
-  SI:  { name: 'Silver (SI)',         pointVal: 5000,  step: 0.01, tickSize: 0.005,    tickVal: 25,    info: '1 контракт = 5000 унций · 1 пункт = $5000 · мин. шаг 0.01' },
-  SIL: { name: 'Micro Silver (SIL)',  pointVal: 1000,  step: 0.01, tickSize: 0.005,    tickVal: 5,     info: '1 контракт = 1000 унций · 1 пункт = $1000 · мин. шаг 0.01' },
-  // Энергетика
-  CL:  { name: 'Crude Oil (CL)',      pointVal: 1000,  step: 0.01, tickSize: 0.01,     tickVal: 10,    info: '1 контракт = 1000 баррелей · 1 пункт = $1000 · мин. шаг 0.01' },
-  MCL: { name: 'Micro Crude (MCL)',   pointVal: 100,   step: 0.01, tickSize: 0.01,     tickVal: 1,     info: '1 контракт = 100 баррелей · 1 пункт = $100 · мин. шаг 0.01' },
-  NG:  { name: 'Natural Gas (NG)',    pointVal: 10000, step: 0.01, tickSize: 0.001,    tickVal: 10,    info: '1 контракт = 10 000 MMBtu · 1 пункт = $10 000 · мин. шаг 0.01' },
+  'XAUUSD':  { name: 'Gold / Золото',          pointVal: 1.0,     step: 0.01, info: 'Pip value $0.01 / Size 0.01' },
+  'XAGUSD':  { name: 'Silver / Серебро',        pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  'XPDUSD':  { name: 'Palladium / Палладий',    pointVal: 1.0,     step: 0.01, info: 'Pip value $0.01 / Size 0.01' },
+  'XPTUSD':  { name: 'Platinum / Платина',      pointVal: 1.0,     step: 0.01, info: 'Pip value $0.01 / Size 0.01' },
+  // Сырьё
+  'BRENT':   { name: 'Brent Crude / Нефть',     pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  'NATGAS':  { name: 'Natural Gas / Газ',        pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
   // Индексы
-  ES:  { name: 'E-mini S&P (ES)',     pointVal: 50,    step: 0.01, tickSize: 0.25,     tickVal: 12.5,  info: '1 пункт = $50 · мин. шаг 0.01' },
-  MES: { name: 'Micro S&P (MES)',     pointVal: 5,     step: 0.01, tickSize: 0.25,     tickVal: 1.25,  info: '1 пункт = $5 · мин. шаг 0.01' },
-  NQ:  { name: 'E-mini Nasdaq (NQ)',  pointVal: 20,    step: 0.01, tickSize: 0.25,     tickVal: 5,     info: '1 пункт = $20 · мин. шаг 0.01' },
-  MNQ: { name: 'Micro Nasdaq (MNQ)', pointVal: 2,     step: 0.01, tickSize: 0.25,     tickVal: 0.5,   info: '1 пункт = $2 · мин. шаг 0.01' },
-  YM:  { name: 'E-mini Dow (YM)',     pointVal: 5,     step: 0.01, tickSize: 1,        tickVal: 5,     info: '1 пункт = $5 · мин. шаг 0.01' },
-  MYM: { name: 'Micro Dow (MYM)',     pointVal: 0.5,   step: 0.01, tickSize: 1,        tickVal: 0.5,   info: '1 пункт = $0.50 · мин. шаг 0.01' },
-  RTY: { name: 'E-mini Russell (RTY)',pointVal: 50,    step: 0.01, tickSize: 0.10,     tickVal: 5,     info: '1 пункт = $50 · мин. шаг 0.01' },
-  M2K: { name: 'Micro Russell (M2K)',pointVal: 5,     step: 0.01, tickSize: 0.10,     tickVal: 0.5,   info: '1 пункт = $5 · мин. шаг 0.01' },
-  // Валюты
-  '6E': { name: 'Euro FX (6E)',        pointVal: 125000, step: 0.01, tickSize: 0.0001,   tickVal: 12.5,  info: '1 контракт = 125 000 EUR · мин. шаг 0.01' },
-  '6B': { name: 'British Pound (6B)', pointVal: 62500,  step: 0.01, tickSize: 0.0001,   tickVal: 6.25,  info: '1 контракт = 62 500 GBP · мин. шаг 0.01' },
-  '6J': { name: 'Japanese Yen (6J)',  pointVal: 12500000, step: 0.01, tickSize: 0.000001, tickVal: 12.5, info: '1 контракт = 12 500 000 JPY · мин. шаг 0.01' },
-  '6A': { name: 'Australian $ (6A)',  pointVal: 100000, step: 0.01, tickSize: 0.0001,   tickVal: 10,    info: '1 контракт = 100 000 AUD · мин. шаг 0.01' },
-  // Крипто CFD
-  BTCUSD:  { name: 'Bitcoin (BTCUSD)',  pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  ETHUSD:  { name: 'Ethereum (ETHUSD)',pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  BNBUSDT: { name: 'BNB (BNBUSDT)',    pointVal: 1, step: 0.01, tickSize: 0.5,     tickVal: 0.5,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  SOLUSD:  { name: 'Solana (SOLUSD)',  pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  XRPUSD:  { name: 'Ripple (XRPUSD)', pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  ADAUSD:  { name: 'Cardano (ADAUSD)', pointVal: 1, step: 0.01, tickSize: 0.00001, tickVal: 0.00001, info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  DOGEUSD: { name: 'Dogecoin (DOGE)',  pointVal: 1, step: 0.01, tickSize: 0.001,   tickVal: 0.001,   info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  LTCUSD:  { name: 'Litecoin (LTCUSD)',pointVal: 1, step: 0.01, tickSize: 0.1,     tickVal: 0.1,     info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  XMRUSD:  { name: 'Monero (XMRUSD)', pointVal: 1, step: 0.01, tickSize: 1,       tickVal: 1,       info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  DASHUSD: { name: 'Dash (DASHUSD)',   pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  NEOUSD:  { name: 'NEO (NEOUSD)',     pointVal: 1, step: 0.01, tickSize: 0.01,    tickVal: 0.01,    info: 'CFD · 1 пункт = $1 · мин. шаг 0.01' },
-  CUSTOM: { name: 'Ручной ввод', pointVal: null, step: 0.01, tickSize: null, tickVal: null, info: 'Введи стоимость 1 пункта вручную' },
+  'S&P500':  { name: 'S&P 500 Index',            pointVal: 1.0,     step: 0.01, info: 'Pip value $0.01 / Size 0.01' },
+  'NQ100':   { name: 'Nasdaq 100 Index',          pointVal: 0.333,   step: 0.01, info: 'Pip value $0.01 / Size 0.03' },
+  'NIKKEI225':{ name: 'Nikkei 225 Japan',         pointVal: 5.0,     step: 0.01, info: 'Pip value $0.05 / Size 0.01' },
+  'WS30':    { name: 'Dow Jones 30',              pointVal: 0.1,     step: 0.01, info: 'Pip value $0.01 / Size 0.1' },
+  'ASX200':  { name: 'Australia 200',             pointVal: 0.25,    step: 0.01, info: 'Pip value $0.01 / Size 0.04' },
+  'FRA40':   { name: 'France 40',                 pointVal: 0.2,     step: 0.01, info: 'Pip value $0.01 / Size 0.05' },
+  'FTSE100': { name: 'UK 100',                    pointVal: 0.25,    step: 0.01, info: 'Pip value $0.01 / Size 0.04' },
+  'GER40':   { name: 'Germany 40',                pointVal: 0.5,     step: 0.01, info: 'Pip value $0.01 / Size 0.02' },
+  'HK50':    { name: 'Hong Kong 50',              pointVal: 0.125,   step: 0.01, info: 'Pip value $0.01 / Size 0.08' },
+  // Форекс мажоры
+  'EURUSD':  { name: 'Euro / US Dollar',          pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  'GBPUSD':  { name: 'British Pound / USD',       pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  'AUDUSD':  { name: 'Australian Dollar / USD',   pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  'USDCAD':  { name: 'USD / Canadian Dollar',     pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'USDCHF':  { name: 'USD / Swiss Franc',         pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'USDJPY':  { name: 'USD / Japanese Yen',        pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  // Форекс миноры
+  'AUDCAD':  { name: 'AUD / Canadian Dollar',     pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'AUDCHF':  { name: 'AUD / Swiss Franc',         pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'AUDJPY':  { name: 'AUD / Japanese Yen',        pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'AUDNZD':  { name: 'AUD / New Zealand Dollar',  pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'CADCHF':  { name: 'Canadian / Swiss Franc',    pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'CADJPY':  { name: 'Canadian / Japanese Yen',   pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'CHFJPY':  { name: 'Swiss Franc / Japanese Yen',pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'EURAUD':  { name: 'Euro / Australian Dollar',  pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'EURCAD':  { name: 'Euro / Canadian Dollar',    pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'EURCHF':  { name: 'Euro / Swiss Franc',        pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'EURGBP':  { name: 'Euro / British Pound',      pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'EURJPY':  { name: 'Euro / Japanese Yen',       pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'EURNZD':  { name: 'Euro / New Zealand Dollar', pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'GBPAUD':  { name: 'GBP / Australian Dollar',   pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'GBPCAD':  { name: 'GBP / Canadian Dollar',     pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'GBPCHF':  { name: 'GBP / Swiss Franc',         pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'GBPJPY':  { name: 'GBP / Japanese Yen',        pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'GBPNZD':  { name: 'GBP / New Zealand Dollar',  pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'NZDCAD':  { name: 'NZD / Canadian Dollar',     pointVal: 7.0,     step: 0.01, info: 'Pip value $0.07 / Size 0.01' },
+  'NZDCHF':  { name: 'NZD / Swiss Franc',         pointVal: 13.0,    step: 0.01, info: 'Pip value $0.13 / Size 0.01' },
+  'NZDJPY':  { name: 'NZD / Japanese Yen',        pointVal: 6.0,     step: 0.01, info: 'Pip value $0.06 / Size 0.01' },
+  'NZDUSD':  { name: 'NZD / US Dollar',           pointVal: 10.0,    step: 0.01, info: 'Pip value $0.1 / Size 0.01' },
+  // Акции США
+  'ALIBABA': { name: 'Alibaba Group',             pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'AMAZON':  { name: 'Amazon Inc',                pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'AMD':     { name: 'Advanced Micro Devices',    pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'APPLE':   { name: 'Apple Inc',                 pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'ATNT':    { name: 'AT&T Inc',                  pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'BOA':     { name: 'Bank of America',           pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'FERRARI': { name: 'Ferrari NV',                pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'GOOGLE':  { name: 'Alphabet Inc',              pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'INTEL':   { name: 'Intel Corp',                pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'JPM':     { name: 'JPMorgan Chase',            pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'META':    { name: 'Meta / Facebook',           pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'MICRON':  { name: 'Micron Technology',         pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'MSFT':    { name: 'Microsoft Corp',            pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'NETFLIX': { name: 'Netflix Inc',               pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'NVIDIA':  { name: 'NVIDIA Corp',               pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'PFIZER':  { name: 'Pfizer Inc',                pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'QCOM':    { name: 'Qualcomm Inc',              pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'TSLA':    { name: 'Tesla Inc',                 pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'VISA':    { name: 'Visa Inc',                  pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  'ZM':      { name: 'Zoom Video',                pointVal: 0.01,    step: 1,    info: 'Pip value $0.01 / Size 1' },
+  // Криптовалюта
+  'BTCUSD':  { name: 'Bitcoin / Биткоин',         pointVal: 1.0,     step: 0.01, info: 'Pip value $0.01 / Size 0.01' },
+  'ETHUSD':  { name: 'Ethereum / Эфириум',        pointVal: 0.2,     step: 0.01, info: 'Pip value $0.01 / Size 0.05' },
+  'BNBUSDT': { name: 'Binance Coin / БНБ',        pointVal: 0.01667, step: 0.01, info: 'Pip value $0.01 / Size 0.6' },
+  'SOLUSD':  { name: 'Solana / Солана',           pointVal: 0.002,   step: 0.01, info: 'Pip value $0.01 / Size 5' },
+  'XRPUSD':  { name: 'Ripple / Риппл',            pointVal: 0.001,   step: 0.01, info: 'Pip value $1 / Size 1000' },
+  'ADAUSD':  { name: 'Cardano / Кардано',         pointVal: 0.00002, step: 0.01, info: 'Pip value $0.01 / Size 500' },
+  'DOGEUSD': { name: 'Dogecoin / Догкоин',        pointVal: 0.000002,step: 0.01, info: 'Pip value $0.01 / Size 5000' },
+  'LTCUSD':  { name: 'Litecoin / Лайткоин',      pointVal: 0.1,     step: 0.01, info: 'Pip value $0.1 / Size 1' },
+  'XMRUSD':  { name: 'Monero / Монеро',           pointVal: 0.0002,  step: 0.01, info: 'Pip value $0.01 / Size 50' },
+  'DASHUSD': { name: 'Dash / Дэш',               pointVal: 0.002,   step: 0.01, info: 'Pip value $0.01 / Size 5' },
+  'NEOUSD':  { name: 'NEO / Нео',                pointVal: 0.01,    step: 0.01, info: 'Pip value $0.1 / Size 10' },
 };
 
 function cvApplyInstrument() {
   const key = document.getElementById('cv_futInstrument').value;
   const spec = CV_INSTRUMENTS[key];
   const infoEl = document.getElementById('cv_instrInfo');
-  const customEl = document.getElementById('cv_customBlock');
-  if (spec) {
-    infoEl.textContent = spec.info;
-    customEl.style.display = key === 'CUSTOM' ? 'block' : 'none';
-  }
+  if (spec) infoEl.textContent = spec.info;
   cvCalc();
 }
 
 function cvGetPointVal() {
   const key = document.getElementById('cv_futInstrument') ?
     document.getElementById('cv_futInstrument').value : null;
-  if (!key) return null;
-  if (key === 'CUSTOM') {
-    return parseFloat(document.getElementById('cv_customPointVal').value) || 1;
-  }
+  if (!key) return 1;
   const spec = CV_INSTRUMENTS[key];
-  return spec ? spec.pointVal : null;
+  return spec ? spec.pointVal : 1;
 }
 
 
