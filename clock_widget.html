@@ -161,9 +161,46 @@
   #tickStyleLabel { font-size: 13px; color: #bbb; min-width: 145px; text-align: center; letter-spacing: .04em; }
   .tick-vol-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
   #tickVolume { width: 110px; accent-color: #E24B4A; cursor: pointer; height: 4px; }
+
+  /* === Кнопка полного экрана === */
+  .fs-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 9999;
+    background: #1e1e1e;
+    color: #888;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: .06em;
+    transition: all .15s;
+  }
+  .fs-btn:hover { color: #fff; border-color: #888; background: #2a2a2a; }
+
+  /* Стили в полноэкранном режиме */
+  :fullscreen body,
+  :-webkit-full-screen body,
+  :-moz-full-screen body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0f0f0f;
+    min-height: 100vh;
+  }
+  :fullscreen .entry-clock,
+  :-webkit-full-screen .entry-clock,
+  :-moz-full-screen .entry-clock {
+    transform: scale(1.35);
+    transform-origin: center center;
+  }
 </style>
 </head>
 <body>
+<button class="fs-btn" id="fsBtn" title="На весь экран">⛶ На весь экран</button>
 <div class="wrapper">
   <div class="entry-clock" id="ec">
     <!-- Цифровое время внутри карточки -->
@@ -506,6 +543,69 @@ function drawClock() {
     if (!isRed && prevClockRed)  soundTrill();
   }
   prevClockRed = isRed;
+}
+
+// ═══ FULLSCREEN ═══
+const fsBtn = document.getElementById('fsBtn');
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+}
+
+function exitFullscreen() {
+  if (document.exitFullscreen) document.exitFullscreen();
+  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+}
+
+fsBtn.addEventListener('click', () => {
+  if (isFullscreen()) exitFullscreen();
+  else enterFullscreen();
+});
+
+// Управление видимостью кнопки через JS
+let fsHideTimer = null;
+
+function hideFsBtn() {
+  fsBtn.style.opacity = '0';
+  fsBtn.style.pointerEvents = 'none';
+}
+
+function revealFsBtn() {
+  if (!isFullscreen()) return;
+  fsBtn.style.opacity = '1';
+  fsBtn.style.pointerEvents = 'auto';
+  clearTimeout(fsHideTimer);
+  fsHideTimer = setTimeout(hideFsBtn, 3000);
+}
+
+document.addEventListener('mousemove', revealFsBtn);
+document.addEventListener('touchstart', revealFsBtn);
+
+document.addEventListener('fullscreenchange', onFsChange);
+document.addEventListener('webkitfullscreenchange', onFsChange);
+document.addEventListener('mozfullscreenchange', onFsChange);
+
+function onFsChange() {
+  if (isFullscreen()) {
+    fsBtn.textContent = '✕ Выйти';
+    fsBtn.title = 'Выйти из полного экрана';
+    // Сразу скрыть при входе в полный экран
+    hideFsBtn();
+  } else {
+    fsBtn.textContent = '⛶ На весь экран';
+    fsBtn.title = 'На весь экран';
+    clearTimeout(fsHideTimer);
+    fsBtn.style.opacity = '1';
+    fsBtn.style.pointerEvents = 'auto';
+  }
 }
 
 function loop() {
