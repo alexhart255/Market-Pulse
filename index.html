@@ -2869,414 +2869,435 @@ const _clockTickStyleList = [
   { key: 'elec',    label: '💡 Электронный'   },
 ];
 
+
 function renderClockWidget(){
   const container = document.getElementById('clockWidgetContent');
   if(!container) return;
-  container.innerHTML = `
-    <div class="entry-clock" id="cw-ec">
-      <div class="digital-time" id="cw-digital">--:--:--</div>
-      <div id="cw-canvas-wrap" style="position:relative;width:380px;height:380px;">
-        <canvas id="cw-canvas" width="380" height="380" style="border-radius:50%;display:block;"></canvas>
-      </div>
-      <div class="entry-mins" id="cw-mins">--</div>
-      <div class="tz-row" id="cw-utcBlock">
-        <span class="utc-label">🌍 UTC:</span>
-        <div class="utc-controls">
-          <button class="utc-btn" id="cw-utcMinus">−</button>
-          <span class="utc-value" id="cw-utcDisplay">${_cwFormatUtc(_clockUtcOffsetMin)}</span>
-          <button class="utc-btn" id="cw-utcPlus">+</button>
-        </div>
-        <button id="cw-stepToggle" class="utc-btn" title="Шаг: 1ч / 30мин / 15мин"><span id="cw-stepLabel">шаг 1ч</span></button>
-        <button id="cw-utcAuto" class="utc-btn" style="color:#60cc80;border-color:#1a5a28;" title="Определить автоматически">⟳ Авто</button>
-      </div>
-      <div class="tick-controls">
-        <div class="tick-checkbox-row">
-          <input type="checkbox" id="cw-tickEnabled" ${_clockTickEnabled?'checked':''}>
-          ТИКАНЬЕ
-        </div>
-        <div class="tick-style-row">
-          <button id="cw-tickPrev">◀</button>
-          <span id="cw-tickStyleLabel">${_clockTickStyleList[_clockTickStyleIdx].label}</span>
-          <button id="cw-tickNext">▶</button>
-        </div>
-        <div class="tick-vol-row">
-          <span>🔈</span>
-          <input type="range" id="cw-tickVol" min="0" max="100" value="50">
-          <span>🔊</span>
-        </div>
-      </div>
-    </div>`;
-
-  // UTC controls
-  const cwStepCycle=[60,30,15]; let cwStepIdx=0;
-  function cwUpdateUtc(){
-    document.getElementById('cw-utcDisplay').textContent=_cwFormatUtc(_clockUtcOffsetMin);
-    document.getElementById('cw-stepLabel').textContent='шаг '+(cwStepCycle[cwStepIdx]===60?'1ч':cwStepCycle[cwStepIdx]+'мин');
-  }
-  document.getElementById('cw-utcMinus').onclick = function(){
-    _clockUtcOffsetMin = Math.max(-720, _clockUtcOffsetMin - cwStepCycle[cwStepIdx]);
-    localStorage.setItem('clockUtcOffset', _clockUtcOffsetMin);
-    cwUpdateUtc();
-  };
-  document.getElementById('cw-utcPlus').onclick = function(){
-    _clockUtcOffsetMin = Math.min(840, _clockUtcOffsetMin + cwStepCycle[cwStepIdx]);
-    localStorage.setItem('clockUtcOffset', _clockUtcOffsetMin);
-    cwUpdateUtc();
-  };
-  document.getElementById('cw-stepToggle').onclick = function(){
-    cwStepIdx=(cwStepIdx+1)%cwStepCycle.length; cwUpdateUtc();
-  };
-  document.getElementById('cw-utcAuto').onclick = function(){
-    _clockUtcOffsetMin = -new Date().getTimezoneOffset();
-    localStorage.setItem('clockUtcOffset', _clockUtcOffsetMin);
-    cwUpdateUtc();
-    const btn=this; btn.textContent='✓'; btn.style.color='#00ff88';
-    setTimeout(()=>{btn.textContent='⟳ Авто';btn.style.color='#60cc80';},1800);
-  };
-
-  // tick controls
-  document.getElementById('cw-tickEnabled').onchange = function(){ _clockTickEnabled = this.checked; };
-  document.getElementById('cw-tickPrev').onclick = function(){
-    _clockTickStyleIdx = (_clockTickStyleIdx - 1 + _clockTickStyleList.length) % _clockTickStyleList.length;
-    document.getElementById('cw-tickStyleLabel').textContent = _clockTickStyleList[_clockTickStyleIdx].label;
-    if(_clockTickEnabled) _cwPlayTick();
-  };
-  document.getElementById('cw-tickNext').onclick = function(){
-    _clockTickStyleIdx = (_clockTickStyleIdx + 1) % _clockTickStyleList.length;
-    document.getElementById('cw-tickStyleLabel').textContent = _clockTickStyleList[_clockTickStyleIdx].label;
-    if(_clockTickEnabled) _cwPlayTick();
-  };
-
-  _cwStartLoop();
-  if(_clockTickInterval) clearInterval(_clockTickInterval);
-  _clockTickInterval = setInterval(() => {
-    if(!_clockTickEnabled) return;
-    const now = _cwGetNow();
-    const min = now.getMinutes(), sec = now.getSeconds();
-    if(!(min >= 55 || min < 5)) return;
-    if(sec === _clockTickLastSec) return;
-    _clockTickLastSec = sec;
-    _cwPlayTick();
-  }, 100);
-}
-
-function _cwFormatUtc(min){
-  const sign = min >= 0 ? '+' : '−';
-  const absMin = Math.abs(min);
-  const h = Math.floor(absMin/60), m = absMin%60;
-  return 'UTC' + sign + h + (m ? ':' + String(m).padStart(2,'0') : '');
-}
-
-function _cwGetNow(){
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset()*60000;
-  return new Date(utcMs + _clockUtcOffsetMin*60000);
-}
-
-function _cwGetACtx(){
-  if(!_clockAudioCtx) _clockAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return _clockAudioCtx;
-}
-
-function _cwSoundBell(){
-  const c=_cwGetACtx(), o=c.createOscillator(), g=c.createGain();
-  o.type='sine'; o.frequency.value=880;
-  g.gain.setValueAtTime(0.4, c.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+0.8);
-  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+0.8);
-}
-
-function _cwSoundTrill(){
-  const c=_cwGetACtx();
-  [440,523,659,784,1047].forEach((freq,i)=>{
-    const o=c.createOscillator(), g=c.createGain();
-    o.type='sine'; o.frequency.value=freq;
-    const t=c.currentTime+i*0.07;
-    g.gain.setValueAtTime(0.28,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.18);
-  });
-}
-
-const _cwTickSounds = {
-  classic:(c,vol,beat)=>{const freq=beat%2===0?1800:1200,g=c.createGain(),o=c.createOscillator(),dist=c.createWaveShaper(),curve=new Float32Array(256);for(let i=0;i<256;i++)curve[i]=(i<128?i/128:(i-256)/128)*3;dist.curve=curve;o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(vol*0.18,c.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.04);o.connect(dist);dist.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.05);},
-  soft:(c,vol)=>{const g=c.createGain(),buf=c.createBuffer(1,c.sampleRate*0.03,c.sampleRate),data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(data.length*0.15));const src=c.createBufferSource();src.buffer=buf;const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=0.8;g.gain.setValueAtTime(vol*0.55,c.currentTime);src.connect(f);f.connect(g);g.connect(c.destination);src.start();},
-  metro:(c,vol)=>{const g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();o1.type='triangle';o1.frequency.value=1500;o2.type='triangle';o2.frequency.value=800;g.gain.setValueAtTime(vol*0.25,c.currentTime);g.gain.linearRampToValueAtTime(0,c.currentTime+0.06);o1.connect(g);o2.connect(g);g.connect(c.destination);o1.start();o1.stop(c.currentTime+0.07);o2.start();o2.stop(c.currentTime+0.07);},
-  vintage:(c,vol,beat)=>{const freq=beat%2===0?420:320,g=c.createGain(),o=c.createOscillator(),f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=600;f.Q.value=4;o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(vol*0.4,c.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.18);o.connect(f);f.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.2);},
-  elec:(c,vol)=>{const g=c.createGain(),o=c.createOscillator();o.type='sine';o.frequency.value=2200;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(vol*0.15,c.currentTime+0.005);g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.045);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.05);}
-};
-
-function _cwPlayTick(){
-  const c=_cwGetACtx();
-  if(c.state==='suspended') c.resume();
-  const style=_clockTickStyleList[_clockTickStyleIdx].key;
-  const vol=parseInt((document.getElementById('cw-tickVol')||{value:'50'}).value)/100;
-  const fn=_cwTickSounds[style];
-  if(fn) fn(c, vol, _clockTickBeat);
-  _clockTickBeat++;
-}
-
-function _cwDrawClock(){
-  const canvas = document.getElementById('cw-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const zh = _cwGetNow();
-  const hours=zh.getHours(), minutes=zh.getMinutes(), seconds=zh.getSeconds();
-  const isRed = minutes>=55 || minutes<5;
-  const EC=190, ER=181;
-
-  const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
-  const handColor   = isRed ? '#E24B4A' : '#1D9E75';
-  const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
-  const borderColor = isRed ? '#E24B4A' : '#1D9E75';
-  // Мигает только когда красный
-  const blinkAlpha  = isRed ? 0.35 + 0.65*(0.5+0.5*Math.sin(Date.now()/1000*(2*Math.PI))) : 1;
-
-  ctx.clearRect(0,0,380,380);
-  ctx.globalAlpha = blinkAlpha;
-  ctx.beginPath(); ctx.arc(EC,EC,ER,0,2*Math.PI);
-  ctx.fillStyle=faceColor; ctx.fill();
-  ctx.strokeStyle=borderColor; ctx.lineWidth=2; ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  for(let i=0;i<60;i++){
-    const ang=(i*6-90)*Math.PI/180, isMajor=i%5===0;
-    const r1=isMajor?ER-28:ER-18;
-    ctx.beginPath();
-    ctx.moveTo(EC+r1*Math.cos(ang), EC+r1*Math.sin(ang));
-    ctx.lineTo(EC+(ER-4)*Math.cos(ang), EC+(ER-4)*Math.sin(ang));
-    ctx.strokeStyle=tickColor; ctx.lineWidth=isMajor?2.5:0.9;
-    ctx.globalAlpha=isMajor?0.9:0.4; ctx.stroke(); ctx.globalAlpha=1;
-  }
-
-  const hAng=((hours%12)*30+minutes*0.5-90)*Math.PI/180;
-  ctx.beginPath(); ctx.moveTo(EC,EC); ctx.lineTo(EC+95*Math.cos(hAng),EC+95*Math.sin(hAng));
-  ctx.strokeStyle='#fff'; ctx.lineWidth=10; ctx.lineCap='round'; ctx.stroke();
-
-  const mAng=(minutes*6-90)*Math.PI/180;
-  ctx.beginPath(); ctx.moveTo(EC,EC); ctx.lineTo(EC+140*Math.cos(mAng),EC+140*Math.sin(mAng));
-  ctx.strokeStyle='#fff'; ctx.lineWidth=7; ctx.lineCap='round'; ctx.stroke();
-
-  const sAng=(seconds*6-90)*Math.PI/180;
-  ctx.beginPath(); ctx.moveTo(EC-32*Math.cos(sAng),EC-32*Math.sin(sAng)); ctx.lineTo(EC+158*Math.cos(sAng),EC+158*Math.sin(sAng));
-  ctx.strokeStyle=handColor; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.stroke();
-
-  ctx.beginPath(); ctx.arc(EC,EC,10,0,2*Math.PI);
-  ctx.fillStyle='#fff'; ctx.fill();
-
-  const cls = isRed?'red':'green';
-  const pad2 = n=>String(n).padStart(2,'0');
-  const ecEl=document.getElementById('cw-ec'), ecMin=document.getElementById('cw-mins'), dtEl=document.getElementById('cw-digital');
-  const utcBlock=document.getElementById('cw-utcBlock'), utcVal=document.getElementById('cw-utcDisplay');
-  if(ecEl)  ecEl.className='entry-clock '+cls;
-  if(dtEl){ dtEl.className='digital-time '+cls; dtEl.textContent=pad2(hours)+':'+pad2(minutes)+':'+pad2(seconds); }
-  if(utcBlock) utcBlock.className='tz-row '+cls;
-  if(utcVal)   utcVal.className='utc-value '+cls;
-  if(ecMin){
-    let minsText;
-    if(minutes>=55)      minsText='последние '+(60-minutes)+' мин часа';
-    else if(minutes<5)   minsText='первые '+(5-minutes)+' мин · ещё запрещён';
-    else                 minsText='до конца часа: '+(60-minutes)+' мин';
-    ecMin.className='entry-mins '+cls; ecMin.textContent=minsText;
-  }
-  if(_clockPrevRed!==null){
-    if(isRed && !_clockPrevRed) _cwSoundBell();
-    if(!isRed && _clockPrevRed) _cwSoundTrill();
-  }
-  _clockPrevRed=isRed;
-}
-
-function _cwLoop(){
-  _cwDrawClock();
-  _clockRAF = requestAnimationFrame(_cwLoop);
-}
-
-function _cwStartLoop(){
-  if(_clockRAF) cancelAnimationFrame(_clockRAF);
-  _clockRAF = requestAnimationFrame(_cwLoop);
-}
-
-function buildClockHTML(){
-  // standalone версия для вкладки/окна — берём оригинальный виджет напрямую
-  return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Циферблат · Вход в сделку</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f0f0f; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; padding: 20px; }
-  .wrapper { display: flex; flex-direction: column; align-items: center; gap: 0; }
-
-  /* === Карточка циферблата === */
-  .entry-clock { display: flex; flex-direction: column; align-items: center; background: #1a1a1a; border: 2px solid #2a2a2a; border-radius: 24px; padding: 22px 28px 24px; transition: border-color .5s, background .5s, box-shadow .5s; }
-  .entry-clock.green { border-color: #1D9E75; background: #0d2018; box-shadow: 0 0 48px 10px rgba(29,158,117,.22); }
-  .entry-clock.red   { border-color: #E24B4A; background: #1e0d0d; box-shadow: 0 0 48px 10px rgba(226,75,74,.22); animation: entryClockBlink 1s ease-in-out infinite; }
-  @keyframes entryClockBlink { 0%,100%{background:#1e0d0d;box-shadow:0 0 20px 3px rgba(226,75,74,.15);border-color:#E24B4A}50%{background:#3a1010;box-shadow:0 0 60px 14px rgba(226,75,74,.60);border-color:#ff6b6b} }
-
-  /* === Заголовок статуса === */
-  .entry-clock-label { font-size: 11px; letter-spacing: .22em; color: #555; margin-bottom: 12px; text-transform: uppercase; transition: color .5s; }
-  .entry-clock-label.green { color: #1D9E75; }
-  .entry-clock-label.red   { color: #E24B4A; }
-
-  /* === Цифровое время ВНУТРИ карточки === */
-  .digital-time {
-    font-size: 42px; font-weight: 700; letter-spacing: .12em;
-    color: #333; margin-bottom: 14px;
-    transition: color .3s;
-    text-shadow: none;
-  }
-  .digital-time.green { color: #1D9E75; text-shadow: 0 0 20px rgba(29,158,117,.5); }
-  .digital-time.red   { color: #E24B4A; text-shadow: 0 0 20px rgba(226,75,74,.5); animation: dtBlink .8s ease-in-out infinite; }
-  @keyframes dtBlink { 0%,100%{opacity:1} 50%{opacity:.45} }
-
-  /* === UTC блок ВНУТРИ карточки === */
-  .utc-block {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
-    margin-top: 16px; padding: 12px 18px;
-    background: #111; border: 1px solid #2a2a2a; border-radius: 14px;
-    width: 100%;
-  }
-  .utc-block.green { border-color: #1a4a30; background: #0a1e14; }
-  .utc-block.red   { border-color: #4a1a1a; background: #1a0a0a; }
-  .utc-label { color: #666; font-size: 12px; white-space: nowrap; }
-  .utc-controls { display: flex; align-items: center; gap: 6px; }
-  .utc-btn { font-size: 15px; background: #1e1e1e; color: #aaa; border: 1px solid #3a3a3a; border-radius: 8px; padding: 5px 13px; cursor: pointer; line-height: 1.4; font-family: inherit; transition: all .15s; }
-  .utc-btn:hover { color: #fff; border-color: #777; background: #2a2a2a; }
-  .utc-value { font-size: 22px; font-weight: 700; color: #00e5ff; min-width: 100px; text-align: center; letter-spacing: .06em; background: #081828; border: 1px solid #0a3a5a; border-radius: 8px; padding: 5px 14px; }
-  .utc-value.green { color: #1D9E75; background: #041410; border-color: #1a4a30; }
-  .utc-value.red   { color: #E24B4A; background: #180808; border-color: #5a1a1a; }
-  #stepLabel { font-size: 11px; color: #444; }
-  .utc-btn-auto { font-size: 12px; color: #60cc80; border-color: #1a5a28; }
-  .utc-btn-auto:hover { color: #00ff88; border-color: #00cc44; }
-
-  /* === Подпись минут === */
-  .entry-mins { font-size: 14px; margin-top: 14px; color: #444; letter-spacing: .08em; transition: color .5s; text-align: center; }
-  .entry-mins.green { color: #1D9E75; }
-  .entry-mins.red   { color: #E24B4A; }
-
-  /* === Тиканье === */
-  .tick-controls { margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 9px; width: 100%; }
-  .tick-sep { width: 100%; height: 1px; background: #2a2a2a; margin: 2px 0; }
-  .tick-checkbox-row { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #555; letter-spacing: .08em; user-select: none; }
-  .tick-checkbox-row input[type=checkbox] { accent-color: #E24B4A; width: 15px; height: 15px; cursor: pointer; }
-  .tick-style-row { display: flex; align-items: center; gap: 7px; }
-  .tick-style-row button { font-size: 13px; background: #111; color: #777; border: 1px solid #2a2a2a; border-radius: 6px; padding: 3px 9px; cursor: pointer; line-height: 1.4; }
-  .tick-style-row button:hover { color: #fff; border-color: #555; }
-  #tickStyleLabel { font-size: 13px; color: #bbb; min-width: 145px; text-align: center; letter-spacing: .04em; }
-  .tick-vol-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
-  #tickVolume { width: 110px; accent-color: #E24B4A; cursor: pointer; height: 4px; }
-</style>
-</head>
-<body>
+  container.innerHTML = `<button class="fs-btn" id="cw-fsBtn" title="На весь экран">⛶ На весь экран</button>
 <div class="wrapper">
-  <div class="entry-clock" id="ec">
-
-
+  <div class="entry-clock" id="cw-ec">
     <!-- Цифровое время внутри карточки -->
-    <div class="digital-time" id="digitalTime">--:--:--</div>
+    <div class="digital-time" id="cw-digitalTime">--:--:--</div>
 
     <!-- Циферблат -->
-    <div id="entry-canvas-wrap" style="position:relative;width:300px;height:300px;">
-      <canvas id="entryCanvas" width="300" height="300"></canvas>
+    <div id="cw-entry-canvas-wrap" style="position:relative;width:300px;height:300px;">
+      <canvas id="cw-entryCanvas" width="300" height="300"></canvas>
     </div>
 
-    <div class="entry-mins" id="ec-mins">--</div>
+    <div class="entry-mins" id="cw-ec-mins">--</div>
 
     <!-- UTC блок внутри карточки -->
-    <div class="utc-block" id="utcBlock">
+    <div class="utc-block" id="cw-utcBlock">
       <span class="utc-label">🌍 UTC:</span>
       <div class="utc-controls">
-        <button class="utc-btn" id="utcMinus">−</button>
-        <span class="utc-value" id="utcDisplay">UTC+1</span>
-        <button class="utc-btn" id="utcPlus">+</button>
+        <button class="utc-btn" id="cw-utcMinus">−</button>
+        <span class="utc-value" id="cw-utcDisplay">UTC+1</span>
+        <button class="utc-btn" id="cw-utcPlus">+</button>
       </div>
-      <button id="stepToggle" class="utc-btn" title="Шаг: 1ч / 30мин / 15мин"><span id="stepLabel">шаг 1ч</span></button>
-      <button id="utcAuto" class="utc-btn utc-btn-auto" title="Определить автоматически">⟳ Авто</button>
+      <button id="cw-stepToggle" class="utc-btn" title="Шаг: 1ч / 30мин / 15мин"><span id="cw-stepLabel">шаг 1ч</span></button>
+      <button id="cw-utcAuto" class="utc-btn utc-btn-auto" title="Определить автоматически">⟳ Авто</button>
     </div>
 
     <div class="tick-controls">
       <div class="tick-sep"></div>
       <div class="tick-checkbox-row">
-        <input type="checkbox" id="tickEnabled" checked>
+        <input type="checkbox" id="cw-tickEnabled" checked>
         ТИКАНЬЕ
       </div>
       <div class="tick-style-row">
-        <button id="tickPrev">◀</button>
-        <span id="tickStyleLabel">🔔 Мягкий клик</span>
-        <button id="tickNext">▶</button>
+        <button id="cw-tickPrev">◀</button>
+        <span id="cw-tickStyleLabel">🔔 Мягкий клик</span>
+        <button id="cw-tickNext">▶</button>
       </div>
       <div class="tick-vol-row">
         <span>🔈</span>
-        <input type="range" id="tickVolume" min="0" max="100" value="50">
+        <input type="range" id="cw-tickVolume" min="0" max="100" value="50">
         <span>🔊</span>
       </div>
     </div>
   </div>
-</div>
-<scr\x69pt>
-const _injectedOffset = ${_clockUtcOffsetMin};
-let utcOffsetMin = _injectedOffset;
-let stepMin=60;
-const stepCycle=[60,30,15];
-let stepIdx=0;
-function clampOffset(v){return Math.max(-720,Math.min(840,v));}
-function formatUtc(min){const sign=min>=0?'+':'−';const absMin=Math.abs(min);const h=Math.floor(absMin/60);const m=absMin%60;return'UTC'+sign+h+(m?':'+String(m).padStart(2,'0'):'');}
-function updateUtcDisplay(){
-  document.getElementById('utcDisplay').textContent=formatUtc(utcOffsetMin);
-  document.getElementById('stepLabel').textContent='шаг '+(stepMin===60?'1ч':stepMin+'мин');
+</div>`;
+  _cwInit();
 }
-function saveOffset(){try{localStorage.setItem('clockUtcOffset',String(utcOffsetMin));}catch(e){}updateUtcDisplay();}
-document.getElementById('stepToggle').onclick=()=>{stepIdx=(stepIdx+1)%stepCycle.length;stepMin=stepCycle[stepIdx];updateUtcDisplay();};
-document.getElementById('utcMinus').onclick=()=>{utcOffsetMin=clampOffset(utcOffsetMin-stepMin);saveOffset();};
-document.getElementById('utcPlus').onclick=()=>{utcOffsetMin=clampOffset(utcOffsetMin+stepMin);saveOffset();};
-document.getElementById('utcAuto').onclick=()=>{
-  const now=new Date();
-  utcOffsetMin=-now.getTimezoneOffset();
-  saveOffset();
-  const btn=document.getElementById('utcAuto');
-  btn.textContent='✓ Определён';btn.style.color='#00ff88';
-  setTimeout(()=>{btn.textContent='⟳ Авто';btn.style.color='#60cc80';},2000);
+
+function _cwInit() {
+  _cwFsBtn = document.getElementById('cw-fsBtn');
+// ═══ UTC OFFSET ═══
+let _cwUtcOffsetMin = parseInt(localStorage.getItem('cw_clockUtcOffset') || '60');
+let _cwStepMin = 60;
+const _cwStepCycle = [60, 30, 15];
+let _cwStepIdx = 0;
+
+function _cwClampOffset(v) { return Math.max(-720, Math.min(840, v)); }
+
+function _cwFormatUtc(min) {
+  const sign = min >= 0 ? '+' : '−';
+  const absMin = Math.abs(min);
+  const h = Math.floor(absMin / 60);
+  const m = absMin % 60;
+  return 'UTC' + sign + h + (m ? ':' + String(m).padStart(2, '0') : '');
+}
+
+function _cwUpdateUtcDisplay() {
+  document.getElementById('cw-utcDisplay').textContent = _cwFormatUtc(_cwUtcOffsetMin);
+  document.getElementById('cw-stepLabel').textContent = 'шаг ' + (_cwStepMin === 60 ? '1ч' : _cwStepMin + 'мин');
+}
+
+function _cwSaveOffset() {
+  try { localStorage.setItem('cw_clockUtcOffset', String(_cwUtcOffsetMin)); } catch(e) {}
+  _cwUpdateUtcDisplay();
+}
+
+document.getElementById('cw-stepToggle').onclick = () => {
+  _cwStepIdx = (_cwStepIdx + 1) % _cwStepCycle.length;
+  _cwStepMin = _cwStepCycle[_cwStepIdx];
+  _cwUpdateUtcDisplay();
 };
-updateUtcDisplay();
-function getNow(){const now=new Date();const utcMs=now.getTime()+now.getTimezoneOffset()*60000;return new Date(utcMs+utcOffsetMin*60000);}
-function pad(n){return String(n).padStart(2,'0');}
-const canvas=document.getElementById('entryCanvas');
-const ctx=canvas.getContext('2d');
-const EC=150,ER=143;
-let audioCtx=null;
-function getACtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
-function soundBell(){const c=getACtx(),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(0.4,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.8);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.8);}
-function soundTrill(){const c=getACtx();[440,523,659,784,1047].forEach((freq,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=freq;const t=c.currentTime+i*0.07;g.gain.setValueAtTime(0.28,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.18);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+0.18);});}
-const tickStyleList=[{key:'classic',label:'🕐 Механические'},{key:'soft',label:'🔔 Мягкий клик'},{key:'metro',label:'⏱ Метроном'},{key:'vintage',label:'🕰 Старинные'},{key:'elec',label:'💡 Электронный'}];
-let tickStyleIdx=1;
-function updateTickStyleLabel(){document.getElementById('tickStyleLabel').textContent=tickStyleList[tickStyleIdx].label;}
-document.getElementById('tickPrev').addEventListener('click',()=>{tickStyleIdx=(tickStyleIdx-1+tickStyleList.length)%tickStyleList.length;updateTickStyleLabel();if(document.getElementById('tickEnabled').checked)playTick();});
-document.getElementById('tickNext').addEventListener('click',()=>{tickStyleIdx=(tickStyleIdx+1)%tickStyleList.length;updateTickStyleLabel();if(document.getElementById('tickEnabled').checked)playTick();});
-const tickSounds={classic:(ctx,vol,beat)=>{const freq=beat%2===0?1800:1200;const g=ctx.createGain(),o=ctx.createOscillator(),dist=ctx.createWaveShaper(),curve=new Float32Array(256);for(let i=0;i<256;i++)curve[i]=(i<128?i/128:(i-256)/128)*3;dist.curve=curve;o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(vol*0.18,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.04);o.connect(dist);dist.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.05);},soft:(ctx,vol)=>{const g=ctx.createGain(),buf=ctx.createBuffer(1,ctx.sampleRate*0.03,ctx.sampleRate),data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(data.length*0.15));const src=ctx.createBufferSource();src.buffer=buf;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=0.8;g.gain.setValueAtTime(vol*0.55,ctx.currentTime);src.connect(f);f.connect(g);g.connect(ctx.destination);src.start();},metro:(ctx,vol)=>{const g=ctx.createGain(),o1=ctx.createOscillator(),o2=ctx.createOscillator();o1.type='triangle';o1.frequency.value=1500;o2.type='triangle';o2.frequency.value=800;g.gain.setValueAtTime(vol*0.25,ctx.currentTime);g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.06);o1.connect(g);o2.connect(g);g.connect(ctx.destination);o1.start();o1.stop(ctx.currentTime+0.07);o2.start();o2.stop(ctx.currentTime+0.07);},vintage:(ctx,vol,beat)=>{const freq=beat%2===0?420:320,g=ctx.createGain(),o=ctx.createOscillator(),f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;f.Q.value=4;o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(vol*0.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.18);o.connect(f);f.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.2);},elec:(ctx,vol)=>{const g=ctx.createGain(),o=ctx.createOscillator();o.type='sine';o.frequency.value=2200;g.gain.setValueAtTime(0,ctx.currentTime);g.gain.linearRampToValueAtTime(vol*0.15,ctx.currentTime+0.005);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.045);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.05);}};
-let tickBeat=0;
-function playTick(){const c=getACtx();if(c.state==='suspended')c.resume();const style=tickStyleList[tickStyleIdx].key;const vol=parseInt(document.getElementById('tickVolume').value)/100;const fn=tickSounds[style];if(fn)fn(c,vol,tickBeat);tickBeat++;}
-let tickLastSec=-1;
-setInterval(()=>{if(!document.getElementById('tickEnabled').checked)return;const now=getNow();const min=now.getMinutes(),sec=now.getSeconds();const isRed=min>=55||min<5;if(!isRed)return;if(sec===tickLastSec)return;tickLastSec=sec;playTick();},100);
-document.addEventListener('click',()=>{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();getACtx();},{once:false});
-let prevClockRed=null;
-function drawClock(){const zh=getNow();const hours=zh.getHours(),minutes=zh.getMinutes(),seconds=zh.getSeconds();const isRed=minutes>=55||minutes<5;const faceColor=isRed?'#3a0a0a':'#0a2e20';const handColor=isRed?'#E24B4A':'#1D9E75';const tickColor=isRed?'#E24B4A':'#1D9E75';const borderColor=isRed?'#E24B4A':'#1D9E75';const blinkAlpha=isRed?0.35+0.65*(0.5+0.5*Math.sin(Date.now()/(1000/(2*Math.PI)))):1;ctx.clearRect(0,0,300,300);ctx.globalAlpha=blinkAlpha;ctx.beginPath();ctx.arc(EC,EC,ER,0,2*Math.PI);ctx.fillStyle=faceColor;ctx.fill();ctx.strokeStyle=borderColor;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;for(let i=0;i<60;i++){const ang=(i*6-90)*Math.PI/180;const isMajor=i%5===0;const r1=isMajor?ER-20:ER-13;ctx.beginPath();ctx.moveTo(EC+r1*Math.cos(ang),EC+r1*Math.sin(ang));ctx.lineTo(EC+(ER-4)*Math.cos(ang),EC+(ER-4)*Math.sin(ang));ctx.strokeStyle=tickColor;ctx.lineWidth=isMajor?2.5:0.9;ctx.globalAlpha=isMajor?0.9:0.4;ctx.stroke();ctx.globalAlpha=1;}const hAng=((hours%12)*30+minutes*0.5-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+74*Math.cos(hAng),EC+74*Math.sin(hAng));ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.lineCap='round';ctx.stroke();const mAng=(minutes*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC,EC);ctx.lineTo(EC+110*Math.cos(mAng),EC+110*Math.sin(mAng));ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();const sAng=(seconds*6-90)*Math.PI/180;ctx.beginPath();ctx.moveTo(EC-25*Math.cos(sAng),EC-25*Math.sin(sAng));ctx.lineTo(EC+124*Math.cos(sAng),EC+124*Math.sin(sAng));ctx.strokeStyle=handColor;ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();ctx.beginPath();ctx.arc(EC,EC,7,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();ctx.globalAlpha=1;const cls=isRed?'red':'green';const ecEl=document.getElementById('ec'),ecMin=document.getElementById('ec-mins'),dtEl=document.getElementById('digitalTime');if(ecEl)ecEl.className='entry-clock '+cls;if(dtEl){dtEl.className='digital-time '+cls;dtEl.textContent=pad(hours)+':'+pad(minutes)+':'+pad(seconds);}const utcBlock=document.getElementById('utcBlock');if(utcBlock){utcBlock.className='utc-block '+cls;}const utcVal=document.getElementById('utcDisplay');if(utcVal){utcVal.className='utc-value '+cls;}if(ecMin){let minsText;if(minutes>=55)minsText='последние '+(60-minutes)+' мин часа';else if(minutes<5)minsText='первые '+(5-minutes)+' мин · ещё запрещён';else minsText='до конца часа: '+(60-minutes)+' мин';ecMin.className='entry-mins '+cls;ecMin.textContent=minsText;}if(prevClockRed!==null){if(isRed&&!prevClockRed)soundBell();if(!isRed&&prevClockRed)soundTrill();}prevClockRed=isRed;}
-function loop(){drawClock();requestAnimationFrame(loop);}
-loop();
-<\/script>
-</body>
-</html>`;
+document.getElementById('cw-utcMinus').onclick = () => {
+  _cwUtcOffsetMin = _cwClampOffset(_cwUtcOffsetMin - _cwStepMin);
+  _cwSaveOffset();
+};
+document.getElementById('cw-utcPlus').onclick = () => {
+  _cwUtcOffsetMin = _cwClampOffset(_cwUtcOffsetMin + _cwStepMin);
+  _cwSaveOffset();
+};
+document.getElementById('cw-utcAuto').onclick = () => {
+  const now = new Date();
+  _cwUtcOffsetMin = -now.getTimezoneOffset();
+  _cwSaveOffset();
+  const btn = document.getElementById('cw-utcAuto');
+  btn.textContent = '✓ Определён';
+  btn.style.color = '#00ff88';
+  setTimeout(() => { btn.textContent = '⟳ Авто'; btn.style.color = '#60cc80'; }, 2000);
+};
+
+_cwUpdateUtcDisplay();
+
+// ═══ TIME ═══
+function _cwGetNow() {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + _cwUtcOffsetMin * 60000);
 }
 
-// ═══════════════════════════════════════════
-// INIT ON LOAD
-// ═══════════════════════════════════════════
+function _cwPad(n) { return String(n).padStart(2, '0'); }
 
-// ═══════════════════════════════════════════
-// RADIO MENU
-// ═══════════════════════════════════════════
-let _radioUrl = '';
+// ═══ CANVAS ═══
+const _cwCanvas = document.getElementById('cw-entryCanvas');
+const _cwCtx = _cwCanvas.getContext('2d');
+const EC = 150, ER = 143;
+
+// ═══ AUDIO ═══
+let _cwAudioCtx = null;
+function _cwGetACtx() {
+  if (!_cwAudioCtx) _cwAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _cwAudioCtx;
+}
+
+function _cwSoundBell() {
+  const c = _cwGetACtx(), o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine'; o.frequency.value = 880;
+  g.gain.setValueAtTime(0.4, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.8);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.8);
+}
+
+function _cwSoundTrill() {
+  const c = _cwGetACtx();
+  [440, 523, 659, 784, 1047].forEach((freq, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = c.currentTime + i * 0.07;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.18);
+  });
+}
+
+// ═══ TICK SOUNDS ═══
+const _cwTickStyleList = [
+  { key: 'classic', label: '🕐 Механические' },
+  { key: 'soft',    label: '🔔 Мягкий клик'  },
+  { key: 'metro',   label: '⏱ Метроном'      },
+  { key: 'vintage', label: '🕰 Старинные'     },
+  { key: 'elec',    label: '💡 Электронный'   },
+];
+let _cwTickStyleIdx = 1;
+
+function _cwUpdateTickLabel() {
+  document.getElementById('cw-tickStyleLabel').textContent = _cwTickStyleList[_cwTickStyleIdx].label;
+}
+
+document.getElementById('cw-tickPrev').addEventListener('click', () => {
+  _cwTickStyleIdx = (_cwTickStyleIdx - 1 + _cwTickStyleList.length) % _cwTickStyleList.length;
+  _cwUpdateTickLabel();
+  if (document.getElementById('cw-tickEnabled').checked) _cwPlayTick();
+});
+document.getElementById('cw-tickNext').addEventListener('click', () => {
+  _cwTickStyleIdx = (_cwTickStyleIdx + 1) % _cwTickStyleList.length;
+  _cwUpdateTickLabel();
+  if (document.getElementById('cw-tickEnabled').checked) _cwPlayTick();
+});
+
+const _cwTickSounds = {
+  classic: (_cwCtx, vol, beat) => {
+    const freq = beat % 2 === 0 ? 1800 : 1200;
+    const g = _cwCtx.createGain(), o = _cwCtx.createOscillator(), dist = _cwCtx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) curve[i] = (i < 128 ? i/128 : (i-256)/128) * 3;
+    dist.curve = curve;
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol * 0.18, _cwCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, _cwCtx.currentTime + 0.04);
+    o.connect(dist); dist.connect(g); g.connect(_cwCtx.destination);
+    o.start(); o.stop(_cwCtx.currentTime + 0.05);
+  },
+  soft: (_cwCtx, vol) => {
+    const g = _cwCtx.createGain();
+    const buf = _cwCtx.createBuffer(1, _cwCtx.sampleRate * 0.03, _cwCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++)
+      data[i] = (Math.random()*2-1) * Math.exp(-i/(data.length*0.15));
+    const src = _cwCtx.createBufferSource(); src.buffer = buf;
+    const f = _cwCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.8;
+    g.gain.setValueAtTime(vol * 0.55, _cwCtx.currentTime);
+    src.connect(f); f.connect(g); g.connect(_cwCtx.destination); src.start();
+  },
+  metro: (_cwCtx, vol) => {
+    const g = _cwCtx.createGain(), o1 = _cwCtx.createOscillator(), o2 = _cwCtx.createOscillator();
+    o1.type = 'triangle'; o1.frequency.value = 1500;
+    o2.type = 'triangle'; o2.frequency.value = 800;
+    g.gain.setValueAtTime(vol * 0.25, _cwCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0, _cwCtx.currentTime + 0.06);
+    o1.connect(g); o2.connect(g); g.connect(_cwCtx.destination);
+    o1.start(); o1.stop(_cwCtx.currentTime + 0.07);
+    o2.start(); o2.stop(_cwCtx.currentTime + 0.07);
+  },
+  vintage: (_cwCtx, vol, beat) => {
+    const freq = beat % 2 === 0 ? 420 : 320;
+    const g = _cwCtx.createGain(), o = _cwCtx.createOscillator(), f = _cwCtx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 600; f.Q.value = 4;
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol * 0.4, _cwCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, _cwCtx.currentTime + 0.18);
+    o.connect(f); f.connect(g); g.connect(_cwCtx.destination);
+    o.start(); o.stop(_cwCtx.currentTime + 0.2);
+  },
+  elec: (_cwCtx, vol) => {
+    const g = _cwCtx.createGain(), o = _cwCtx.createOscillator();
+    o.type = 'sine'; o.frequency.value = 2200;
+    g.gain.setValueAtTime(0, _cwCtx.currentTime);
+    g.gain.linearRampToValueAtTime(vol * 0.15, _cwCtx.currentTime + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, _cwCtx.currentTime + 0.045);
+    o.connect(g); g.connect(_cwCtx.destination);
+    o.start(); o.stop(_cwCtx.currentTime + 0.05);
+  }
+};
+
+let _cwTickBeat = 0;
+function _cwPlayTick() {
+  const c = _cwGetACtx();
+  if (c.state === 'suspended') c.resume();
+  const style = _cwTickStyleList[_cwTickStyleIdx].key;
+  const vol = parseInt(document.getElementById('cw-tickVolume').value) / 100;
+  const fn = _cwTickSounds[style];
+  if (fn) fn(c, vol, _cwTickBeat);
+  _cwTickBeat++;
+}
+
+let _cwTickLastSec = -1;
+setInterval(() => {
+  if (!document.getElementById('cw-tickEnabled').checked) return;
+  const now = _cwGetNow();
+  const min = now.getMinutes(), sec = now.getSeconds();
+  const isRed = min >= 55 || min < 5;
+  if (!isRed) return;
+  if (sec === _cwTickLastSec) return;
+  _cwTickLastSec = sec;
+  _cwPlayTick();
+}, 100);
+
+document.addEventListener('click', () => {
+  if (_cwAudioCtx && _cwAudioCtx.state === 'suspended') _cwAudioCtx.resume();
+  _cwGetACtx();
+}, { once: false });
+
+// ═══ DRAW CLOCK ═══
+let _cwPrevClockRed = null;
+
+function _cwDrawClock() {
+  const zh = _cwGetNow();
+  const hours = zh.getHours(), minutes = zh.getMinutes(), seconds = zh.getSeconds();
+  const isRed = minutes >= 55 || minutes < 5;
+
+  const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
+  const handColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
+  const borderColor = isRed ? '#E24B4A' : '#1D9E75';
+  const blinkAlpha  = isRed
+    ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(Date.now() / (1000 / (2 * Math.PI))))
+    : 1;
+
+  _cwCtx.clearRect(0, 0, 300, 300);
+  _cwCtx.globalAlpha = blinkAlpha;
+
+  // Фон циферблата
+  _cwCtx.beginPath();
+  _cwCtx.arc(_cwEC, _cwEC, _cwER, 0, 2 * Math.PI);
+  _cwCtx.fillStyle = faceColor;
+  _cwCtx.fill();
+  _cwCtx.strokeStyle = borderColor;
+  _cwCtx.lineWidth = 2;
+  _cwCtx.stroke();
+  _cwCtx.globalAlpha = 1;
+
+  // Деления
+  for (let i = 0; i < 60; i++) {
+    const ang = (i * 6 - 90) * Math.PI / 180;
+    const isMajor = i % 5 === 0;
+    const r1 = isMajor ? ER - 20 : ER - 13;
+    _cwCtx.beginPath();
+    _cwCtx.moveTo(EC + r1 * Math.cos(ang), EC + r1 * Math.sin(ang));
+    _cwCtx.lineTo(EC + (ER - 4) * Math.cos(ang), EC + (ER - 4) * Math.sin(ang));
+    _cwCtx.strokeStyle = tickColor;
+    _cwCtx.lineWidth = isMajor ? 2.5 : 0.9;
+    _cwCtx.globalAlpha = isMajor ? 0.9 : 0.4;
+    _cwCtx.stroke();
+    _cwCtx.globalAlpha = 1;
+  }
+
+  // Часовая стрелка
+  const hAng = ((hours % 12) * 30 + minutes * 0.5 - 90) * Math.PI / 180;
+  _cwCtx.beginPath(); _cwCtx.moveTo(_cwEC, _cwEC);
+  _cwCtx.lineTo(EC + 74 * Math.cos(hAng), EC + 74 * Math.sin(hAng));
+  _cwCtx.strokeStyle = '#fff'; _cwCtx.lineWidth = 8; _cwCtx.lineCap = 'round'; _cwCtx.stroke();
+
+  // Минутная стрелка
+  const mAng = (minutes * 6 - 90) * Math.PI / 180;
+  _cwCtx.beginPath(); _cwCtx.moveTo(_cwEC, _cwEC);
+  _cwCtx.lineTo(EC + 110 * Math.cos(mAng), EC + 110 * Math.sin(mAng));
+  _cwCtx.strokeStyle = '#fff'; _cwCtx.lineWidth = 5; _cwCtx.lineCap = 'round'; _cwCtx.stroke();
+
+  // Секундная стрелка
+  const sAng = (seconds * 6 - 90) * Math.PI / 180;
+  _cwCtx.beginPath();
+  _cwCtx.moveTo(EC - 25 * Math.cos(sAng), EC - 25 * Math.sin(sAng));
+  _cwCtx.lineTo(EC + 124 * Math.cos(sAng), EC + 124 * Math.sin(sAng));
+  _cwCtx.strokeStyle = handColor; _cwCtx.lineWidth = 2; _cwCtx.lineCap = 'round'; _cwCtx.stroke();
+
+  // Центральная точка
+  _cwCtx.beginPath(); _cwCtx.arc(_cwEC, _cwEC, 7, 0, 2 * Math.PI);
+  _cwCtx.fillStyle = '#fff'; _cwCtx.fill();
+  _cwCtx.globalAlpha = 1;
+
+  // UI обновления
+  const cls = isRed ? 'red' : 'green';
+  const ecEl  = document.getElementById('cw-ec');
+  const ecMin = document.getElementById('cw-ec-mins');
+  const dtEl  = document.getElementById('cw-digitalTime');
+  const utcBlock = document.getElementById('cw-utcBlock');
+  const utcVal   = document.getElementById('cw-utcDisplay');
+
+  if (ecEl)  ecEl.className  = 'entry-clock ' + cls;
+  if (dtEl) {
+    dtEl.className  = 'digital-time ' + cls;
+    dtEl.textContent = _cwPad(hours) + ':' + _cwPad(minutes) + ':' + _cwPad(seconds);
+  }
+  if (utcBlock) utcBlock.className = 'utc-block ' + cls;
+  if (utcVal)   utcVal.className   = 'utc-value ' + cls;
+  if (ecMin) {
+    let minsText;
+    if (minutes >= 55)    minsText = 'последние ' + (60 - minutes) + ' мин часа';
+    else if (minutes < 5) minsText = 'первые ' + (5 - minutes) + ' мин · ещё запрещён';
+    else                  minsText = 'до конца часа: ' + (60 - minutes) + ' мин';
+    ecMin.className  = 'entry-mins ' + cls;
+    ecMin.textContent = minsText;
+  }
+
+  if (_cwPrevClockRed !== null) {
+    if (isRed  && !_cwPrevClockRed) _cwSoundBell();
+    if (!isRed && _cwPrevClockRed)  _cwSoundTrill();
+  }
+  _cwPrevClockRed = isRed;
+}
+
+// ═══ FULLSCREEN ═══
+const fsBtn = document.getElementById('cw-fsBtn');
+
+function _cwIsFS() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+}
+
+function _cwEnterFS() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+}
+
+function _cwExitFS() {
+  if (document.exitFullscreen) document._cwExitFS();
+  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+}
+
+fsBtn.addEventListener('click', () => {
+  if (_cwIsFS()) _cwExitFS();
+  else _cwEnterFS();
+});
+
+// Управление видимостью кнопки через JS
+let _cwFsHideTimer = null;
+
+function _cwHideBtn() {
+  fsBtn.style.opacity = '0';
+  fsBtn.style.pointerEvents = 'none';
+}
+
+function _cwRevealBtn() {
+  if (!_cwIsFS()) return;
+  fsBtn.style.opacity = '1';
+  fsBtn.style.pointerEvents = 'auto';
+  clearTimeout(_cwFsHideTimer);
+  _cwFsHideTimer = setTimeout(hideFsBtn, 3000);
+}
+
+document.addEventListener('mousemove', _cwRevealBtn);
+document.addEventListener('touchstart', _cwRevealBtn);
+
+document.addEventListener('fullscreenchange', _cwOnFsChange);
+document.addEventListener('webkitfullscreenchange', _cwOnFsChange);
+document.addEventListener('mozfullscreenchange', _cwOnFsChange);
+
+function _cwOnFsChange() {
+  if (_cwIsFS()) {
+    fsBtn.textContent = '✕ Выйти';
+    fsBtn.title = 'Выйти из полного экрана';
+    // Сразу скрыть при входе в полный экран
+    _cwHideBtn();
+  } else {
+    fsBtn.textContent = '⛶ На весь экран';
+    fsBtn.title = 'На весь экран';
+    clearTimeout(_cwFsHideTimer);
+    fsBtn.style.opacity = '1';
+    fsBtn.style.pointerEvents = 'auto';
+  }
+}
+
+function _cwLoop() {
+  _cwDrawClock();
+  requestAnimationFrame(loop);
+}
+_cwLoop();
+}
+
+const _cwB64HTML = 'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9InJ1Ij4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgo8dGl0bGU+0KbQuNGE0LXRgNCx0LvQsNGCIMK3INCS0YXQvtC0INCyINGB0LTQtdC70LrRgzwvdGl0bGU+CjxsaW5rIGhyZWY9Imh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9U3BhY2UrTW9ubzp3Z2h0QDQwMDs3MDAmZGlzcGxheT1zd2FwIiByZWw9InN0eWxlc2hlZXQiPgo8c3R5bGU+CiAgKiB7IGJveC1zaXppbmc6IGJvcmRlci1ib3g7IG1hcmdpbjogMDsgcGFkZGluZzogMDsgfQogIGJvZHkgewogICAgYmFja2dyb3VuZDogIzBmMGYwZjsKICAgIG1pbi1oZWlnaHQ6IDEwMHZoOwogICAgZGlzcGxheTogZmxleDsKICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjsKICAgIGZvbnQtZmFtaWx5OiAnU3BhY2UgTW9ubycsIG1vbm9zcGFjZTsKICAgIHBhZGRpbmc6IDIwcHg7CiAgfQogIC53cmFwcGVyIHsgZGlzcGxheTogZmxleDsgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsgYWxpZ24taXRlbXM6IGNlbnRlcjsgZ2FwOiAwOyB9CgogIC8qID09PSDQmtCw0YDRgtC+0YfQutCwINGG0LjRhNC10YDQsdC70LDRgtCwID09PSAqLwogIC5lbnRyeS1jbG9jayB7CiAgICBkaXNwbGF5OiBmbGV4OwogICAgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsKICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICBiYWNrZ3JvdW5kOiAjMWExYTFhOwogICAgYm9yZGVyOiAycHggc29saWQgIzJhMmEyYTsKICAgIGJvcmRlci1yYWRpdXM6IDI0cHg7CiAgICBwYWRkaW5nOiAyMnB4IDI4cHggMjRweDsKICAgIHRyYW5zaXRpb246IGJvcmRlci1jb2xvciAuNXMsIGJhY2tncm91bmQgLjVzLCBib3gtc2hhZG93IC41czsKICB9CiAgLmVudHJ5LWNsb2NrLmdyZWVuIHsKICAgIGJvcmRlci1jb2xvcjogIzFEOUU3NTsKICAgIGJhY2tncm91bmQ6ICMwZDIwMTg7CiAgICBib3gtc2hhZG93OiAwIDAgNDhweCAxMHB4IHJnYmEoMjksMTU4LDExNywuMjIpOwogIH0KICAuZW50cnktY2xvY2sucmVkIHsKICAgIGJvcmRlci1jb2xvcjogI0UyNEI0QTsKICAgIGJhY2tncm91bmQ6ICMxZTBkMGQ7CiAgICBib3gtc2hhZG93OiAwIDAgNDhweCAxMHB4IHJnYmEoMjI2LDc1LDc0LC4yMik7CiAgICBhbmltYXRpb246IGVudHJ5Q2xvY2tCbGluayAxcyBlYXNlLWluLW91dCBpbmZpbml0ZTsKICB9CiAgQGtleWZyYW1lcyBlbnRyeUNsb2NrQmxpbmsgewogICAgMCUsMTAwJSB7IGJhY2tncm91bmQ6IzFlMGQwZDsgYm94LXNoYWRvdzowIDAgMjBweCAzcHggcmdiYSgyMjYsNzUsNzQsLjE1KTsgYm9yZGVyLWNvbG9yOiNFMjRCNEEgfQogICAgNTAlICAgICAgeyBiYWNrZ3JvdW5kOiMzYTEwMTA7IGJveC1zaGFkb3c6MCAwIDYwcHggMTRweCByZ2JhKDIyNiw3NSw3NCwuNjApOyBib3JkZXItY29sb3I6I2ZmNmI2YiB9CiAgfQoKICAvKiA9PT0g0JfQsNCz0L7Qu9C+0LLQvtC6INGB0YLQsNGC0YPRgdCwID09PSAqLwogIC5lbnRyeS1jbG9jay1sYWJlbCB7CiAgICBmb250LXNpemU6IDExcHg7CiAgICBsZXR0ZXItc3BhY2luZzogLjIyZW07CiAgICBjb2xvcjogIzU1NTsKICAgIG1hcmdpbi1ib3R0b206IDEycHg7CiAgICB0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOwogICAgdHJhbnNpdGlvbjogY29sb3IgLjVzOwogIH0KICAuZW50cnktY2xvY2stbGFiZWwuZ3JlZW4geyBjb2xvcjogIzFEOUU3NTsgfQogIC5lbnRyeS1jbG9jay1sYWJlbC5yZWQgICB7IGNvbG9yOiAjRTI0QjRBOyB9CgogIC8qID09PSDQptC40YTRgNC+0LLQvtC1INCy0YDQtdC80Y8g0LLQvdGD0YLRgNC4INC60LDRgNGC0L7Rh9C60LggPT09ICovCiAgLmRpZ2l0YWwtdGltZSB7CiAgICBmb250LXNpemU6IDQycHg7CiAgICBmb250LXdlaWdodDogNzAwOwogICAgbGV0dGVyLXNwYWNpbmc6IC4xMmVtOwogICAgY29sb3I6ICMzMzM7CiAgICBtYXJnaW4tYm90dG9tOiAxNHB4OwogICAgdHJhbnNpdGlvbjogY29sb3IgLjNzOwogICAgdGV4dC1zaGFkb3c6IG5vbmU7CiAgfQogIC5kaWdpdGFsLXRpbWUuZ3JlZW4geyBjb2xvcjogIzFEOUU3NTsgdGV4dC1zaGFkb3c6IDAgMCAyMHB4IHJnYmEoMjksMTU4LDExNywuNSk7IH0KICAuZGlnaXRhbC10aW1lLnJlZCAgIHsgY29sb3I6ICNFMjRCNEE7IHRleHQtc2hhZG93OiAwIDAgMjBweCByZ2JhKDIyNiw3NSw3NCwuNSk7IGFuaW1hdGlvbjogZHRCbGluayAuOHMgZWFzZS1pbi1vdXQgaW5maW5pdGU7IH0KICBAa2V5ZnJhbWVzIGR0QmxpbmsgeyAwJSwxMDAle29wYWNpdHk6MX0gNTAle29wYWNpdHk6LjQ1fSB9CgogIC8qID09PSBVVEMg0LHQu9C+0Log0LLQvdGD0YLRgNC4INC60LDRgNGC0L7Rh9C60LggPT09ICovCiAgLnV0Yy1ibG9jayB7CiAgICBkaXNwbGF5OiBmbGV4OwogICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgIGdhcDogMTBweDsKICAgIGZsZXgtd3JhcDogd3JhcDsKICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOwogICAgbWFyZ2luLXRvcDogMTZweDsKICAgIHBhZGRpbmc6IDEycHggMThweDsKICAgIGJhY2tncm91bmQ6ICMxMTE7CiAgICBib3JkZXI6IDFweCBzb2xpZCAjMmEyYTJhOwogICAgYm9yZGVyLXJhZGl1czogMTRweDsKICAgIHdpZHRoOiAxMDAlOwogIH0KICAudXRjLWJsb2NrLmdyZWVuIHsgYm9yZGVyLWNvbG9yOiAjMWE0YTMwOyBiYWNrZ3JvdW5kOiAjMGExZTE0OyB9CiAgLnV0Yy1ibG9jay5yZWQgICB7IGJvcmRlci1jb2xvcjogIzRhMWExYTsgYmFja2dyb3VuZDogIzFhMGEwYTsgfQogIC51dGMtbGFiZWwgeyBjb2xvcjogIzY2NjsgZm9udC1zaXplOiAxMnB4OyB3aGl0ZS1zcGFjZTogbm93cmFwOyB9CiAgLnV0Yy1jb250cm9scyB7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogNnB4OyB9CiAgLnV0Yy1idG4gewogICAgZm9udC1zaXplOiAxNXB4OwogICAgYmFja2dyb3VuZDogIzFlMWUxZTsKICAgIGNvbG9yOiAjYWFhOwogICAgYm9yZGVyOiAxcHggc29saWQgIzNhM2EzYTsKICAgIGJvcmRlci1yYWRpdXM6IDhweDsKICAgIHBhZGRpbmc6IDVweCAxM3B4OwogICAgY3Vyc29yOiBwb2ludGVyOwogICAgbGluZS1oZWlnaHQ6IDEuNDsKICAgIGZvbnQtZmFtaWx5OiBpbmhlcml0OwogICAgdHJhbnNpdGlvbjogYWxsIC4xNXM7CiAgfQogIC51dGMtYnRuOmhvdmVyIHsgY29sb3I6ICNmZmY7IGJvcmRlci1jb2xvcjogIzc3NzsgYmFja2dyb3VuZDogIzJhMmEyYTsgfQogIC51dGMtdmFsdWUgewogICAgZm9udC1zaXplOiAyMnB4OwogICAgZm9udC13ZWlnaHQ6IDcwMDsKICAgIGNvbG9yOiAjMDBlNWZmOwogICAgbWluLXdpZHRoOiAxMDBweDsKICAgIHRleHQtYWxpZ246IGNlbnRlcjsKICAgIGxldHRlci1zcGFjaW5nOiAuMDZlbTsKICAgIGJhY2tncm91bmQ6ICMwODE4Mjg7CiAgICBib3JkZXI6IDFweCBzb2xpZCAjMGEzYTVhOwogICAgYm9yZGVyLXJhZGl1czogOHB4OwogICAgcGFkZGluZzogNXB4IDE0cHg7CiAgfQogIC51dGMtdmFsdWUuZ3JlZW4geyBjb2xvcjogIzFEOUU3NTsgYmFja2dyb3VuZDogIzA0MTQxMDsgYm9yZGVyLWNvbG9yOiAjMWE0YTMwOyB9CiAgLnV0Yy12YWx1ZS5yZWQgICB7IGNvbG9yOiAjRTI0QjRBOyBiYWNrZ3JvdW5kOiAjMTgwODA4OyBib3JkZXItY29sb3I6ICM1YTFhMWE7IH0KICAjc3RlcExhYmVsIHsgZm9udC1zaXplOiAxMXB4OyBjb2xvcjogIzQ0NDsgfQogIC51dGMtYnRuLWF1dG8geyBmb250LXNpemU6IDEycHg7IGNvbG9yOiAjNjBjYzgwOyBib3JkZXItY29sb3I6ICMxYTVhMjg7IH0KICAudXRjLWJ0bi1hdXRvOmhvdmVyIHsgY29sb3I6ICMwMGZmODg7IGJvcmRlci1jb2xvcjogIzAwY2M0NDsgfQoKICAvKiA9PT0g0J/QvtC00L/QuNGB0Ywg0LzQuNC90YPRgiA9PT0gKi8KICAuZW50cnktbWlucyB7CiAgICBmb250LXNpemU6IDE0cHg7CiAgICBtYXJnaW4tdG9wOiAxNHB4OwogICAgY29sb3I6ICM0NDQ7CiAgICBsZXR0ZXItc3BhY2luZzogLjA4ZW07CiAgICB0cmFuc2l0aW9uOiBjb2xvciAuNXM7CiAgICB0ZXh0LWFsaWduOiBjZW50ZXI7CiAgfQogIC5lbnRyeS1taW5zLmdyZWVuIHsgY29sb3I6ICMxRDlFNzU7IH0KICAuZW50cnktbWlucy5yZWQgICB7IGNvbG9yOiAjRTI0QjRBOyB9CgogIC8qID09PSDQotC40LrQsNC90YzQtSA9PT0gKi8KICAudGljay1jb250cm9scyB7IG1hcmdpbi10b3A6IDE2cHg7IGRpc3BsYXk6IGZsZXg7IGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogOXB4OyB3aWR0aDogMTAwJTsgfQogIC50aWNrLXNlcCB7IHdpZHRoOiAxMDAlOyBoZWlnaHQ6IDFweDsgYmFja2dyb3VuZDogIzJhMmEyYTsgbWFyZ2luOiAycHggMDsgfQogIC50aWNrLWNoZWNrYm94LXJvdyB7CiAgICBkaXNwbGF5OiBmbGV4OwogICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgIGdhcDogOHB4OwogICAgY3Vyc29yOiBwb2ludGVyOwogICAgZm9udC1zaXplOiAxMnB4OwogICAgY29sb3I6ICM1NTU7CiAgICBsZXR0ZXItc3BhY2luZzogLjA4ZW07CiAgICB1c2VyLXNlbGVjdDogbm9uZTsKICB9CiAgLnRpY2stY2hlY2tib3gtcm93IGlucHV0W3R5cGU9Y2hlY2tib3hdIHsgYWNjZW50LWNvbG9yOiAjRTI0QjRBOyB3aWR0aDogMTVweDsgaGVpZ2h0OiAxNXB4OyBjdXJzb3I6IHBvaW50ZXI7IH0KICAudGljay1zdHlsZS1yb3cgeyBkaXNwbGF5OiBmbGV4OyBhbGlnbi1pdGVtczogY2VudGVyOyBnYXA6IDdweDsgfQogIC50aWNrLXN0eWxlLXJvdyBidXR0b24gewogICAgZm9udC1zaXplOiAxM3B4OwogICAgYmFja2dyb3VuZDogIzExMTsKICAgIGNvbG9yOiAjNzc3OwogICAgYm9yZGVyOiAxcHggc29saWQgIzJhMmEyYTsKICAgIGJvcmRlci1yYWRpdXM6IDZweDsKICAgIHBhZGRpbmc6IDNweCA5cHg7CiAgICBjdXJzb3I6IHBvaW50ZXI7CiAgICBsaW5lLWhlaWdodDogMS40OwogIH0KICAudGljay1zdHlsZS1yb3cgYnV0dG9uOmhvdmVyIHsgY29sb3I6ICNmZmY7IGJvcmRlci1jb2xvcjogIzU1NTsgfQogICN0aWNrU3R5bGVMYWJlbCB7IGZvbnQtc2l6ZTogMTNweDsgY29sb3I6ICNiYmI7IG1pbi13aWR0aDogMTQ1cHg7IHRleHQtYWxpZ246IGNlbnRlcjsgbGV0dGVyLXNwYWNpbmc6IC4wNGVtOyB9CiAgLnRpY2stdm9sLXJvdyB7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogOHB4OyBmb250LXNpemU6IDEycHg7IGNvbG9yOiAjNDQ0OyB9CiAgI3RpY2tWb2x1bWUgeyB3aWR0aDogMTEwcHg7IGFjY2VudC1jb2xvcjogI0UyNEI0QTsgY3Vyc29yOiBwb2ludGVyOyBoZWlnaHQ6IDRweDsgfQoKICAvKiA9PT0g0JrQvdC+0L/QutCwINC/0L7Qu9C90L7Qs9C+INGN0LrRgNCw0L3QsCA9PT0gKi8KICAuZnMtYnRuIHsKICAgIHBvc2l0aW9uOiBmaXhlZDsKICAgIHRvcDogMTRweDsKICAgIHJpZ2h0OiAxNHB4OwogICAgei1pbmRleDogOTk5OTsKICAgIGJhY2tncm91bmQ6ICMxZTFlMWU7CiAgICBjb2xvcjogIzg4ODsKICAgIGJvcmRlcjogMXB4IHNvbGlkICMzYTNhM2E7CiAgICBib3JkZXItcmFkaXVzOiAxMHB4OwogICAgcGFkZGluZzogN3B4IDE0cHg7CiAgICBmb250LWZhbWlseTogJ1NwYWNlIE1vbm8nLCBtb25vc3BhY2U7CiAgICBmb250LXNpemU6IDEzcHg7CiAgICBjdXJzb3I6IHBvaW50ZXI7CiAgICBsZXR0ZXItc3BhY2luZzogLjA2ZW07CiAgICB0cmFuc2l0aW9uOiBhbGwgLjE1czsKICB9CiAgLmZzLWJ0bjpob3ZlciB7IGNvbG9yOiAjZmZmOyBib3JkZXItY29sb3I6ICM4ODg7IGJhY2tncm91bmQ6ICMyYTJhMmE7IH0KCiAgLyog0KHRgtC40LvQuCDQsiDQv9C+0LvQvdC+0Y3QutGA0LDQvdC90L7QvCDRgNC10LbQuNC80LUgKi8KICA6ZnVsbHNjcmVlbiBib2R5LAogIDotd2Via2l0LWZ1bGwtc2NyZWVuIGJvZHksCiAgOi1tb3otZnVsbC1zY3JlZW4gYm9keSB7CiAgICBkaXNwbGF5OiBmbGV4OwogICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOwogICAgYmFja2dyb3VuZDogIzBmMGYwZjsKICAgIG1pbi1oZWlnaHQ6IDEwMHZoOwogIH0KICA6ZnVsbHNjcmVlbiAuZW50cnktY2xvY2ssCiAgOi13ZWJraXQtZnVsbC1zY3JlZW4gLmVudHJ5LWNsb2NrLAogIDotbW96LWZ1bGwtc2NyZWVuIC5lbnRyeS1jbG9jayB7CiAgICB0cmFuc2Zvcm06IHNjYWxlKDEuMzUpOwogICAgdHJhbnNmb3JtLW9yaWdpbjogY2VudGVyIGNlbnRlcjsKICB9Cjwvc3R5bGU+CjwvaGVhZD4KPGJvZHk+CjxidXR0b24gY2xhc3M9ImZzLWJ0biIgaWQ9ImZzQnRuIiB0aXRsZT0i0J3QsCDQstC10YHRjCDRjdC60YDQsNC9Ij7im7Yg0J3QsCDQstC10YHRjCDRjdC60YDQsNC9PC9idXR0b24+CjxkaXYgY2xhc3M9IndyYXBwZXIiPgogIDxkaXYgY2xhc3M9ImVudHJ5LWNsb2NrIiBpZD0iZWMiPgogICAgPCEtLSDQptC40YTRgNC+0LLQvtC1INCy0YDQtdC80Y8g0LLQvdGD0YLRgNC4INC60LDRgNGC0L7Rh9C60LggLS0+CiAgICA8ZGl2IGNsYXNzPSJkaWdpdGFsLXRpbWUiIGlkPSJkaWdpdGFsVGltZSI+LS06LS06LS08L2Rpdj4KCiAgICA8IS0tINCm0LjRhNC10YDQsdC70LDRgiAtLT4KICAgIDxkaXYgaWQ9ImVudHJ5LWNhbnZhcy13cmFwIiBzdHlsZT0icG9zaXRpb246cmVsYXRpdmU7d2lkdGg6MzAwcHg7aGVpZ2h0OjMwMHB4OyI+CiAgICAgIDxjYW52YXMgaWQ9ImVudHJ5Q2FudmFzIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCI+PC9jYW52YXM+CiAgICA8L2Rpdj4KCiAgICA8ZGl2IGNsYXNzPSJlbnRyeS1taW5zIiBpZD0iZWMtbWlucyI+LS08L2Rpdj4KCiAgICA8IS0tIFVUQyDQsdC70L7QuiDQstC90YPRgtGA0Lgg0LrQsNGA0YLQvtGH0LrQuCAtLT4KICAgIDxkaXYgY2xhc3M9InV0Yy1ibG9jayIgaWQ9InV0Y0Jsb2NrIj4KICAgICAgPHNwYW4gY2xhc3M9InV0Yy1sYWJlbCI+8J+MjSBVVEM6PC9zcGFuPgogICAgICA8ZGl2IGNsYXNzPSJ1dGMtY29udHJvbHMiPgogICAgICAgIDxidXR0b24gY2xhc3M9InV0Yy1idG4iIGlkPSJ1dGNNaW51cyI+4oiSPC9idXR0b24+CiAgICAgICAgPHNwYW4gY2xhc3M9InV0Yy12YWx1ZSIgaWQ9InV0Y0Rpc3BsYXkiPlVUQysxPC9zcGFuPgogICAgICAgIDxidXR0b24gY2xhc3M9InV0Yy1idG4iIGlkPSJ1dGNQbHVzIj4rPC9idXR0b24+CiAgICAgIDwvZGl2PgogICAgICA8YnV0dG9uIGlkPSJzdGVwVG9nZ2xlIiBjbGFzcz0idXRjLWJ0biIgdGl0bGU9ItCo0LDQszogMdGHIC8gMzDQvNC40L0gLyAxNdC80LjQvSI+PHNwYW4gaWQ9InN0ZXBMYWJlbCI+0YjQsNCzIDHRhzwvc3Bhbj48L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBpZD0idXRjQXV0byIgY2xhc3M9InV0Yy1idG4gdXRjLWJ0bi1hdXRvIiB0aXRsZT0i0J7Qv9GA0LXQtNC10LvQuNGC0Ywg0LDQstGC0L7QvNCw0YLQuNGH0LXRgdC60LgiPuKfsyDQkNCy0YLQvjwvYnV0dG9uPgogICAgPC9kaXY+CgogICAgPGRpdiBjbGFzcz0idGljay1jb250cm9scyI+CiAgICAgIDxkaXYgY2xhc3M9InRpY2stc2VwIj48L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0idGljay1jaGVja2JveC1yb3ciPgogICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgaWQ9InRpY2tFbmFibGVkIiBjaGVja2VkPgogICAgICAgINCi0JjQmtCQ0J3QrNCVCiAgICAgIDwvZGl2PgogICAgICA8ZGl2IGNsYXNzPSJ0aWNrLXN0eWxlLXJvdyI+CiAgICAgICAgPGJ1dHRvbiBpZD0idGlja1ByZXYiPuKXgDwvYnV0dG9uPgogICAgICAgIDxzcGFuIGlkPSJ0aWNrU3R5bGVMYWJlbCI+8J+UlCDQnNGP0LPQutC40Lkg0LrQu9C40Lo8L3NwYW4+CiAgICAgICAgPGJ1dHRvbiBpZD0idGlja05leHQiPuKWtjwvYnV0dG9uPgogICAgICA8L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0idGljay12b2wtcm93Ij4KICAgICAgICA8c3Bhbj7wn5SIPC9zcGFuPgogICAgICAgIDxpbnB1dCB0eXBlPSJyYW5nZSIgaWQ9InRpY2tWb2x1bWUiIG1pbj0iMCIgbWF4PSIxMDAiIHZhbHVlPSI1MCI+CiAgICAgICAgPHNwYW4+8J+Uijwvc3Bhbj4KICAgICAgPC9kaXY+CiAgICA8L2Rpdj4KICA8L2Rpdj4KPC9kaXY+Cgo8c2NyaXB0PgovLyDilZDilZDilZAgVVRDIE9GRlNFVCDilZDilZDilZAKbGV0IHV0Y09mZnNldE1pbiA9IHBhcnNlSW50KGxvY2FsU3RvcmFnZS5nZXRJdGVtKCdjbG9ja1V0Y09mZnNldCcpIHx8ICc2MCcpOwpsZXQgc3RlcE1pbiA9IDYwOwpjb25zdCBzdGVwQ3ljbGUgPSBbNjAsIDMwLCAxNV07CmxldCBzdGVwSWR4ID0gMDsKCmZ1bmN0aW9uIGNsYW1wT2Zmc2V0KHYpIHsgcmV0dXJuIE1hdGgubWF4KC03MjAsIE1hdGgubWluKDg0MCwgdikpOyB9CgpmdW5jdGlvbiBmb3JtYXRVdGMobWluKSB7CiAgY29uc3Qgc2lnbiA9IG1pbiA+PSAwID8gJysnIDogJ+KIkic7CiAgY29uc3QgYWJzTWluID0gTWF0aC5hYnMobWluKTsKICBjb25zdCBoID0gTWF0aC5mbG9vcihhYnNNaW4gLyA2MCk7CiAgY29uc3QgbSA9IGFic01pbiAlIDYwOwogIHJldHVybiAnVVRDJyArIHNpZ24gKyBoICsgKG0gPyAnOicgKyBTdHJpbmcobSkucGFkU3RhcnQoMiwgJzAnKSA6ICcnKTsKfQoKZnVuY3Rpb24gdXBkYXRlVXRjRGlzcGxheSgpIHsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndXRjRGlzcGxheScpLnRleHRDb250ZW50ID0gZm9ybWF0VXRjKHV0Y09mZnNldE1pbik7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3N0ZXBMYWJlbCcpLnRleHRDb250ZW50ID0gJ9GI0LDQsyAnICsgKHN0ZXBNaW4gPT09IDYwID8gJzHRhycgOiBzdGVwTWluICsgJ9C80LjQvScpOwp9CgpmdW5jdGlvbiBzYXZlT2Zmc2V0KCkgewogIHRyeSB7IGxvY2FsU3RvcmFnZS5zZXRJdGVtKCdjbG9ja1V0Y09mZnNldCcsIFN0cmluZyh1dGNPZmZzZXRNaW4pKTsgfSBjYXRjaChlKSB7fQogIHVwZGF0ZVV0Y0Rpc3BsYXkoKTsKfQoKZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3N0ZXBUb2dnbGUnKS5vbmNsaWNrID0gKCkgPT4gewogIHN0ZXBJZHggPSAoc3RlcElkeCArIDEpICUgc3RlcEN5Y2xlLmxlbmd0aDsKICBzdGVwTWluID0gc3RlcEN5Y2xlW3N0ZXBJZHhdOwogIHVwZGF0ZVV0Y0Rpc3BsYXkoKTsKfTsKZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3V0Y01pbnVzJykub25jbGljayA9ICgpID0+IHsKICB1dGNPZmZzZXRNaW4gPSBjbGFtcE9mZnNldCh1dGNPZmZzZXRNaW4gLSBzdGVwTWluKTsKICBzYXZlT2Zmc2V0KCk7Cn07CmRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd1dGNQbHVzJykub25jbGljayA9ICgpID0+IHsKICB1dGNPZmZzZXRNaW4gPSBjbGFtcE9mZnNldCh1dGNPZmZzZXRNaW4gKyBzdGVwTWluKTsKICBzYXZlT2Zmc2V0KCk7Cn07CmRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd1dGNBdXRvJykub25jbGljayA9ICgpID0+IHsKICBjb25zdCBub3cgPSBuZXcgRGF0ZSgpOwogIHV0Y09mZnNldE1pbiA9IC1ub3cuZ2V0VGltZXpvbmVPZmZzZXQoKTsKICBzYXZlT2Zmc2V0KCk7CiAgY29uc3QgYnRuID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3V0Y0F1dG8nKTsKICBidG4udGV4dENvbnRlbnQgPSAn4pyTINCe0L/RgNC10LTQtdC70ZHQvSc7CiAgYnRuLnN0eWxlLmNvbG9yID0gJyMwMGZmODgnOwogIHNldFRpbWVvdXQoKCkgPT4geyBidG4udGV4dENvbnRlbnQgPSAn4p+zINCQ0LLRgtC+JzsgYnRuLnN0eWxlLmNvbG9yID0gJyM2MGNjODAnOyB9LCAyMDAwKTsKfTsKCnVwZGF0ZVV0Y0Rpc3BsYXkoKTsKCi8vIOKVkOKVkOKVkCBUSU1FIOKVkOKVkOKVkApmdW5jdGlvbiBnZXROb3coKSB7CiAgY29uc3Qgbm93ID0gbmV3IERhdGUoKTsKICBjb25zdCB1dGNNcyA9IG5vdy5nZXRUaW1lKCkgKyBub3cuZ2V0VGltZXpvbmVPZmZzZXQoKSAqIDYwMDAwOwogIHJldHVybiBuZXcgRGF0ZSh1dGNNcyArIHV0Y09mZnNldE1pbiAqIDYwMDAwKTsKfQoKZnVuY3Rpb24gcGFkKG4pIHsgcmV0dXJuIFN0cmluZyhuKS5wYWRTdGFydCgyLCAnMCcpOyB9CgovLyDilZDilZDilZAgQ0FOVkFTIOKVkOKVkOKVkApjb25zdCBjYW52YXMgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZW50cnlDYW52YXMnKTsKY29uc3QgY3R4ID0gY2FudmFzLmdldENvbnRleHQoJzJkJyk7CmNvbnN0IEVDID0gMTUwLCBFUiA9IDE0MzsKCi8vIOKVkOKVkOKVkCBBVURJTyDilZDilZDilZAKbGV0IGF1ZGlvQ3R4ID0gbnVsbDsKZnVuY3Rpb24gZ2V0QUN0eCgpIHsKICBpZiAoIWF1ZGlvQ3R4KSBhdWRpb0N0eCA9IG5ldyAod2luZG93LkF1ZGlvQ29udGV4dCB8fCB3aW5kb3cud2Via2l0QXVkaW9Db250ZXh0KSgpOwogIHJldHVybiBhdWRpb0N0eDsKfQoKZnVuY3Rpb24gc291bmRCZWxsKCkgewogIGNvbnN0IGMgPSBnZXRBQ3R4KCksIG8gPSBjLmNyZWF0ZU9zY2lsbGF0b3IoKSwgZyA9IGMuY3JlYXRlR2FpbigpOwogIG8udHlwZSA9ICdzaW5lJzsgby5mcmVxdWVuY3kudmFsdWUgPSA4ODA7CiAgZy5nYWluLnNldFZhbHVlQXRUaW1lKDAuNCwgYy5jdXJyZW50VGltZSk7CiAgZy5nYWluLmV4cG9uZW50aWFsUmFtcFRvVmFsdWVBdFRpbWUoMC4wMDEsIGMuY3VycmVudFRpbWUgKyAwLjgpOwogIG8uY29ubmVjdChnKTsgZy5jb25uZWN0KGMuZGVzdGluYXRpb24pOyBvLnN0YXJ0KCk7IG8uc3RvcChjLmN1cnJlbnRUaW1lICsgMC44KTsKfQoKZnVuY3Rpb24gc291bmRUcmlsbCgpIHsKICBjb25zdCBjID0gZ2V0QUN0eCgpOwogIFs0NDAsIDUyMywgNjU5LCA3ODQsIDEwNDddLmZvckVhY2goKGZyZXEsIGkpID0+IHsKICAgIGNvbnN0IG8gPSBjLmNyZWF0ZU9zY2lsbGF0b3IoKSwgZyA9IGMuY3JlYXRlR2FpbigpOwogICAgby50eXBlID0gJ3NpbmUnOyBvLmZyZXF1ZW5jeS52YWx1ZSA9IGZyZXE7CiAgICBjb25zdCB0ID0gYy5jdXJyZW50VGltZSArIGkgKiAwLjA3OwogICAgZy5nYWluLnNldFZhbHVlQXRUaW1lKDAuMjgsIHQpOwogICAgZy5nYWluLmV4cG9uZW50aWFsUmFtcFRvVmFsdWVBdFRpbWUoMC4wMDEsIHQgKyAwLjE4KTsKICAgIG8uY29ubmVjdChnKTsgZy5jb25uZWN0KGMuZGVzdGluYXRpb24pOyBvLnN0YXJ0KHQpOyBvLnN0b3AodCArIDAuMTgpOwogIH0pOwp9CgovLyDilZDilZDilZAgVElDSyBTT1VORFMg4pWQ4pWQ4pWQCmNvbnN0IHRpY2tTdHlsZUxpc3QgPSBbCiAgeyBrZXk6ICdjbGFzc2ljJywgbGFiZWw6ICfwn5WQINCc0LXRhdCw0L3QuNGH0LXRgdC60LjQtScgfSwKICB7IGtleTogJ3NvZnQnLCAgICBsYWJlbDogJ/CflJQg0JzRj9Cz0LrQuNC5INC60LvQuNC6JyAgfSwKICB7IGtleTogJ21ldHJvJywgICBsYWJlbDogJ+KPsSDQnNC10YLRgNC+0L3QvtC8JyAgICAgIH0sCiAgeyBrZXk6ICd2aW50YWdlJywgbGFiZWw6ICfwn5WwINCh0YLQsNGA0LjQvdC90YvQtScgICAgIH0sCiAgeyBrZXk6ICdlbGVjJywgICAgbGFiZWw6ICfwn5KhINCt0LvQtdC60YLRgNC+0L3QvdGL0LknICAgfSwKXTsKbGV0IHRpY2tTdHlsZUlkeCA9IDE7CgpmdW5jdGlvbiB1cGRhdGVUaWNrU3R5bGVMYWJlbCgpIHsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndGlja1N0eWxlTGFiZWwnKS50ZXh0Q29udGVudCA9IHRpY2tTdHlsZUxpc3RbdGlja1N0eWxlSWR4XS5sYWJlbDsKfQoKZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RpY2tQcmV2JykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgdGlja1N0eWxlSWR4ID0gKHRpY2tTdHlsZUlkeCAtIDEgKyB0aWNrU3R5bGVMaXN0Lmxlbmd0aCkgJSB0aWNrU3R5bGVMaXN0Lmxlbmd0aDsKICB1cGRhdGVUaWNrU3R5bGVMYWJlbCgpOwogIGlmIChkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndGlja0VuYWJsZWQnKS5jaGVja2VkKSBwbGF5VGljaygpOwp9KTsKZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RpY2tOZXh0JykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgdGlja1N0eWxlSWR4ID0gKHRpY2tTdHlsZUlkeCArIDEpICUgdGlja1N0eWxlTGlzdC5sZW5ndGg7CiAgdXBkYXRlVGlja1N0eWxlTGFiZWwoKTsKICBpZiAoZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RpY2tFbmFibGVkJykuY2hlY2tlZCkgcGxheVRpY2soKTsKfSk7Cgpjb25zdCB0aWNrU291bmRzID0gewogIGNsYXNzaWM6IChjdHgsIHZvbCwgYmVhdCkgPT4gewogICAgY29uc3QgZnJlcSA9IGJlYXQgJSAyID09PSAwID8gMTgwMCA6IDEyMDA7CiAgICBjb25zdCBnID0gY3R4LmNyZWF0ZUdhaW4oKSwgbyA9IGN0eC5jcmVhdGVPc2NpbGxhdG9yKCksIGRpc3QgPSBjdHguY3JlYXRlV2F2ZVNoYXBlcigpOwogICAgY29uc3QgY3VydmUgPSBuZXcgRmxvYXQzMkFycmF5KDI1Nik7CiAgICBmb3IgKGxldCBpID0gMDsgaSA8IDI1NjsgaSsrKSBjdXJ2ZVtpXSA9IChpIDwgMTI4ID8gaS8xMjggOiAoaS0yNTYpLzEyOCkgKiAzOwogICAgZGlzdC5jdXJ2ZSA9IGN1cnZlOwogICAgby50eXBlID0gJ3NxdWFyZSc7IG8uZnJlcXVlbmN5LnZhbHVlID0gZnJlcTsKICAgIGcuZ2Fpbi5zZXRWYWx1ZUF0VGltZSh2b2wgKiAwLjE4LCBjdHguY3VycmVudFRpbWUpOwogICAgZy5nYWluLmV4cG9uZW50aWFsUmFtcFRvVmFsdWVBdFRpbWUoMC4wMDAxLCBjdHguY3VycmVudFRpbWUgKyAwLjA0KTsKICAgIG8uY29ubmVjdChkaXN0KTsgZGlzdC5jb25uZWN0KGcpOyBnLmNvbm5lY3QoY3R4LmRlc3RpbmF0aW9uKTsKICAgIG8uc3RhcnQoKTsgby5zdG9wKGN0eC5jdXJyZW50VGltZSArIDAuMDUpOwogIH0sCiAgc29mdDogKGN0eCwgdm9sKSA9PiB7CiAgICBjb25zdCBnID0gY3R4LmNyZWF0ZUdhaW4oKTsKICAgIGNvbnN0IGJ1ZiA9IGN0eC5jcmVhdGVCdWZmZXIoMSwgY3R4LnNhbXBsZVJhdGUgKiAwLjAzLCBjdHguc2FtcGxlUmF0ZSk7CiAgICBjb25zdCBkYXRhID0gYnVmLmdldENoYW5uZWxEYXRhKDApOwogICAgZm9yIChsZXQgaSA9IDA7IGkgPCBkYXRhLmxlbmd0aDsgaSsrKQogICAgICBkYXRhW2ldID0gKE1hdGgucmFuZG9tKCkqMi0xKSAqIE1hdGguZXhwKC1pLyhkYXRhLmxlbmd0aCowLjE1KSk7CiAgICBjb25zdCBzcmMgPSBjdHguY3JlYXRlQnVmZmVyU291cmNlKCk7IHNyYy5idWZmZXIgPSBidWY7CiAgICBjb25zdCBmID0gY3R4LmNyZWF0ZUJpcXVhZEZpbHRlcigpOyBmLnR5cGUgPSAnYmFuZHBhc3MnOyBmLmZyZXF1ZW5jeS52YWx1ZSA9IDkwMDsgZi5RLnZhbHVlID0gMC44OwogICAgZy5nYWluLnNldFZhbHVlQXRUaW1lKHZvbCAqIDAuNTUsIGN0eC5jdXJyZW50VGltZSk7CiAgICBzcmMuY29ubmVjdChmKTsgZi5jb25uZWN0KGcpOyBnLmNvbm5lY3QoY3R4LmRlc3RpbmF0aW9uKTsgc3JjLnN0YXJ0KCk7CiAgfSwKICBtZXRybzogKGN0eCwgdm9sKSA9PiB7CiAgICBjb25zdCBnID0gY3R4LmNyZWF0ZUdhaW4oKSwgbzEgPSBjdHguY3JlYXRlT3NjaWxsYXRvcigpLCBvMiA9IGN0eC5jcmVhdGVPc2NpbGxhdG9yKCk7CiAgICBvMS50eXBlID0gJ3RyaWFuZ2xlJzsgbzEuZnJlcXVlbmN5LnZhbHVlID0gMTUwMDsKICAgIG8yLnR5cGUgPSAndHJpYW5nbGUnOyBvMi5mcmVxdWVuY3kudmFsdWUgPSA4MDA7CiAgICBnLmdhaW4uc2V0VmFsdWVBdFRpbWUodm9sICogMC4yNSwgY3R4LmN1cnJlbnRUaW1lKTsKICAgIGcuZ2Fpbi5saW5lYXJSYW1wVG9WYWx1ZUF0VGltZSgwLCBjdHguY3VycmVudFRpbWUgKyAwLjA2KTsKICAgIG8xLmNvbm5lY3QoZyk7IG8yLmNvbm5lY3QoZyk7IGcuY29ubmVjdChjdHguZGVzdGluYXRpb24pOwogICAgbzEuc3RhcnQoKTsgbzEuc3RvcChjdHguY3VycmVudFRpbWUgKyAwLjA3KTsKICAgIG8yLnN0YXJ0KCk7IG8yLnN0b3AoY3R4LmN1cnJlbnRUaW1lICsgMC4wNyk7CiAgfSwKICB2aW50YWdlOiAoY3R4LCB2b2wsIGJlYXQpID0+IHsKICAgIGNvbnN0IGZyZXEgPSBiZWF0ICUgMiA9PT0gMCA/IDQyMCA6IDMyMDsKICAgIGNvbnN0IGcgPSBjdHguY3JlYXRlR2FpbigpLCBvID0gY3R4LmNyZWF0ZU9zY2lsbGF0b3IoKSwgZiA9IGN0eC5jcmVhdGVCaXF1YWRGaWx0ZXIoKTsKICAgIGYudHlwZSA9ICdsb3dwYXNzJzsgZi5mcmVxdWVuY3kudmFsdWUgPSA2MDA7IGYuUS52YWx1ZSA9IDQ7CiAgICBvLnR5cGUgPSAnc2luZSc7IG8uZnJlcXVlbmN5LnZhbHVlID0gZnJlcTsKICAgIGcuZ2Fpbi5zZXRWYWx1ZUF0VGltZSh2b2wgKiAwLjQsIGN0eC5jdXJyZW50VGltZSk7CiAgICBnLmdhaW4uZXhwb25lbnRpYWxSYW1wVG9WYWx1ZUF0VGltZSgwLjAwMDEsIGN0eC5jdXJyZW50VGltZSArIDAuMTgpOwogICAgby5jb25uZWN0KGYpOyBmLmNvbm5lY3QoZyk7IGcuY29ubmVjdChjdHguZGVzdGluYXRpb24pOwogICAgby5zdGFydCgpOyBvLnN0b3AoY3R4LmN1cnJlbnRUaW1lICsgMC4yKTsKICB9LAogIGVsZWM6IChjdHgsIHZvbCkgPT4gewogICAgY29uc3QgZyA9IGN0eC5jcmVhdGVHYWluKCksIG8gPSBjdHguY3JlYXRlT3NjaWxsYXRvcigpOwogICAgby50eXBlID0gJ3NpbmUnOyBvLmZyZXF1ZW5jeS52YWx1ZSA9IDIyMDA7CiAgICBnLmdhaW4uc2V0VmFsdWVBdFRpbWUoMCwgY3R4LmN1cnJlbnRUaW1lKTsKICAgIGcuZ2Fpbi5saW5lYXJSYW1wVG9WYWx1ZUF0VGltZSh2b2wgKiAwLjE1LCBjdHguY3VycmVudFRpbWUgKyAwLjAwNSk7CiAgICBnLmdhaW4uZXhwb25lbnRpYWxSYW1wVG9WYWx1ZUF0VGltZSgwLjAwMDEsIGN0eC5jdXJyZW50VGltZSArIDAuMDQ1KTsKICAgIG8uY29ubmVjdChnKTsgZy5jb25uZWN0KGN0eC5kZXN0aW5hdGlvbik7CiAgICBvLnN0YXJ0KCk7IG8uc3RvcChjdHguY3VycmVudFRpbWUgKyAwLjA1KTsKICB9Cn07CgpsZXQgdGlja0JlYXQgPSAwOwpmdW5jdGlvbiBwbGF5VGljaygpIHsKICBjb25zdCBjID0gZ2V0QUN0eCgpOwogIGlmIChjLnN0YXRlID09PSAnc3VzcGVuZGVkJykgYy5yZXN1bWUoKTsKICBjb25zdCBzdHlsZSA9IHRpY2tTdHlsZUxpc3RbdGlja1N0eWxlSWR4XS5rZXk7CiAgY29uc3Qgdm9sID0gcGFyc2VJbnQoZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RpY2tWb2x1bWUnKS52YWx1ZSkgLyAxMDA7CiAgY29uc3QgZm4gPSB0aWNrU291bmRzW3N0eWxlXTsKICBpZiAoZm4pIGZuKGMsIHZvbCwgdGlja0JlYXQpOwogIHRpY2tCZWF0Kys7Cn0KCmxldCB0aWNrTGFzdFNlYyA9IC0xOwpzZXRJbnRlcnZhbCgoKSA9PiB7CiAgaWYgKCFkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndGlja0VuYWJsZWQnKS5jaGVja2VkKSByZXR1cm47CiAgY29uc3Qgbm93ID0gZ2V0Tm93KCk7CiAgY29uc3QgbWluID0gbm93LmdldE1pbnV0ZXMoKSwgc2VjID0gbm93LmdldFNlY29uZHMoKTsKICBjb25zdCBpc1JlZCA9IG1pbiA+PSA1NSB8fCBtaW4gPCA1OwogIGlmICghaXNSZWQpIHJldHVybjsKICBpZiAoc2VjID09PSB0aWNrTGFzdFNlYykgcmV0dXJuOwogIHRpY2tMYXN0U2VjID0gc2VjOwogIHBsYXlUaWNrKCk7Cn0sIDEwMCk7Cgpkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsICgpID0+IHsKICBpZiAoYXVkaW9DdHggJiYgYXVkaW9DdHguc3RhdGUgPT09ICdzdXNwZW5kZWQnKSBhdWRpb0N0eC5yZXN1bWUoKTsKICBnZXRBQ3R4KCk7Cn0sIHsgb25jZTogZmFsc2UgfSk7CgovLyDilZDilZDilZAgRFJBVyBDTE9DSyDilZDilZDilZAKbGV0IHByZXZDbG9ja1JlZCA9IG51bGw7CgpmdW5jdGlvbiBkcmF3Q2xvY2soKSB7CiAgY29uc3QgemggPSBnZXROb3coKTsKICBjb25zdCBob3VycyA9IHpoLmdldEhvdXJzKCksIG1pbnV0ZXMgPSB6aC5nZXRNaW51dGVzKCksIHNlY29uZHMgPSB6aC5nZXRTZWNvbmRzKCk7CiAgY29uc3QgaXNSZWQgPSBtaW51dGVzID49IDU1IHx8IG1pbnV0ZXMgPCA1OwoKICBjb25zdCBmYWNlQ29sb3IgICA9IGlzUmVkID8gJyMzYTBhMGEnIDogJyMwYTJlMjAnOwogIGNvbnN0IGhhbmRDb2xvciAgID0gaXNSZWQgPyAnI0UyNEI0QScgOiAnIzFEOUU3NSc7CiAgY29uc3QgdGlja0NvbG9yICAgPSBpc1JlZCA/ICcjRTI0QjRBJyA6ICcjMUQ5RTc1JzsKICBjb25zdCBib3JkZXJDb2xvciA9IGlzUmVkID8gJyNFMjRCNEEnIDogJyMxRDlFNzUnOwogIGNvbnN0IGJsaW5rQWxwaGEgID0gaXNSZWQKICAgID8gMC4zNSArIDAuNjUgKiAoMC41ICsgMC41ICogTWF0aC5zaW4oRGF0ZS5ub3coKSAvICgxMDAwIC8gKDIgKiBNYXRoLlBJKSkpKQogICAgOiAxOwoKICBjdHguY2xlYXJSZWN0KDAsIDAsIDMwMCwgMzAwKTsKICBjdHguZ2xvYmFsQWxwaGEgPSBibGlua0FscGhhOwoKICAvLyDQpNC+0L0g0YbQuNGE0LXRgNCx0LvQsNGC0LAKICBjdHguYmVnaW5QYXRoKCk7CiAgY3R4LmFyYyhFQywgRUMsIEVSLCAwLCAyICogTWF0aC5QSSk7CiAgY3R4LmZpbGxTdHlsZSA9IGZhY2VDb2xvcjsKICBjdHguZmlsbCgpOwogIGN0eC5zdHJva2VTdHlsZSA9IGJvcmRlckNvbG9yOwogIGN0eC5saW5lV2lkdGggPSAyOwogIGN0eC5zdHJva2UoKTsKICBjdHguZ2xvYmFsQWxwaGEgPSAxOwoKICAvLyDQlNC10LvQtdC90LjRjwogIGZvciAobGV0IGkgPSAwOyBpIDwgNjA7IGkrKykgewogICAgY29uc3QgYW5nID0gKGkgKiA2IC0gOTApICogTWF0aC5QSSAvIDE4MDsKICAgIGNvbnN0IGlzTWFqb3IgPSBpICUgNSA9PT0gMDsKICAgIGNvbnN0IHIxID0gaXNNYWpvciA/IEVSIC0gMjAgOiBFUiAtIDEzOwogICAgY3R4LmJlZ2luUGF0aCgpOwogICAgY3R4Lm1vdmVUbyhFQyArIHIxICogTWF0aC5jb3MoYW5nKSwgRUMgKyByMSAqIE1hdGguc2luKGFuZykpOwogICAgY3R4LmxpbmVUbyhFQyArIChFUiAtIDQpICogTWF0aC5jb3MoYW5nKSwgRUMgKyAoRVIgLSA0KSAqIE1hdGguc2luKGFuZykpOwogICAgY3R4LnN0cm9rZVN0eWxlID0gdGlja0NvbG9yOwogICAgY3R4LmxpbmVXaWR0aCA9IGlzTWFqb3IgPyAyLjUgOiAwLjk7CiAgICBjdHguZ2xvYmFsQWxwaGEgPSBpc01ham9yID8gMC45IDogMC40OwogICAgY3R4LnN0cm9rZSgpOwogICAgY3R4Lmdsb2JhbEFscGhhID0gMTsKICB9CgogIC8vINCn0LDRgdC+0LLQsNGPINGB0YLRgNC10LvQutCwCiAgY29uc3QgaEFuZyA9ICgoaG91cnMgJSAxMikgKiAzMCArIG1pbnV0ZXMgKiAwLjUgLSA5MCkgKiBNYXRoLlBJIC8gMTgwOwogIGN0eC5iZWdpblBhdGgoKTsgY3R4Lm1vdmVUbyhFQywgRUMpOwogIGN0eC5saW5lVG8oRUMgKyA3NCAqIE1hdGguY29zKGhBbmcpLCBFQyArIDc0ICogTWF0aC5zaW4oaEFuZykpOwogIGN0eC5zdHJva2VTdHlsZSA9ICcjZmZmJzsgY3R4LmxpbmVXaWR0aCA9IDg7IGN0eC5saW5lQ2FwID0gJ3JvdW5kJzsgY3R4LnN0cm9rZSgpOwoKICAvLyDQnNC40L3Rg9GC0L3QsNGPINGB0YLRgNC10LvQutCwCiAgY29uc3QgbUFuZyA9IChtaW51dGVzICogNiAtIDkwKSAqIE1hdGguUEkgLyAxODA7CiAgY3R4LmJlZ2luUGF0aCgpOyBjdHgubW92ZVRvKEVDLCBFQyk7CiAgY3R4LmxpbmVUbyhFQyArIDExMCAqIE1hdGguY29zKG1BbmcpLCBFQyArIDExMCAqIE1hdGguc2luKG1BbmcpKTsKICBjdHguc3Ryb2tlU3R5bGUgPSAnI2ZmZic7IGN0eC5saW5lV2lkdGggPSA1OyBjdHgubGluZUNhcCA9ICdyb3VuZCc7IGN0eC5zdHJva2UoKTsKCiAgLy8g0KHQtdC60YPQvdC00L3QsNGPINGB0YLRgNC10LvQutCwCiAgY29uc3Qgc0FuZyA9IChzZWNvbmRzICogNiAtIDkwKSAqIE1hdGguUEkgLyAxODA7CiAgY3R4LmJlZ2luUGF0aCgpOwogIGN0eC5tb3ZlVG8oRUMgLSAyNSAqIE1hdGguY29zKHNBbmcpLCBFQyAtIDI1ICogTWF0aC5zaW4oc0FuZykpOwogIGN0eC5saW5lVG8oRUMgKyAxMjQgKiBNYXRoLmNvcyhzQW5nKSwgRUMgKyAxMjQgKiBNYXRoLnNpbihzQW5nKSk7CiAgY3R4LnN0cm9rZVN0eWxlID0gaGFuZENvbG9yOyBjdHgubGluZVdpZHRoID0gMjsgY3R4LmxpbmVDYXAgPSAncm91bmQnOyBjdHguc3Ryb2tlKCk7CgogIC8vINCm0LXQvdGC0YDQsNC70YzQvdCw0Y8g0YLQvtGH0LrQsAogIGN0eC5iZWdpblBhdGgoKTsgY3R4LmFyYyhFQywgRUMsIDcsIDAsIDIgKiBNYXRoLlBJKTsKICBjdHguZmlsbFN0eWxlID0gJyNmZmYnOyBjdHguZmlsbCgpOwogIGN0eC5nbG9iYWxBbHBoYSA9IDE7CgogIC8vIFVJINC+0LHQvdC+0LLQu9C10L3QuNGPCiAgY29uc3QgY2xzID0gaXNSZWQgPyAncmVkJyA6ICdncmVlbic7CiAgY29uc3QgZWNFbCAgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZWMnKTsKICBjb25zdCBlY01pbiA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdlYy1taW5zJyk7CiAgY29uc3QgZHRFbCAgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZGlnaXRhbFRpbWUnKTsKICBjb25zdCB1dGNCbG9jayA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd1dGNCbG9jaycpOwogIGNvbnN0IHV0Y1ZhbCAgID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3V0Y0Rpc3BsYXknKTsKCiAgaWYgKGVjRWwpICBlY0VsLmNsYXNzTmFtZSAgPSAnZW50cnktY2xvY2sgJyArIGNsczsKICBpZiAoZHRFbCkgewogICAgZHRFbC5jbGFzc05hbWUgID0gJ2RpZ2l0YWwtdGltZSAnICsgY2xzOwogICAgZHRFbC50ZXh0Q29udGVudCA9IHBhZChob3VycykgKyAnOicgKyBwYWQobWludXRlcykgKyAnOicgKyBwYWQoc2Vjb25kcyk7CiAgfQogIGlmICh1dGNCbG9jaykgdXRjQmxvY2suY2xhc3NOYW1lID0gJ3V0Yy1ibG9jayAnICsgY2xzOwogIGlmICh1dGNWYWwpICAgdXRjVmFsLmNsYXNzTmFtZSAgID0gJ3V0Yy12YWx1ZSAnICsgY2xzOwogIGlmIChlY01pbikgewogICAgbGV0IG1pbnNUZXh0OwogICAgaWYgKG1pbnV0ZXMgPj0gNTUpICAgIG1pbnNUZXh0ID0gJ9C/0L7RgdC70LXQtNC90LjQtSAnICsgKDYwIC0gbWludXRlcykgKyAnINC80LjQvSDRh9Cw0YHQsCc7CiAgICBlbHNlIGlmIChtaW51dGVzIDwgNSkgbWluc1RleHQgPSAn0L/QtdGA0LLRi9C1ICcgKyAoNSAtIG1pbnV0ZXMpICsgJyDQvNC40L0gwrcg0LXRidGRINC30LDQv9GA0LXRidGR0L0nOwogICAgZWxzZSAgICAgICAgICAgICAgICAgIG1pbnNUZXh0ID0gJ9C00L4g0LrQvtC90YbQsCDRh9Cw0YHQsDogJyArICg2MCAtIG1pbnV0ZXMpICsgJyDQvNC40L0nOwogICAgZWNNaW4uY2xhc3NOYW1lICA9ICdlbnRyeS1taW5zICcgKyBjbHM7CiAgICBlY01pbi50ZXh0Q29udGVudCA9IG1pbnNUZXh0OwogIH0KCiAgaWYgKHByZXZDbG9ja1JlZCAhPT0gbnVsbCkgewogICAgaWYgKGlzUmVkICAmJiAhcHJldkNsb2NrUmVkKSBzb3VuZEJlbGwoKTsKICAgIGlmICghaXNSZWQgJiYgcHJldkNsb2NrUmVkKSAgc291bmRUcmlsbCgpOwogIH0KICBwcmV2Q2xvY2tSZWQgPSBpc1JlZDsKfQoKLy8g4pWQ4pWQ4pWQIEZVTExTQ1JFRU4g4pWQ4pWQ4pWQCmNvbnN0IGZzQnRuID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2ZzQnRuJyk7CgpmdW5jdGlvbiBpc0Z1bGxzY3JlZW4oKSB7CiAgcmV0dXJuICEhKGRvY3VtZW50LmZ1bGxzY3JlZW5FbGVtZW50IHx8IGRvY3VtZW50LndlYmtpdEZ1bGxzY3JlZW5FbGVtZW50IHx8IGRvY3VtZW50Lm1vekZ1bGxTY3JlZW5FbGVtZW50KTsKfQoKZnVuY3Rpb24gZW50ZXJGdWxsc2NyZWVuKCkgewogIGNvbnN0IGVsID0gZG9jdW1lbnQuZG9jdW1lbnRFbGVtZW50OwogIGlmIChlbC5yZXF1ZXN0RnVsbHNjcmVlbikgZWwucmVxdWVzdEZ1bGxzY3JlZW4oKTsKICBlbHNlIGlmIChlbC53ZWJraXRSZXF1ZXN0RnVsbHNjcmVlbikgZWwud2Via2l0UmVxdWVzdEZ1bGxzY3JlZW4oKTsKICBlbHNlIGlmIChlbC5tb3pSZXF1ZXN0RnVsbFNjcmVlbikgZWwubW96UmVxdWVzdEZ1bGxTY3JlZW4oKTsKfQoKZnVuY3Rpb24gZXhpdEZ1bGxzY3JlZW4oKSB7CiAgaWYgKGRvY3VtZW50LmV4aXRGdWxsc2NyZWVuKSBkb2N1bWVudC5leGl0RnVsbHNjcmVlbigpOwogIGVsc2UgaWYgKGRvY3VtZW50LndlYmtpdEV4aXRGdWxsc2NyZWVuKSBkb2N1bWVudC53ZWJraXRFeGl0RnVsbHNjcmVlbigpOwogIGVsc2UgaWYgKGRvY3VtZW50Lm1vekNhbmNlbEZ1bGxTY3JlZW4pIGRvY3VtZW50Lm1vekNhbmNlbEZ1bGxTY3JlZW4oKTsKfQoKZnNCdG4uYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgaWYgKGlzRnVsbHNjcmVlbigpKSBleGl0RnVsbHNjcmVlbigpOwogIGVsc2UgZW50ZXJGdWxsc2NyZWVuKCk7Cn0pOwoKLy8g0KPQv9GA0LDQstC70LXQvdC40LUg0LLQuNC00LjQvNC+0YHRgtGM0Y4g0LrQvdC+0L/QutC4INGH0LXRgNC10LcgSlMKbGV0IGZzSGlkZVRpbWVyID0gbnVsbDsKCmZ1bmN0aW9uIGhpZGVGc0J0bigpIHsKICBmc0J0bi5zdHlsZS5vcGFjaXR5ID0gJzAnOwogIGZzQnRuLnN0eWxlLnBvaW50ZXJFdmVudHMgPSAnbm9uZSc7Cn0KCmZ1bmN0aW9uIHJldmVhbEZzQnRuKCkgewogIGlmICghaXNGdWxsc2NyZWVuKCkpIHJldHVybjsKICBmc0J0bi5zdHlsZS5vcGFjaXR5ID0gJzEnOwogIGZzQnRuLnN0eWxlLnBvaW50ZXJFdmVudHMgPSAnYXV0byc7CiAgY2xlYXJUaW1lb3V0KGZzSGlkZVRpbWVyKTsKICBmc0hpZGVUaW1lciA9IHNldFRpbWVvdXQoaGlkZUZzQnRuLCAzMDAwKTsKfQoKZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignbW91c2Vtb3ZlJywgcmV2ZWFsRnNCdG4pOwpkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCd0b3VjaHN0YXJ0JywgcmV2ZWFsRnNCdG4pOwoKZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignZnVsbHNjcmVlbmNoYW5nZScsIG9uRnNDaGFuZ2UpOwpkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCd3ZWJraXRmdWxsc2NyZWVuY2hhbmdlJywgb25Gc0NoYW5nZSk7CmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ21vemZ1bGxzY3JlZW5jaGFuZ2UnLCBvbkZzQ2hhbmdlKTsKCmZ1bmN0aW9uIG9uRnNDaGFuZ2UoKSB7CiAgaWYgKGlzRnVsbHNjcmVlbigpKSB7CiAgICBmc0J0bi50ZXh0Q29udGVudCA9ICfinJUg0JLRi9C50YLQuCc7CiAgICBmc0J0bi50aXRsZSA9ICfQktGL0LnRgtC4INC40Lcg0L/QvtC70L3QvtCz0L4g0Y3QutGA0LDQvdCwJzsKICAgIC8vINCh0YDQsNC30YMg0YHQutGA0YvRgtGMINC/0YDQuCDQstGF0L7QtNC1INCyINC/0L7Qu9C90YvQuSDRjdC60YDQsNC9CiAgICBoaWRlRnNCdG4oKTsKICB9IGVsc2UgewogICAgZnNCdG4udGV4dENvbnRlbnQgPSAn4pu2INCd0LAg0LLQtdGB0Ywg0Y3QutGA0LDQvSc7CiAgICBmc0J0bi50aXRsZSA9ICfQndCwINCy0LXRgdGMINGN0LrRgNCw0L0nOwogICAgY2xlYXJUaW1lb3V0KGZzSGlkZVRpbWVyKTsKICAgIGZzQnRuLnN0eWxlLm9wYWNpdHkgPSAnMSc7CiAgICBmc0J0bi5zdHlsZS5wb2ludGVyRXZlbnRzID0gJ2F1dG8nOwogIH0KfQoKZnVuY3Rpb24gbG9vcCgpIHsKICBkcmF3Q2xvY2soKTsKICByZXF1ZXN0QW5pbWF0aW9uRnJhbWUobG9vcCk7Cn0KbG9vcCgpOwo8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg==';
+function buildClockHTML(){
+  try { return decodeURIComponent(escape(atob(_cwB64HTML))); }
+  catch(e) { return atob(_cwB64HTML); }
+}
+
+
 function openRadioMenu(btn){
   const overlay=document.getElementById('radioMenuOverlay');
   const box=document.getElementById('radioMenuBox');
