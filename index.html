@@ -1208,7 +1208,7 @@
   <div id="inPlayMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:330px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
     <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🔥 Finviz — In Play Screener</div>
 
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ffaa00;padding:8px 12px 4px;opacity:.7;">📋 Фильтры: RelVol>2x · Gap>2% · AvgVol>500K · $2–$100</div>
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ffaa00;padding:8px 12px 4px;opacity:.7;">📋 Фильтры: RelVol>2x · Gap>2% · AvgVol>2M · $2–$100</div>
 
     <button onclick="openInPlay('tab')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
       <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ffaa00;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Открыть рядом в браузере</div></div>
@@ -2801,7 +2801,7 @@ function openFinviz(mode, direction){
 // ═══════════════════════════════════════════
 // FINVIZ IN PLAY MENU
 // ═══════════════════════════════════════════
-const FINVIZ_INPLAY = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,country_usa,geo_usa,price_2to100,sh_avgvol_o500,sh_relvol_o2,ta_gap_u2&ft=4&o=-relativevolume';
+const FINVIZ_INPLAY = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,country_usa,geo_usa,price_2to100,sh_avgvol_o2000,sh_relvol_o2,ta_gap_u2&ft=4&o=-relativevolume';
 
 function openInPlayMenu(btn){
   const overlay=document.getElementById('inPlayMenuOverlay');
