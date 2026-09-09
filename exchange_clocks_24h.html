@@ -60,6 +60,7 @@
     padding:7px 10px; font-family:'Space Grotesk', sans-serif; font-size:12px; cursor:pointer;
   }
   .auto-btn:hover{ color:var(--text); border-color:var(--blue); }
+  .auto-btn.active{ color:var(--text); border-color:var(--red); background:rgba(226,87,76,.12); }
 
   section{ max-width:1340px; margin:0 auto 40px; }
   .section-title{ font-size:14px; color:var(--muted); margin:0 0 14px; letter-spacing:.2px; }
@@ -243,6 +244,7 @@
       <select id="utc-select"></select>
     </div>
     <button class="auto-btn" id="auto-btn" type="button">Определить автоматически</button>
+    <button class="auto-btn" id="preview-toggle" type="button" title="Показать все дуги в полном цвете, игнорируя текущий статус открытия/закрытия">Показать все цвета (тест)</button>
   </div>
 </header>
 
@@ -535,6 +537,20 @@
   autoBtn.addEventListener('click', ()=>{
     myOffsetMinutes = -new Date().getTimezoneOffset();
     buildOffsetOptions();
+  });
+
+  // ---------- тестовый режим: показать все дуги в полном цвете ----------
+  // Обычная кнопка-переключатель (не «зажать/отпустить»): нажал — все биржи на циферблате
+  // отрисовываются так, будто сейчас у всех рабочее время (независимо от реальных выходных
+  // и часов работы), удобно для визуальной проверки цветов и штриховки. Нажал ещё раз —
+  // возвращается обычный live-режим с актуальным статусом каждой биржи.
+  let previewAllColors = false;
+  const previewBtn = document.getElementById('preview-toggle');
+  previewBtn.addEventListener('click', ()=>{
+    previewAllColors = !previewAllColors;
+    previewBtn.classList.toggle('active', previewAllColors);
+    previewBtn.textContent = previewAllColors ? 'Показать актуальные цвета' : 'Показать все цвета (тест)';
+    render();
   });
 
   // ---------- геометрия дуг ----------
@@ -892,7 +908,7 @@
       // а не сливается с фоном циферблата.
       const decHourLive = t.h + t.m/60;
       const liveStatus = weeklyStatus(ex, t) || businessWeekStatus(ex, t);
-      const isClosedNow = liveStatus.phase === 'closed';
+      const isClosedNow = previewAllColors ? false : (liveStatus.phase === 'closed');
       const normalHex = REGION[ex.region].hex;
       const DIM_OPACITY = '0.18';
 
