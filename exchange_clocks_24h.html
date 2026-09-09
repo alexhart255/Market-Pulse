@@ -473,6 +473,30 @@
     }
     return { phase:'open', isOpen:true, remain: remainToClose, label:'до закрытия' };
   }
+  // ---------- статус обычных биржи (будни/выходные) ----------
+  // sessionState() знает только час суток внутри одних суток и ничего не знает про дни
+  // недели, поэтому сама по себе не может понять, что в субботу и воскресенье биржа не
+  // торгует вовсе. Эта функция оборачивает sessionState() для ВСЕХ площадок, у которых
+  // нет собственного ex.weekly (Forex и «Чикаго» — у них уже есть weeklyStatus() выше):
+  // по субботам и воскресеньям возвращает phase:'closed' с обратным отсчётом до открытия
+  // в понедельник, а в пятницу после закрытия — обратный отсчёт до понедельника вместо
+  // (неверного) отсчёта до «завтра», которое sessionState() посчитала бы как субботу.
+  function businessWeekStatus(ex, t){
+    const decHour = t.h + t.m/60;
+    const wd = t.weekday; // 0=вс,1=пн,...6=сб — день недели по местной дате самой биржи
+    if(wd === 0 || wd === 6){
+      const daysUntilMonday = wd === 0 ? 1 : 2;
+      const remain = daysUntilMonday*24 - decHour + ex.start;
+      return { phase:'closed', isOpen:false, remain, label:'до открытия' };
+    }
+    const daily = sessionState(decHour, ex);
+    if(daily.phase === 'closed' && wd === 5 && decHour >= ex.end){
+      const remain = (2*24 - decHour) + ex.start;
+      return { phase:'closed', isOpen:false, remain, label:'до открытия' };
+    }
+    return daily;
+  }
+
   // переводит локальные десятичные часы биржи в UTC-десятичные часы для текущего смещения
   function localHourToUTC(hourDec, offsetH){
     return ((hourDec - offsetH) % 24 + 24) % 24;
@@ -859,12 +883,51 @@
       const rInner = RING_INNER0 + i*(RING_WIDTH+RING_GAP);
       const rOuter = rInner + RING_WIDTH;
 
+      // живой статус биржи прямо сейчас — используется, чтобы притушить её дугу до
+      // тусклого варианта того же регионального цвета, когда площадка не торгует
+      // (закончился день, выходные, недельное закрытие Forex/«Чикаго»), и вернуть
+      // полную яркость цвета, как только она снова откроется. Вместо смены самого
+      // цвета на серый меняется только непрозрачность заливки — так закрытая биржа
+      // всё равно узнаётся по своему цвету (тусклый жёлтый/зелёный/синий/красный),
+      // а не сливается с фоном циферблата.
+      const decHourLive = t.h + t.m/60;
+      const liveStatus = weeklyStatus(ex, t) || businessWeekStatus(ex, t);
+      const isClosedNow = liveStatus.phase === 'closed';
+      const normalHex = REGION[ex.region].hex;
+      const DIM_OPACITY = '0.18';
+
       if(hasLunch){
-        document.getElementById(`seg-${i}-am`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, lStartDeg));
-        document.getElementById(`seg-${i}-lunch`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, lStartDeg, lEndDeg));
-        document.getElementById(`seg-${i}-pm`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, lEndDeg, endDeg0));
+        const amEl = document.getElementById(`seg-${i}-am`);
+        const lunchArcEl = document.getElementById(`seg-${i}-lunch`);
+        const pmEl = document.getElementById(`seg-${i}-pm`);
+        amEl.setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, lStartDeg));
+        lunchArcEl.setAttribute('d', ringPath(CX,CY,rInner,rOuter, lStartDeg, lEndDeg));
+        pmEl.setAttribute('d', ringPath(CX,CY,rInner,rOuter, lEndDeg, endDeg0));
+        amEl.setAttribute('fill', normalHex);
+        pmEl.setAttribute('fill', normalHex);
+        amEl.setAttribute('fill-opacity', isClosedNow ? DIM_OPACITY : '1');
+        pmEl.setAttribute('fill-opacity', isClosedNow ? DIM_OPACITY : '1');
+        if(isClosedNow){
+          // на выходных/при недельном закрытии весь день не торгуется — дневной
+          // перерыв отдельно уже не имеет смысла показывать штриховкой, красим
+          // так же тускло, как и остальную дугу
+          lunchArcEl.setAttribute('fill', normalHex);
+          lunchArcEl.setAttribute('fill-opacity', DIM_OPACITY);
+        } else {
+          lunchArcEl.setAttribute('fill', 'url(#lunch-hatch)');
+          lunchArcEl.setAttribute('fill-opacity', '1');
+        }
       } else if(!ex.alwaysOpen){
-        document.getElementById(`seg-${i}`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, endDeg0));
+        const segEl = document.getElementById(`seg-${i}`);
+        segEl.setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, endDeg0));
+        segEl.setAttribute('fill', normalHex);
+        segEl.setAttribute('fill-opacity', isClosedNow ? DIM_OPACITY : '1');
+      } else {
+        // Forex рисуется статичной окружностью (см. buildBigDialStatic) — её положение
+        // не меняется, тускнеет только stroke-opacity на выходных.
+        const segEl = document.getElementById(`seg-${i}`);
+        segEl.setAttribute('stroke', normalHex);
+        segEl.setAttribute('stroke-opacity', isClosedNow ? DIM_OPACITY : '1');
       }
 
       const rMid = (rInner + rOuter) / 2;
@@ -890,7 +953,7 @@
         `M ${pA.x.toFixed(2)} ${pA.y.toFixed(2)} A ${rMid.toFixed(2)} ${rMid.toFixed(2)} 0 0 ${sweep} ${pB.x.toFixed(2)} ${pB.y.toFixed(2)}`);
 
       const decHour = t.h + t.m/60;
-      const { phase, remain, label } = weeklyStatus(ex, t) || sessionState(decHour, ex);
+      const { phase, remain, label } = liveStatus;
       const legStatus = document.getElementById(`leg-status-${i}`);
       legStatus.textContent = phase==='open' ? 'открыта' : (phase==='lunch' ? 'перерыв' : 'закрыта');
       legStatus.className = 'status ' + phase;
