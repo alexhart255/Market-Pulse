@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Биржевые часы 24 — панель сессий</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14;
+    --panel:#12161F;
+    --panel-alt:#171C27;
+    --hair:#232A38;
+    --text:#E7ECF3;
+    --muted:#7C8797;
+    --apac:#E3A23D;
+    --eu:#4C93D9;
+    --am:#4CAE6B;
+    --red:#E2574C;
+    --blue:#5B8CFF;
+    --closed:#3A414F;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(1200px 500px at 12% -10%, #141a26 0%, transparent 60%), var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    min-height:100vh;
+    padding:28px 24px 60px;
+  }
+
+  header{
+    max-width:1340px;
+    margin:0 auto 24px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    align-items:flex-end;
+    justify-content:space-between;
+    border-bottom:1px solid var(--hair);
+    padding-bottom:18px;
+  }
+  .title-block h1{ font-size:22px; font-weight:600; margin:0 0 4px; }
+  .title-block p{ margin:0; color:var(--muted); font-size:13px; max-width:520px; }
+
+  .controls{ display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap; }
+  .field{ display:flex; flex-direction:column; gap:5px; }
+  .field label{ font-size:11px; color:var(--muted); }
+  select{
+    background:var(--panel-alt); color:var(--text); border:1px solid var(--hair);
+    border-radius:7px; padding:7px 10px; font-family:'JetBrains Mono', monospace;
+    font-size:13px; min-width:150px;
+  }
+  select:focus-visible, button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .auto-btn{
+    background:none; border:1px solid var(--hair); color:var(--muted); border-radius:7px;
+    padding:7px 10px; font-family:'Space Grotesk', sans-serif; font-size:12px; cursor:pointer;
+  }
+  .auto-btn:hover{ color:var(--text); border-color:var(--blue); }
+
+  section{ max-width:1340px; margin:0 auto 40px; }
+  .section-title{ font-size:14px; color:var(--muted); margin:0 0 14px; letter-spacing:.2px; }
+  .section-title-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:0 0 14px; }
+  .section-title-row .section-title{ margin:0; }
+
+  /* ---------- масштаб большого циферблата ---------- */
+  .zoom-controls{ display:flex; align-items:center; gap:2px; }
+  .zoom-btn{
+    background:var(--panel-alt); border:1px solid var(--hair); color:var(--text);
+    width:26px; height:26px; border-radius:6px; font-size:15px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif;
+    user-select:none;
+  }
+  .zoom-btn:hover{ border-color:var(--blue); color:var(--text); }
+  .zoom-btn:active{ transform:translateY(1px); }
+  .zoom-btn:disabled{ opacity:.4; cursor:default; }
+  .zoom-btn:disabled:hover{ border-color:var(--hair); }
+  .zoom-value{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--muted);
+    min-width:42px; text-align:center; cursor:pointer; user-select:none; padding:2px 4px; border-radius:5px;
+  }
+  .zoom-value:hover{ color:var(--text); }
+
+  /* ---------- ряд отдельных 24h часов ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+    gap:14px;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--hair); border-radius:12px;
+    padding:16px 12px 14px; display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .card:hover{ transform:translateY(-2px); }
+  .city{ font-size:13.5px; font-weight:600; text-align:center; }
+  svg.mini-clock{ width:120px; height:120px; }
+  .face{ fill:var(--panel-alt); stroke:var(--hair); stroke-width:2; }
+  .tick{ stroke:var(--muted); stroke-width:1.4; opacity:.7; }
+  .tick.major{ stroke:var(--text); stroke-width:2; opacity:1; }
+  .num{ font-family:'JetBrains Mono', monospace; font-size:8px; fill:var(--muted); text-anchor:middle; }
+  .hand-24{ stroke:var(--text); stroke-width:3.4; stroke-linecap:round; transform-origin:60px 60px; }
+  .hub{ fill:var(--red); }
+  .digital{ font-family:'JetBrains Mono', monospace; font-size:14px; }
+  .subline{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--muted); }
+  .status{
+    font-size:10.5px; font-family:'JetBrains Mono', monospace; padding:2px 8px; border-radius:999px;
+    border:1px solid var(--hair);
+  }
+  .status.open{ color:#8BE0A8; border-color:#2E5A3E; }
+  .status.closed{ color:var(--muted); }
+  .status.lunch{ color:var(--apac); border-color:#5A431E; }
+  .countdown{ font-family:'JetBrains Mono', monospace; font-size:11px; }
+  .countdown.ticking-close{ color:#8BE0A8; }
+  .countdown.ticking-open{ color:var(--muted); }
+
+  /* ---------- легенда регионов ---------- */
+  .legend-row{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:16px; }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+  .swatch{ width:11px; height:11px; border-radius:3px; }
+
+  /* ---------- большой циферблат ---------- */
+  .dial-wrap{
+    display:flex; flex-direction:column; gap:28px; align-items:stretch;
+    background:var(--panel); border:1px solid var(--hair); border-radius:16px; padding:28px;
+  }
+  .dial-col{ display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; }
+  svg.big-dial{ display:block; width:100%; max-width:1040px; margin:0 auto; aspect-ratio:1/1; height:auto; overflow:visible; }
+  .ring-label{ font-family:'JetBrains Mono', monospace; font-weight:700; fill:#12161F; text-anchor:middle; pointer-events:none; }
+  .big-face{ fill:var(--panel-alt); stroke:var(--hair); stroke-width:2; }
+  .big-tick{ stroke:var(--muted); stroke-width:1.2; opacity:.55; }
+  .big-tick.major{ stroke:var(--text); stroke-width:2; opacity:1; }
+  .big-num{ font-family:'JetBrains Mono', monospace; font-size:15px; font-weight:600; fill:var(--text); text-anchor:middle; }
+  .ring-bg{ fill:var(--closed); opacity:.45; }
+  .ring-seg{ opacity:.95; }
+  .now-hand{ stroke:var(--red); stroke-width:2.4; stroke-linecap:round; transform-origin:center; }
+  .center-hub{ fill:var(--text); }
+
+  .readout{ text-align:center; }
+  .readout .utc-time{ font-family:'JetBrains Mono', monospace; font-size:30px; letter-spacing:1px; }
+  .readout .utc-label{ font-size:11px; color:var(--muted); margin-top:2px; }
+
+  .legend-list{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:10px;
+  }
+  .legend-list h3{ grid-column:1/-1; margin:0 0 4px; font-size:13px; color:var(--muted); font-weight:500; }
+  .leg-row{
+    display:flex; flex-direction:column; gap:5px;
+    padding:10px 12px; border:1px solid var(--hair); border-radius:8px;
+    background:var(--panel-alt); font-size:12.5px;
+    transition:background .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .leg-row.is-open{
+    background:linear-gradient(0deg, rgba(139,224,168,.09), rgba(139,224,168,.09)), var(--panel-alt);
+    border-color:#2E5A3E;
+    box-shadow:inset 0 0 0 1px rgba(139,224,168,.10);
+  }
+  .leg-row.is-lunch{
+    background:linear-gradient(0deg, rgba(227,162,61,.10), rgba(227,162,61,.10)), var(--panel-alt);
+    border-color:#5A431E;
+    box-shadow:inset 0 0 0 1px rgba(227,162,61,.12);
+  }
+  .leg-top{ display:flex; align-items:center; gap:9px; }
+  .leg-top .name{ font-weight:500; flex:1; }
+  .leg-clock-line{
+    display:flex; align-items:baseline; gap:7px;
+    font-family:'JetBrains Mono', monospace; font-size:12px;
+  }
+  .leg-clock-line .leg-label{
+    color:var(--muted); font-size:10.5px; min-width:62px; font-family:'Space Grotesk', sans-serif;
+    white-space:nowrap; flex-shrink:0;
+  }
+  .leg-clock-line .leg-value{ letter-spacing:.3px; }
+  .leg-clock-line .leg-hours{ color:var(--muted); font-size:11px; margin-left:2px; }
+  .leg-bottom{ font-family:'JetBrains Mono', monospace; font-size:11.5px; }
+  .leg-bottom.ticking-close{ color:var(--muted); }
+  .leg-bottom.ticking-open{ color:var(--muted); }
+  .leg-lunch{
+    display:none; flex-direction:column; gap:2px;
+    margin-top:2px; padding-top:6px; border-top:1px dashed var(--hair);
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--apac);
+  }
+  .leg-lunch.show{ display:flex; }
+
+  @media (max-width:520px){
+    body{ padding:20px 14px 40px; }
+    .dial-wrap{ padding:18px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .card{ transition:none; } }
+
+  /* ---------- ключевые моменты торговых суток ---------- */
+  .km-marker{ cursor:pointer; }
+  .km-marker .km-dot-svg{ transition: r .15s ease, stroke-width .15s ease; }
+  .km-marker.light .km-dot-svg{ fill:#F2EEE3; stroke:#12161F; stroke-width:1.6; }
+  .km-marker.dark .km-dot-svg{ fill:#242B39; stroke:#8A93A3; stroke-width:1.6; }
+  .km-marker:hover .km-dot-svg{ r:8; }
+  .km-marker.active .km-dot-svg{ stroke:var(--red); stroke-width:2.8; }
+  .km-marker .km-pulse{ fill:none; stroke:var(--red); stroke-width:1.4; opacity:0; }
+  .km-marker.active .km-pulse{ opacity:.65; animation:km-pulse 1.6s ease-out infinite; }
+  @keyframes km-pulse{
+    0%{ r:7; opacity:.65; }
+    100%{ r:15; opacity:0; }
+  }
+
+  /* ---------- выделение выбранного часа на большом циферблате ---------- */
+  .sector-highlight{ fill:#000; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .sector-highlight.show{ opacity:.5; }
+  .selection-hub-outer{ fill:none; stroke:var(--red); stroke-width:2; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .selection-hub-outer.show{ opacity:.9; }
+  .selection-hub-dot{ fill:var(--red); opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .selection-hub-dot.show{ opacity:1; }
+
+  /* ---------- плавающая подсказка при наведении на метку ---------- */
+  .km-tooltip{
+    position:fixed; z-index:80; max-width:290px;
+    background:var(--panel-alt); border:1px solid var(--hair); border-radius:10px;
+    padding:11px 13px; font-size:12.5px; line-height:1.5; color:var(--text);
+    pointer-events:none; opacity:0; transform:translateY(4px);
+    transition:opacity .12s ease, transform .12s ease;
+    box-shadow:0 10px 28px rgba(0,0,0,.5);
+  }
+  .km-tooltip.show{ opacity:1; transform:translateY(0); }
+  .km-tooltip h5{ margin:0 0 3px; font-size:13px; font-weight:600; }
+  .km-tooltip .km-tooltip-time{ font-family:'JetBrains Mono', monospace; color:var(--muted); font-size:10.5px; margin-bottom:6px; }
+  .km-tooltip .km-tooltip-desc{ color:var(--muted); }
+  .km-tooltip .km-tooltip-tags{ display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .km-tooltip .km-tooltip-tag{ font-size:10px; padding:2px 7px; border-radius:999px; border:1px solid var(--hair); color:var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Биржевые часы 24 — панель сессий</h1>
+    <p>Собственная визуализация торговых сессий бирж мира: ряд отдельных 24-часовых циферблатов и общий круговой график в UTC. Это оригинальный дизайн, вдохновлённый идеей биржевых часов, а не копия чьего-либо запатентованного циферблата.</p>
+  </div>
+  <div class="controls">
+    <div class="field">
+      <label for="utc-select">Ваш часовой пояс (UTC)</label>
+      <select id="utc-select"></select>
+    </div>
+    <button class="auto-btn" id="auto-btn" type="button">Определить автоматически</button>
+  </div>
+</header>
+
+<section>
+  <div class="section-title-row">
+    <p class="section-title">Общий циферблат — все сессии на одном 24-часовом круге в вашем времени</p>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoom-out" type="button" title="Уменьшить" aria-label="Уменьшить масштаб">−</button>
+      <span class="zoom-value" id="zoom-value" title="Сбросить масштаб (100%)">100%</span>
+      <button class="zoom-btn" id="zoom-in" type="button" title="Увеличить" aria-label="Увеличить масштаб">+</button>
+    </div>
+  </div>
+  <div class="legend-row">
+    <div class="legend-item"><span class="swatch" style="background:#4C93D9"></span>Синий цвет — американская сессия</div>
+    <div class="legend-item"><span class="swatch" style="background:#4CAE6B"></span>Зелёный цвет — европейская сессия</div>
+    <div class="legend-item"><span class="swatch" style="background:#E3A23D"></span>Жёлтый цвет — азиатско-тихоокеанская сессия</div>
+    <div class="legend-item"><span class="swatch" style="background:#E2574C"></span>Красный цвет — Forex</div>
+    <div class="legend-item"><span class="swatch" style="background:repeating-linear-gradient(45deg, var(--closed) 0 2px, var(--bg) 2px 4px)"></span>Штриховка — перерыв биржи</div>
+  </div>
+  <div class="dial-wrap">
+    <div class="dial-col">
+      <svg class="big-dial" id="big-dial" viewBox="0 0 620 620"></svg>
+      <div class="readout">
+        <div class="utc-time" id="big-utc-time">--:--:--</div>
+        <div class="utc-label" id="big-utc-label">ваше время · красная стрелка</div>
+      </div>
+    </div>
+    <div class="legend-list" id="legend-list">
+      <h3>Кольца (от центра к краю)</h3>
+    </div>
+
+  </div>
+</section>
+
+<div class="km-tooltip" id="km-tooltip"></div>
+
+<script>
+(function(){
+  const REGION = {
+    apac:  { color:'var(--apac)', hex:'#E3A23D', label:'Азия-Тихоокеанский регион' },
+    eu:    { color:'var(--am)',   hex:'#4CAE6B', label:'Европа' },
+    am:    { color:'var(--eu)',   hex:'#4C93D9', label:'Америка' },
+    forex: { color:'var(--red)',  hex:'#E2574C', label:'Forex' }
+  };
+
+  // старт/конец основной сессии в ЛОКАЛЬНОМ времени биржи (десятичные часы)
+  const exchanges = [
+    { name:'Сидней',    tz:'Australia/Sydney',   region:'apac', start:10.00, end:16.00 },
+    { name:'Токио',     tz:'Asia/Tokyo',         region:'apac', start:9.00,  end:15.00, lunchStart:11.50, lunchEnd:12.50 },
+    { name:'Гонконг',   tz:'Asia/Hong_Kong',     region:'apac', start:9.50,  end:16.00, lunchStart:12.00, lunchEnd:13.00 },
+    { name:'Шанхай',    tz:'Asia/Shanghai',      region:'apac', start:9.50,  end:15.00, lunchStart:11.50, lunchEnd:13.00 },
+    { name:'Мумбаи',    tz:'Asia/Kolkata',       region:'apac', start:9.25,  end:15.50 },
+    { name:'Эр-Рияд',   tz:'Asia/Riyadh',        region:'eu',   start:10.00, end:15.00 },
+    { name:'Москва',    tz:'Europe/Moscow',      region:'eu',   start:10.00, end:18.75 },
+    { name:'Франкфурт', tz:'Europe/Berlin',      region:'eu',   start:9.00,  end:17.50 },
+    { name:'Лондон',    tz:'Europe/London',      region:'eu',   start:8.00,  end:16.50 },
+    { name:'Сан-Паулу', tz:'America/Sao_Paulo',  region:'am',   start:10.00, end:17.00 },
+    { name:'Нью-Йорк',  tz:'America/New_York',   region:'am',   start:9.50,  end:16.00 },
+    { name:'Торонто',   tz:'America/Toronto',    region:'am',   start:9.50,  end:16.00 },
+    { name:'Чикаго',    tz:'America/Chicago',    region:'am',   start:17.00, end:16.00, lunchStart:16.00, lunchEnd:17.00,
+      weekly:{ closeDow:5, closeHour:16, openDow:0, openHour:17 } },
+    // Forex (внебиржевой валютный рынок) торгует круглосуточно и без перерыва на обед,
+    // поэтому дуга сплошная на все 24 часа (start/end почти совпадают, крошечный зазор
+    // в несколько секунд оставлен только затем, чтобы SVG-дуга не вырождалась в точку
+    // при start === end — на практике это никогда не попадает в реальные минуты суток).
+    // tz специально — Нью-Йорк: официально неделя Forex привязана именно к 17:00 по
+    // восточному времени США (и закрытие в пятницу, и открытие в воскресенье).
+    { name:'Forex',     tz:'America/New_York',   region:'forex', start:0.00, end:23.999, alwaysOpen:true,
+      weekly:{ closeDow:5, closeHour:17, openDow:0, openHour:17 } }
+  ];
+
+  // ---------- ключевые моменты торговых суток ----------
+  // utc — время зимой (стандартное), utcSummer — то же самое событие летом (если сдвигается
+  // вместе с переходом Европы/США на летнее время). tone: 'light' — открытие/закрытие
+  // крупной сессии, 'dark' — промежуточное событие (статистика, премаркет, переход суток).
+  const keyMoments = [
+    { utc:0.50, tone:'light',
+      title:'Первый час торгов в Токио',
+      tags:['Токио'],
+      desc:'Открывается японская сессия — начинается период максимальной активности институциональных игроков и крупных фондов: именно в первый и последний час сессии они чаще всего заключают сделки. Биржа Сиднея в этот час ещё работает, так что ликвидность формируется сразу двумя тихоокеанскими площадками. Азиатские инвесторы часто действуют согласованно, поэтому движение в одну сторону может усиливаться.' },
+    { utc:1.50, tone:'dark',
+      title:'Разгон перед открытием Китая',
+      tags:['Шанхай','Гонконг'],
+      desc:'Активность нарастает в преддверии открытия трёх крупных китайских площадок — Шанхая, Шэньчжэня и Гонконга. У Китая одни из крупнейших в мире валютных резервов, поэтому даже намёк на изменение их структуры способен заметно качнуть пару евро/доллар. В первый час китайской сессии чаще наблюдается рост EUR/USD.' },
+    { utc:5.00, tone:'dark',
+      title:'Последний час работы Токийской биржи',
+      tags:['Токио','Гонконг','Шанхай'],
+      desc:'Выходит статистика по японской экономике — возможны резкие движения, если вмешивается Банк Японии. В Гонконге и Шанхае начинается вторая половина сессии после обеденного перерыва, активность повышается. Движение по EUR/USD в этот час может быть разнонаправленным; зимой в это же время открывается премаркет Лондонской биржи.' },
+    { utc:6.00, tone:'light',
+      title:'Закрытие торгов в Токио',
+      tags:['Токио'],
+      desc:'До закрытия Шанхая и Шэньчжэня остаётся около часа; летом в это же время открываются торги во Франкфурте. Азиатский регион формирует значительный объём сделок благодаря масштабной торгово-промышленной активности, а закупки евро перед стартом европейской сессии обычно толкают EUR/USD вверх.' },
+    { utc:8.00, utcSummer:7.00, tone:'light',
+      title:'Начало Европейской сессии',
+      tags:['Лондон','Франкфурт'],
+      desc:'Открываются основные европейские площадки, включая Лондонскую биржу. Одновременно завершаются торги в Китае — стоит сравнивать ставки, сделанные на открытии Лондона, с тем, как закрылся азиатский регион. В первые часы европейской сессии чаще преобладают продажи евро.' },
+    { utc:9.00, utcSummer:8.00, tone:'dark',
+      title:'Важная статистика по еврозоне',
+      tags:['Франкфурт','Лондон'],
+      desc:'В этот час чаще всего выходят значимые макроэкономические данные по еврозоне, способные почти сразу вызвать резкое движение по евро, особенно на самой публикации. Азиатская сессия в это время подходит к завершению. Характерная тенденция для EUR/USD в этот момент — снижение.' },
+    { utc:11.50, utcSummer:10.50, tone:'dark',
+      title:'Премаркет Нью-Йоркской биржи',
+      tags:['Нью-Йорк'],
+      desc:'На NYSE начинают собираться заявки на покупку и продажу, по итогам которых сформируется цена открытия. Одновременно завершается торговый день на ближневосточных нефтяных рынках. В этот час чаще наблюдается рост евро.' },
+    { utc:13.50, utcSummer:12.50, tone:'dark',
+      title:'За час до открытия основных бирж США',
+      tags:['Нью-Йорк','Торонто'],
+      desc:'Обычно именно в это время выходит наиболее значимая статистика и новости из США, которые часто задают направление всей дневной торговле. Курс евро перед стартом американской сессии чаще снижается.' },
+    { utc:14.50, utcSummer:13.50, tone:'light',
+      title:'Начало основной сессии в США и Канаде',
+      tags:['Нью-Йорк','Торонто','Лондон'],
+      desc:'Европейская и американская сессии пересекаются — объёмы торгов резко растут, а движение цены становится менее предсказуемым: новости трудно интерпретировать из-за спекулятивной активности, тренды могут разворачиваться очень быстро. В этот час стоит быть аккуратнее с размером позиций и внимательно наблюдать за рынком, а не торговать сходу.' },
+    { utc:16.50, utcSummer:15.50, tone:'light',
+      title:'Закрытие основных торгов в Европе',
+      tags:['Лондон','Франкфурт','Москва'],
+      desc:'Завершается европейская сессия, и направление движения EUR/USD нередко резко меняется. Для этой пары в данный момент чаще характерен рост.' },
+    { utc:21.00, utcSummer:20.00, tone:'light',
+      title:'Закрытие основной сессии в США',
+      tags:['Нью-Йорк','Торонто'],
+      desc:'На NYSE начинается постмаркет, в ходе которого формируется цена закрытия; ликвидность в этот период может заметно снижаться, особенно при отсутствии значимых новостей. Одновременно открывается премаркет австралийской биржи.' },
+    { utc:22.00, utcSummer:21.00, tone:'dark',
+      title:'Переход к новым торговым суткам',
+      tags:['Сидней'],
+      desc:'Если в течение дня цена шла вверх, в начале новых суток по EUR/USD нередко случается откат почти до самого открытия Токио. По пятницам в это время торговля на форекс приостанавливается вплоть до открытия рынка в воскресенье вечером.' }
+  ];
+  let myOffsetMinutes = -new Date().getTimezoneOffset();
+
+  // ---------- UTC-помощники ----------
+  function formatOffset(min){
+    const sign = min < 0 ? '-' : '+';
+    const abs = Math.abs(min);
+    const h = String(Math.floor(abs/60)).padStart(2,'0');
+    const m = String(abs%60).padStart(2,'0');
+    return `UTC${sign}${h}:${m}`;
+  }
+  function readTZ(tz, date){
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hour12:false,
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit'
+    });
+    const parts = {};
+    dtf.formatToParts(date).forEach(p=>{ if(p.type!=='literal') parts[p.type]=p.value; });
+    const asUTC = Date.UTC(+parts.year, +parts.month-1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    const offsetMinutes = Math.round((asUTC - date.getTime())/60000);
+    let h = +parts.hour; if(h===24) h=0;
+    // день недели по МЕСТНОЙ дате биржи (0 = воскресенье … 6 = суббота) — нужен, чтобы
+    // отдельно от часа суток отследить недельное закрытие на выходные (Forex, CME)
+    const weekday = new Date(asUTC).getUTCDay();
+    return { h, m:+parts.minute, s:+parts.second, offsetMinutes, weekday };
+  }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function countdownStr(hDec){
+    let totalMin = Math.round(hDec*60);
+    if(totalMin<0) totalMin = 0;
+    const d = Math.floor(totalMin/1440);
+    const h = Math.floor((totalMin%1440)/60), m = totalMin%60;
+    if(d>0) return `${d}д ${h}ч ${String(m).padStart(2,'0')}мин`;
+    return h>0 ? `${h}ч ${String(m).padStart(2,'0')}мин` : `${m}мин`;
+  }
+  function sessionState(decHour, ex){
+    const { start, end, lunchStart, lunchEnd } = ex;
+    const hasLunch = lunchStart!=null && lunchEnd!=null;
+    // проверяет попадание часа в промежуток [s,e), корректно обрабатывая переход через полночь
+    // (нужно и для сессий вроде CME Globex, которая открыта почти круглые сутки, и для
+    // их суточного технического перерыва, который приходится ровно на границу дня)
+    function inWindow(h, s, e){
+      if(e <= s) return h >= s || h < e;
+      return h >= s && h < e;
+    }
+    if(hasLunch && inWindow(decHour, lunchStart, lunchEnd)){
+      let remain = lunchEnd - decHour;
+      if(remain <= 0) remain += 24;
+      return { phase:'lunch', isOpen:false, remain, label:'до конца перерыва' };
+    }
+    const isOpenNow = inWindow(decHour, start, end);
+    if(!isOpenNow){
+      let remain = start - decHour;
+      if(remain <= 0) remain += 24;
+      return { phase:'closed', isOpen:false, remain, label:'до открытия' };
+    }
+    if(hasLunch){
+      let remain = lunchStart - decHour;
+      if(remain <= 0) remain += 24;
+      return { phase:'open', isOpen:true, remain, label:'до перерыва' };
+    }
+    let remain = end - decHour;
+    if(remain <= 0) remain += 24;
+    return { phase:'open', isOpen:true, remain, label:'до закрытия' };
+  }
+  // ---------- недельный статус (Forex, CME/«Чикаго») ----------
+  // Обычная sessionState() знает только час суток и не в курсе дней недели. У Forex и
+  // «Чикаго» суточные start/end (00:00–23:999) — чисто технический трюк для отрисовки
+  // сплошного кольца на циферблате, а не настоящее время открытия/закрытия, поэтому
+  // использовать их для статуса или обратного отсчёта нельзя. Эта функция полностью
+  // заменяет sessionState() для таких площадок: и в будни (когда они открыты и просто
+  // тикают в счётчике до закрытия в пятницу), и на выходных (когда они закрыты и тикают
+  // до открытия в воскресенье).
+  // У «Чикаго» вдобавок есть ЕЖЕДНЕВНЫЙ часовой технический перерыв (клиринг) — он задан
+  // как обычные ex.lunchStart/ex.lunchEnd. Он ближе по времени, чем пятничное закрытие,
+  // почти всю неделю, поэтому его нужно учитывать отдельно и показывать то из двух событий
+  // (сегодняшний клиринг или недельное закрытие), которое наступит раньше.
+  // ex.weekly = { closeDow, closeHour, openDow, openHour } — closeDow/openDow: 0=вс…6=сб,
+  // время — в МЕСТНОМ часовом поясе этой площадки (ex.tz), день недели берётся из t.weekday.
+  function mod(a,n){ return ((a%n)+n)%n; }
+  function weeklyStatus(ex, t){
+    if(!ex.weekly) return null;
+    const { closeDow, closeHour, openDow, openHour } = ex.weekly;
+    const decHour = t.h + t.m/60;
+    const nowPos = t.weekday*24 + decHour;           // положение "сейчас" внутри недели, в часах
+    const closePos = closeDow*24 + closeHour;
+    let openPos = openDow*24 + openHour;
+    if(openPos <= closePos) openPos += 7*24;          // открытие всегда позже закрытия на той же неделе
+    const weeklySpan = openPos - closePos;
+    const relToClose = mod(nowPos - closePos, 7*24);
+    if(relToClose < weeklySpan){
+      return { phase:'closed', isOpen:false, remain: weeklySpan - relToClose, label:'до открытия' };
+    }
+    const remainToClose = mod(closePos - nowPos, 7*24);
+    if(ex.lunchStart!=null && ex.lunchEnd!=null){
+      const daily = sessionState(decHour, ex);
+      if(daily.phase === 'lunch'){
+        return { phase:'lunch', isOpen:false, remain: daily.remain, label:'до конца перерыва' };
+      }
+      if(daily.remain < remainToClose){
+        return { phase:'open', isOpen:true, remain: daily.remain, label:'до закрытия' };
+      }
+    }
+    return { phase:'open', isOpen:true, remain: remainToClose, label:'до закрытия' };
+  }
+  // переводит локальные десятичные часы биржи в UTC-десятичные часы для текущего смещения
+  function localHourToUTC(hourDec, offsetH){
+    return ((hourDec - offsetH) % 24 + 24) % 24;
+  }
+  function fmtDec(hourDec){
+    let h = Math.floor(hourDec), m = Math.round((hourDec%1)*60);
+    if(m===60){ m = 0; h = (h+1)%24; }             // 23.999999ч округлялось в "23:60" — переносим в следующий час
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  // грубое определение "летнего" периода в Европе по смещению Франкфурта:
+  // UTC+2 — лето, UTC+1 — зима. Используется, чтобы подвинуть ключевые моменты
+  // на час вместе с переходом на летнее/зимнее время.
+  function isEUSummer(now){
+    return readTZ('Europe/Berlin', now).offsetMinutes === 120;
+  }
+  function momentUTC(km, summer){
+    return (km.utcSummer!=null && summer) ? km.utcSummer : km.utc;
+  }
+
+  // ---------- контролы ----------
+  const utcSelect = document.getElementById('utc-select');
+  const autoBtn = document.getElementById('auto-btn');
+  function buildOffsetOptions(){
+    utcSelect.innerHTML = '';
+    for(let min = -12*60; min <= 14*60; min += 30){
+      const opt = document.createElement('option');
+      opt.value = min; opt.textContent = formatOffset(min);
+      utcSelect.appendChild(opt);
+    }
+    const nearest = Math.round(myOffsetMinutes/30)*30;
+    utcSelect.value = String(Math.min(Math.max(nearest,-12*60),14*60));
+    myOffsetMinutes = parseInt(utcSelect.value,10);
+  }
+  buildOffsetOptions();
+  utcSelect.addEventListener('change', ()=>{ myOffsetMinutes = parseInt(utcSelect.value,10); });
+  autoBtn.addEventListener('click', ()=>{
+    myOffsetMinutes = -new Date().getTimezoneOffset();
+    buildOffsetOptions();
+  });
+
+  // ---------- геометрия дуг ----------
+  function polar(cx,cy,r,deg){
+    const rad = (deg-90)*Math.PI/180;
+    return { x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad) };
+  }
+  function ringPath(cx,cy,rInner,rOuter,startDeg,endDeg){
+    if(endDeg <= startDeg) endDeg += 360;
+    const largeArc = (endDeg-startDeg) > 180 ? 1 : 0;
+    const p1o = polar(cx,cy,rOuter,startDeg), p2o = polar(cx,cy,rOuter,endDeg);
+    const p1i = polar(cx,cy,rInner,endDeg),   p2i = polar(cx,cy,rInner,startDeg);
+    return `M ${p1o.x.toFixed(2)} ${p1o.y.toFixed(2)} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${p2o.x.toFixed(2)} ${p2o.y.toFixed(2)} `+
+           `L ${p1i.x.toFixed(2)} ${p1i.y.toFixed(2)} A ${rInner} ${rInner} 0 ${largeArc} 0 ${p2i.x.toFixed(2)} ${p2i.y.toFixed(2)} Z`;
+  }
+  // сектор (клин) от центра циферблата — используется для тёмно-серой подсветки выбранного часа
+  function sectorPath(cx,cy,r,startDeg,endDeg){
+    if(endDeg <= startDeg) endDeg += 360;
+    const largeArc = (endDeg-startDeg) > 180 ? 1 : 0;
+    const p1 = polar(cx,cy,r,startDeg), p2 = polar(cx,cy,r,endDeg);
+    return `M ${cx} ${cy} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
+  }
+
+  // ================= БОЛЬШОЙ ЦИФЕРБЛАТ =================
+  const bigDial = document.getElementById('big-dial');
+  const CX=310, CY=310;
+  const RING_INNER0 = 30, RING_GAP = 1;
+  // верхняя граница цветных колец: держим её чуть внутри радиуса, откуда начинаются
+  // часовые деления (228), чтобы дуги сессий — включая сплошное кольцо Forex —
+  // никогда не заходили на серую часть циферблата с делениями и цифрами.
+  // Ширина одного кольца пересчитывается от числа бирж, поэтому все кольца всегда
+  // умещаются внутри этой границы, сколько бы бирж ни было в списке.
+  const RING_OUTER_MAX = 225;
+  const RING_WIDTH = (RING_OUTER_MAX - RING_INNER0 - (exchanges.length-1)*RING_GAP) / exchanges.length;
+
+  function buildBigDialStatic(){
+    let svg = `<defs>
+      <pattern id="lunch-hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <rect width="6" height="6" fill="var(--closed)"/>
+        <line x1="0" y1="0" x2="0" y2="6" stroke="var(--bg)" stroke-width="2.4"/>
+      </pattern>
+    </defs>`;
+    svg += `<circle class="big-face" cx="${CX}" cy="${CY}" r="290" />`;
+    // фоновые полные кольца
+    exchanges.forEach((ex,i)=>{
+      const rInner = RING_INNER0 + i*(RING_WIDTH+RING_GAP);
+      const rOuter = rInner + RING_WIDTH;
+      svg += `<circle class="ring-bg" cx="${CX}" cy="${CY}" r="${(rInner+rOuter)/2}" fill="none" stroke="${'var(--closed)'}" stroke-width="${RING_WIDTH}" opacity="0.35" />`;
+    });
+    // часовые деления снаружи, за пределами всех колец
+    for(let i=0;i<24;i++){
+      const deg = i*15;
+      const major = i%3===0;
+      const r1 = major ? 228 : 236;
+      const p1 = polar(CX,CY,r1,deg), p2 = polar(CX,CY,246,deg);
+      svg += `<line class="big-tick${major?' major':''}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" />`;
+      if(major){
+        const label = i===0 ? 24 : i;
+        const lp = polar(CX,CY,268,deg);
+        svg += `<text class="big-num" x="${lp.x.toFixed(1)}" y="${(lp.y+4.5).toFixed(1)}">${label}</text>`;
+      }
+    }
+    // сегменты сессий (заполняются в render) + подписи бирж на дугах + стрелки
+    exchanges.forEach((ex,i)=>{
+      const hasLunch = ex.lunchStart!=null;
+      if(ex.alwaysOpen){
+        // площадка без перерывов и без времени закрытия (напр. Forex) рисуется как обычная
+        // окружность фиксированного радиуса, а не как дуга почти на все 360° — цельная
+        // дуга такой длины, построенная одной SVG arc-командой, местами рендерится с
+        // «плывущей» толщиной из-за погрешностей округления около точки замыкания.
+        // Простая окружность даёт математически одинаковую толщину кольца везде.
+        const rInner = RING_INNER0 + i*(RING_WIDTH+RING_GAP);
+        const rOuter = rInner + RING_WIDTH;
+        const rMid = (rInner + rOuter) / 2;
+        svg += `<circle id="seg-${i}" class="ring-seg" cx="${CX}" cy="${CY}" r="${rMid}" fill="none" stroke="${REGION[ex.region].hex}" stroke-width="${RING_WIDTH}" />`;
+      } else if(hasLunch){
+        svg += `<path id="seg-${i}-am" class="ring-seg" fill="${REGION[ex.region].hex}" />`;
+        svg += `<path id="seg-${i}-lunch" class="ring-seg" fill="url(#lunch-hatch)" />`;
+        svg += `<path id="seg-${i}-pm" class="ring-seg" fill="${REGION[ex.region].hex}" />`;
+      } else {
+        svg += `<path id="seg-${i}" class="ring-seg" fill="${REGION[ex.region].hex}" />`;
+      }
+    });
+    exchanges.forEach((ex,i)=>{
+      svg += `<path id="label-arc-${i}" class="ring-label-arc" fill="none" stroke="none" />`;
+      svg += `<text id="label-${i}" class="ring-label" font-size="${RING_WIDTH*0.78}" text-anchor="middle">`+
+             `<textPath id="label-path-${i}" href="#label-arc-${i}" startOffset="50%"><tspan dy="0.3em">${ex.name}</tspan></textPath></text>`;
+    });
+    svg += `<path id="sector-highlight" class="sector-highlight" />`;
+    svg += `<path id="hover-sector-highlight" class="sector-highlight" />`;
+    svg += `<line id="now-hand" class="now-hand" x1="${CX}" y1="${CY}" x2="${CX}" y2="${CY-284}" />`;
+    svg += `<circle class="center-hub" cx="${CX}" cy="${CY}" r="4.5" />`;
+    svg += `<circle id="selection-hub-outer" class="selection-hub-outer" cx="${CX}" cy="${CY}" r="9" />`;
+    svg += `<circle id="selection-hub-dot" class="selection-hub-dot" cx="${CX}" cy="${CY}" r="5" />`;
+    keyMoments.forEach((km,i)=>{
+      svg += `<g id="km-${i}" class="km-marker ${km.tone}" tabindex="0" role="button" aria-label="${km.title}">`+
+             `<circle class="km-pulse" cx="0" cy="0" r="7" />`+
+             `<circle class="km-dot-svg" cx="0" cy="0" r="6.5" />`+
+             `</g>`;
+    });
+    bigDial.innerHTML = svg;
+    keyMoments.forEach((km,i)=>{
+      const g = document.getElementById(`km-${i}`);
+      g.addEventListener('mouseenter', (e)=>showTooltip(i,e));
+      g.addEventListener('mousemove', positionTooltip);
+      g.addEventListener('mouseleave', hideTooltip);
+      g.addEventListener('focus', ()=>{
+        const r = g.querySelector('.km-dot-svg').getBoundingClientRect();
+        showTooltip(i, { clientX: r.left + r.width/2, clientY: r.top });
+      });
+      g.addEventListener('blur', hideTooltip);
+    });
+  }
+  buildBigDialStatic();
+
+  // ---------- плавающая подсказка при наведении на метку на циферблате ----------
+  // вся информация по моменту (время, описание, площадки) читается только здесь
+  const kmTooltipEl = document.getElementById('km-tooltip');
+  function showTooltip(i, evt){
+    const km = keyMoments[i];
+    const now = new Date();
+    const summer = isEUSummer(now);
+    const myOffsetH = myOffsetMinutes/60;
+    const utcHour = momentUTC(km, summer);
+    const myHour = ((utcHour + myOffsetH) % 24 + 24) % 24;
+    kmTooltipEl.innerHTML = `
+      <h5>${km.title}</h5>
+      <div class="km-tooltip-time">${fmtDec(myHour)} у вас</div>
+      <div class="km-tooltip-desc">${km.desc}</div>
+      <div class="km-tooltip-tags">${km.tags.map(t=>`<span class="km-tooltip-tag">${t}</span>`).join('')}</div>`;
+    kmTooltipEl.classList.add('show');
+    positionTooltip(evt);
+
+    // то же самое затемнение часового сектора, что и у автоматической подсветки —
+    // но здесь оно привязано к наведённой метке, а не к текущему времени,
+    // и показывает, где на циферблате начинается и заканчивается её час
+    const floorH = Math.floor(myHour);
+    const sStart = floorH/24*360, sEnd = (floorH+1)/24*360;
+    const hoverSectorEl = document.getElementById('hover-sector-highlight');
+    hoverSectorEl.setAttribute('d', sectorPath(CX,CY,290,sStart,sEnd));
+    hoverSectorEl.classList.add('show');
+  }
+  function positionTooltip(evt){
+    const pad = 16;
+    const rect = kmTooltipEl.getBoundingClientRect();
+    const dialRect = bigDial.getBoundingClientRect();
+
+    // подсказка всегда должна оставаться СНАРУЖИ циферблата (не поверх него), чтобы
+    // затемнённый сектор и сам круг были видны целиком, пока пользователь читает текст —
+    // поэтому сначала пробуем разместить её справа от циферблата, затем слева, и только
+    // если совсем не хватает места по ширине экрана — рядом с курсором как раньше
+    let x;
+    const spaceRight = window.innerWidth - dialRect.right;
+    const spaceLeft = dialRect.left;
+    if(spaceRight >= rect.width + pad + 8){
+      x = dialRect.right + pad;
+    } else if(spaceLeft >= rect.width + pad + 8){
+      x = dialRect.left - rect.width - pad;
+    } else {
+      x = evt.clientX + pad;
+      if(x + rect.width > window.innerWidth - 8) x = evt.clientX - rect.width - pad;
+    }
+
+    // по вертикали подсказку стараемся держать рядом с наведённой меткой, но не даём
+    // ей вылезти за верх/низ экрана
+    let y = evt.clientY - rect.height/2;
+    y = Math.min(Math.max(y, 8), window.innerHeight - rect.height - 8);
+
+    kmTooltipEl.style.left = `${Math.max(8,x)}px`;
+    kmTooltipEl.style.top = `${y}px`;
+  }
+  function hideTooltip(){
+    kmTooltipEl.classList.remove('show');
+    document.getElementById('hover-sector-highlight').classList.remove('show');
+  }
+
+  function updateMomentPositions(now){
+    const summer = isEUSummer(now);
+    const myOffsetH = myOffsetMinutes/60;
+    const mineNow = new Date(now.getTime() + myOffsetMinutes*60000);
+    const nowMyHour = mineNow.getUTCHours() + mineNow.getUTCMinutes()/60 + mineNow.getUTCSeconds()/3600;
+    const nowFloorH = Math.floor(nowMyHour);
+
+    // индекс момента, чей часовой интервал сейчас накрывает красная стрелка —
+    // подсветка сектора включается/выключается автоматически по этому индексу,
+    // без клика по метке
+    let activeBandIdx = null;
+
+    keyMoments.forEach((km,i)=>{
+      const utcHour = momentUTC(km, summer);
+      const myHour = ((utcHour + myOffsetH) % 24 + 24) % 24;
+      const deg = myHour/24*360;
+      const p = polar(CX,CY,283,deg);
+      document.getElementById(`km-${i}`).setAttribute('transform', `translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})`);
+
+      let diff = Math.abs(nowMyHour - myHour); diff = Math.min(diff, 24-diff);
+      const isActive = diff <= (20/60);
+      document.getElementById(`km-${i}`).classList.toggle('active', isActive);
+
+      if(Math.floor(myHour) === nowFloorH) activeBandIdx = i;
+    });
+
+    // тёмная подсветка часа и красный кружок в центре включаются автоматически,
+    // когда стрелка входит в час с ключевым моментом, и гаснут при выходе из него
+    const sectorEl = document.getElementById('sector-highlight');
+    const hubOuterEl = document.getElementById('selection-hub-outer');
+    const hubDotEl = document.getElementById('selection-hub-dot');
+    if(activeBandIdx != null){
+      const km = keyMoments[activeBandIdx];
+      const utcHour = momentUTC(km, summer);
+      const myHour = ((utcHour + myOffsetH) % 24 + 24) % 24;
+      const floorH = Math.floor(myHour);
+      const sStart = floorH/24*360, sEnd = (floorH+1)/24*360;
+      sectorEl.setAttribute('d', sectorPath(CX,CY,290,sStart,sEnd));
+      sectorEl.classList.add('show');
+      hubOuterEl.classList.add('show');
+      hubDotEl.classList.add('show');
+    } else {
+      sectorEl.classList.remove('show');
+      hubOuterEl.classList.remove('show');
+      hubDotEl.classList.remove('show');
+    }
+  }
+
+  // легенда колец
+  const legendList = document.getElementById('legend-list');
+  exchanges.forEach((ex,i)=>{
+    const row = document.createElement('div');
+    row.className = 'leg-row';
+    row.id = `leg-row-${i}`;
+    row.innerHTML = `
+      <div class="leg-top">
+        <span class="swatch" style="background:${REGION[ex.region].hex}"></span>
+        <span class="name">${ex.name}</span>
+        <span class="status closed" id="leg-status-${i}">закрыта</span>
+      </div>
+      <div class="leg-clock-line">
+        <span class="leg-label" id="leg-my-label-${i}">Моё время</span>
+        <span class="leg-value" id="leg-utc-${i}">--:--:--</span>
+        <span class="leg-hours" id="leg-utc-hours-${i}">(--:-- – --:--)</span>
+      </div>
+      <div class="leg-clock-line">
+        <span class="leg-label">Местное</span>
+        <span class="leg-value" id="leg-local-${i}">--:--:--</span>
+        <span class="leg-hours" id="leg-hours-${i}">(--:-- – --:--)</span>
+      </div>
+      <div class="leg-bottom" id="leg-countdown-${i}">--</div>
+      <div class="leg-lunch" id="leg-lunch-${i}">
+        <span id="leg-lunch-utc-${i}"></span>
+        <span id="leg-lunch-local-${i}"></span>
+      </div>`;
+    legendList.appendChild(row);
+  });
+
+  function renderBig(now){
+    const mineNow = new Date(now.getTime() + myOffsetMinutes*60000);
+    const myOffsetH = myOffsetMinutes/60;
+    // подпись "Моё UTC±X" — пересчитывается на каждый рендер, т.к. смещение можно менять
+    // выбором часового пояса, и должна всегда отражать актуально выбранный UTC-сдвиг
+    const myUtcLabel = formatOffset(myOffsetMinutes);
+
+    // ---------- проход 1: геометрия дуг + средний угол подписи по региону ----------
+    // Биржи одного региона (например, весь Азиатско-Тихоокеанский блок: Сидней, Токио,
+    // Гонконг, Шанхай, Мумбаи) визуально образуют единый кластер колец рядом друг с другом.
+    // Если считать направление текста (перевёрнут/не перевёрнут) отдельно для каждой биржи
+    // по её собственному углу, соседние дуги иногда попадают по разные стороны границы
+    // 90°/270° и подписи внутри одного кластера начинают читаться в разные стороны
+    // (например, «Сидней» — сверху вниз, а «Токио» рядом — снизу вверх). Поэтому сначала
+    // считаем угол середины подписи для каждой биржи, а направление текста выбираем ОДНО
+    // на весь регион — по среднему углу всех его бирж (circular mean, чтобы корректно
+    // работать и на стыке 0°/360°).
+    const geo = [];
+    exchanges.forEach((ex,i)=>{
+      const t = readTZ(ex.tz, now);
+      const offsetH = t.offsetMinutes/60;
+      const hasLunch = ex.lunchStart!=null;
+
+      const myStart = ((ex.start - offsetH + myOffsetH) % 24 + 24) % 24;
+      const myEnd = ((ex.end - offsetH + myOffsetH) % 24 + 24) % 24;
+      let startDeg = myStart/24*360, endDeg0 = myEnd/24*360;
+
+      let lStartDeg=null, lEndDeg=null, myLunchStart=null, myLunchEnd=null;
+      if(hasLunch){
+        myLunchStart = ((ex.lunchStart - offsetH + myOffsetH) % 24 + 24) % 24;
+        myLunchEnd = ((ex.lunchEnd - offsetH + myOffsetH) % 24 + 24) % 24;
+        lStartDeg = myLunchStart/24*360; lEndDeg = myLunchEnd/24*360;
+      }
+
+      let endDeg = endDeg0;
+      if(endDeg <= startDeg) endDeg += 360;
+      let midDeg;
+      if(hasLunch){
+        let lS = lStartDeg, lE = lEndDeg;
+        if(lS <= startDeg) lS += 360;
+        if(lE <= lS) lE += 360;
+        const amSpan = lS - startDeg;
+        const pmSpan = endDeg - lE;
+        midDeg = (pmSpan >= amSpan ? (lE + endDeg) / 2 : (startDeg + lS) / 2) % 360;
+      } else {
+        midDeg = (startDeg + endDeg) / 2 % 360;
+      }
+
+      geo.push({ t, offsetH, hasLunch, startDeg, endDeg0, endDeg, lStartDeg, lEndDeg, myStart, myEnd, myLunchStart, myLunchEnd, midDeg, sessLen: endDeg-startDeg });
+    });
+
+    const regionFlip = {};
+    const regionLabelDeg = {};
+    Object.keys(REGION).forEach(region=>{
+      const idxs = exchanges.map((e,i)=>i).filter(i=>exchanges[i].region===region);
+      if(!idxs.length) return;
+      // почти круглосуточные площадки (напр. Чикаго — открыта ~23 часа из 24) исключаем
+      // из усреднения: их собственная геометрическая середина лежит на противоположной
+      // стороне круга от короткого перерыва и сильно исказила бы средний угол региона.
+      const normalIdxs = idxs.filter(i=>geo[i].sessLen < 300);
+      const useIdxs = normalIdxs.length ? normalIdxs : idxs;
+      let sumSin=0, sumCos=0;
+      useIdxs.forEach(i=>{
+        const rad = geo[i].midDeg*Math.PI/180;
+        sumSin += Math.sin(rad); sumCos += Math.cos(rad);
+      });
+      const meanDeg = ((Math.atan2(sumSin,sumCos)*180/Math.PI) % 360 + 360) % 360;
+      regionFlip[region] = meanDeg > 90 && meanDeg < 270;
+      // единый угол-ориентир подписи применяется только к регионам, где сессии бирж
+      // достаточно близки друг к другу (европейский и американский блоки) — там все
+      // названия внутри одной дуги начинаются из одной и той же точки для симметрии.
+      // В азиатско-тихоокеанском блоке биржи торгуют в слишком разное время суток,
+      // общая точка выходила бы за пределы цветной дуги отдельных бирж, поэтому там
+      // подпись каждой биржи по-прежнему центрируется по её собственному времени.
+      regionLabelDeg[region] = (region === 'am' || region === 'eu') ? meanDeg : null;
+    });
+
+    // Forex не образует собственного «естественного» угла подписи (её дуга — это
+    // почти полные 360°, а не сессия в конкретной части суток), поэтому её подпись
+    // принудительно ставится на тот же угол и с тем же направлением чтения, что и
+    // у американского кластера (Чикаго) — так «Forex» оказывается на том же уровне
+    // и читается снизу вверх точно так же, как «Чикаго».
+    if(regionLabelDeg.am != null){
+      regionLabelDeg.forex = regionLabelDeg.am;
+      regionFlip.forex = regionFlip.am;
+    }
+
+    // ---------- проход 2: сегменты дуг + подписи ----------
+    exchanges.forEach((ex,i)=>{
+      const { t, offsetH, hasLunch, startDeg, endDeg0, endDeg, lStartDeg, lEndDeg, midDeg, myStart, myEnd, myLunchStart, myLunchEnd } = geo[i];
+
+      const rInner = RING_INNER0 + i*(RING_WIDTH+RING_GAP);
+      const rOuter = rInner + RING_WIDTH;
+
+      if(hasLunch){
+        document.getElementById(`seg-${i}-am`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, lStartDeg));
+        document.getElementById(`seg-${i}-lunch`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, lStartDeg, lEndDeg));
+        document.getElementById(`seg-${i}-pm`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, lEndDeg, endDeg0));
+      } else if(!ex.alwaysOpen){
+        document.getElementById(`seg-${i}`).setAttribute('d', ringPath(CX,CY,rInner,rOuter, startDeg, endDeg0));
+      }
+
+      const rMid = (rInner + rOuter) / 2;
+
+      // подпись изгибается вдоль дуги кольца (не прямая), поэтому строим для неё
+      // короткий невидимый дуговой path нужной длины и направления. Направление
+      // дуги переворачивается для всего регионального кластера сразу (см. проход 1),
+      // чтобы все подписи внутри одной группы (Азия-Тихий океан / Европа / Америка)
+      // читались единообразно, даже если отдельная биржа оказывается у самой границы
+      // 90°/270°.
+      const fontSize = RING_WIDTH*0.78;
+      const charW = fontSize * 0.62; // моноширинный шрифт JetBrains Mono
+      const textWidthPx = Math.max(ex.name.length * charW, charW);
+      const spanDeg = Math.min((textWidthPx / rMid) * (180/Math.PI) * 1.18, 170);
+      const halfSpan = spanDeg / 2;
+      const flip = regionFlip[ex.region];
+      const labelDeg = regionLabelDeg[ex.region] != null ? regionLabelDeg[ex.region] : midDeg;
+      const aStart = flip ? labelDeg + halfSpan : labelDeg - halfSpan;
+      const aEnd   = flip ? labelDeg - halfSpan : labelDeg + halfSpan;
+      const pA = polar(CX,CY,rMid,aStart), pB = polar(CX,CY,rMid,aEnd);
+      const sweep = aEnd >= aStart ? 1 : 0;
+      document.getElementById(`label-arc-${i}`).setAttribute('d',
+        `M ${pA.x.toFixed(2)} ${pA.y.toFixed(2)} A ${rMid.toFixed(2)} ${rMid.toFixed(2)} 0 0 ${sweep} ${pB.x.toFixed(2)} ${pB.y.toFixed(2)}`);
+
+      const decHour = t.h + t.m/60;
+      const { phase, remain, label } = weeklyStatus(ex, t) || sessionState(decHour, ex);
+      const legStatus = document.getElementById(`leg-status-${i}`);
+      legStatus.textContent = phase==='open' ? 'открыта' : (phase==='lunch' ? 'перерыв' : 'закрыта');
+      legStatus.className = 'status ' + phase;
+      document.getElementById(`leg-row-${i}`).className =
+        'leg-row' + (phase==='open' ? ' is-open' : (phase==='lunch' ? ' is-lunch' : ''));
+      const legCd = document.getElementById(`leg-countdown-${i}`);
+      legCd.textContent = `${label} ${countdownStr(remain)}`;
+      legCd.className = 'leg-bottom ' + (phase==='closed' ? 'ticking-open' : 'ticking-close');
+      if(ex.weekly){
+        // у этих площадок нет настоящих ежедневных часов открытия/закрытия — start/end
+        // (00:00–23:999) существуют только для отрисовки сплошного кольца на циферблате,
+        // показывать их как "часы работы" было бы неверно. Вместо этого показываем
+        // настоящее время недельного закрытия/открытия.
+        const closeMyHour = ((ex.weekly.closeHour - offsetH + myOffsetH) % 24 + 24) % 24;
+        const openMyHour = ((ex.weekly.openHour - offsetH + myOffsetH) % 24 + 24) % 24;
+        document.getElementById(`leg-hours-${i}`).textContent =
+          `(круглосуточно · закрытие Пт ${fmtDec(ex.weekly.closeHour)}, открытие Вс ${fmtDec(ex.weekly.openHour)})`;
+        document.getElementById(`leg-utc-hours-${i}`).textContent =
+          `(круглосуточно · закрытие Пт ≈ ${fmtDec(closeMyHour)}, открытие Вс ≈ ${fmtDec(openMyHour)})`;
+      } else {
+        document.getElementById(`leg-hours-${i}`).textContent =
+          `(${fmtDec(ex.start)} – ${fmtDec(ex.end)})`;
+        document.getElementById(`leg-utc-hours-${i}`).textContent =
+          `(${fmtDec(myStart)} – ${fmtDec(myEnd)})`;
+      }
+
+      // моё локальное время (по выбранному часовому поясу) и текущее местное время биржи
+      document.getElementById(`leg-my-label-${i}`).textContent = myUtcLabel;
+      document.getElementById(`leg-utc-${i}`).textContent =
+        `${pad(mineNow.getUTCHours())}:${pad(mineNow.getUTCMinutes())}:${pad(mineNow.getUTCSeconds())}`;
+      document.getElementById(`leg-local-${i}`).textContent =
+        `${pad(t.h)}:${pad(t.m)}:${pad(t.s)}`;
+
+      // строка перерыва: местное время и то же самое время по моему UTC-сдвигу
+      const lunchEl = document.getElementById(`leg-lunch-${i}`);
+      if(hasLunch){
+        lunchEl.classList.add('show');
+        document.getElementById(`leg-lunch-local-${i}`).textContent =
+          `Перерыв (мест.): ${fmtDec(ex.lunchStart)} – ${fmtDec(ex.lunchEnd)}`;
+        document.getElementById(`leg-lunch-utc-${i}`).textContent =
+          `Перерыв (${myUtcLabel}): ${fmtDec(myLunchStart)} – ${fmtDec(myLunchEnd)}`;
+      } else {
+        lunchEl.classList.remove('show');
+      }
+    });
+
+    const nowDeg = (mineNow.getUTCHours() + mineNow.getUTCMinutes()/60 + mineNow.getUTCSeconds()/3600) / 24 * 360;
+    document.getElementById('now-hand').style.transform = `rotate(${nowDeg}deg)`;
+
+    document.getElementById('big-utc-time').textContent =
+      `${pad(mineNow.getUTCHours())}:${pad(mineNow.getUTCMinutes())}:${pad(mineNow.getUTCSeconds())}`;
+    document.getElementById('big-utc-label').textContent =
+      `ваше время (${formatOffset(myOffsetMinutes)}) · красная стрелка`;
+  }
+
+  function render(){
+    const now = new Date();
+    renderBig(now);
+    updateMomentPositions(now);
+  }
+  render();
+  setInterval(render, 1000);
+
+  // ---------- масштаб большого циферблата ----------
+  // Позволяет плавно уменьшать/увеличивать циферблат небольшими шагами (5%),
+  // чтобы он полностью помещался на экране, если полноразмерный вариант обрезается.
+  (function setupZoom(){
+    const ZOOM_MIN = 40, ZOOM_MAX = 150, ZOOM_STEP = 5, ZOOM_DEFAULT = 100;
+    const BASE_MAX_WIDTH = 1040; // соответствует max-width в CSS для svg.big-dial
+    const dialEl = document.querySelector('svg.big-dial');
+    const outBtn = document.getElementById('zoom-out');
+    const inBtn = document.getElementById('zoom-in');
+    const valueEl = document.getElementById('zoom-value');
+
+    let zoom = ZOOM_DEFAULT;
+    const saved = parseInt(localStorage.getItem('exchangeClocksZoom') || '', 10);
+    if(!Number.isNaN(saved) && saved >= ZOOM_MIN && saved <= ZOOM_MAX) zoom = saved;
+
+    function apply(){
+      dialEl.style.maxWidth = Math.round(BASE_MAX_WIDTH * zoom/100) + 'px';
+      valueEl.textContent = zoom + '%';
+      outBtn.disabled = zoom <= ZOOM_MIN;
+      inBtn.disabled = zoom >= ZOOM_MAX;
+      try{ localStorage.setItem('exchangeClocksZoom', String(zoom)); }catch(e){}
+    }
+    outBtn.addEventListener('click', ()=>{ zoom = Math.max(ZOOM_MIN, zoom - ZOOM_STEP); apply(); });
+    inBtn.addEventListener('click', ()=>{ zoom = Math.min(ZOOM_MAX, zoom + ZOOM_STEP); apply(); });
+    valueEl.addEventListener('click', ()=>{ zoom = ZOOM_DEFAULT; apply(); });
+
+    apply();
+  })();
+})();
+</script>
+</body>
+</html>
