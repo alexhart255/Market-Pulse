@@ -1150,6 +1150,27 @@
     <button onclick="openFinviz('window','short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
       <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">SMA50↓ SMA200↓ RSI<50 ShortFloat↑</div></div>
     </button>
+
+    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
+
+    <!-- LEVEL / CONSOLIDATION -->
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ffb020;padding:8px 12px 2px;opacity:.7;">⏸ У УРОВНЯ — не может пробить</div>
+
+    <div style="font-size:9px;letter-spacing:1px;color:#00ff88;padding:4px 12px 2px;opacity:.65;">▲ упёрлась в сопротивление (лонг на пробой)</div>
+    <button onclick="openFinviz('tab','long-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#00ff88;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w High, SMA50↑</div></div>
+    </button>
+    <button onclick="openFinviz('window','long-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#00ff88;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w High, SMA50↑</div></div>
+    </button>
+
+    <div style="font-size:9px;letter-spacing:1px;color:#ff3b5c;padding:8px 12px 2px;opacity:.65;">▼ упёрлась в поддержку (шорт на пробой)</div>
+    <button onclick="openFinviz('tab','short-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ff3b5c;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w Low, SMA50↓</div></div>
+    </button>
+    <button onclick="openFinviz('window','short-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w Low, SMA50↓</div></div>
+    </button>
   </div>
 </div>
 
@@ -2774,19 +2795,56 @@ function openInvesting(mode){
 // ═══════════════════════════════════════════
 const FINVIZ_LONG  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pa,ta_sma50_pa,ta_rsi_nos&o=-marketcap';
 const FINVIZ_SHORT = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_sma200_pb,ta_sma50_pb,ta_rsi_oos,sh_short_high&o=-marketcap';
+// "У уровня" — консолидация без пробоя (паттерн Horizontal S/R) + близость к 52w хай/лоу,
+// чтобы отделить "уперлась в сопротивление" (лонг на пробой) от "уперлась в поддержку" (шорт на пробой).
+// Примечание: у Finviz нет фильтра "ровно N дней у уровня" — это ближайший технический аналог.
+const FINVIZ_LONG_LEVEL  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_pattern_horizontal,ta_highlow52w_b0to10h,ta_sma50_pa&o=-marketcap';
+const FINVIZ_SHORT_LEVEL = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_pattern_horizontal,ta_highlow52w_a0to10l,ta_sma50_pb&o=-marketcap';
 
 function openFinvizMenu(btn){
   const overlay=document.getElementById('finvizMenuOverlay');
   const box=document.getElementById('finvizMenuBox');
   const rect=btn.getBoundingClientRect();
-  let left=rect.left; if(left+320>window.innerWidth) left=window.innerWidth-325;
-  box.style.top=(rect.bottom+window.scrollY+8)+'px'; box.style.left=left+'px';
+
+  // Сброс перед измерением, чтобы получить реальную высоту меню
+  box.style.top='0px'; box.style.left='0px'; box.style.maxHeight='none'; box.style.overflowY='visible';
   overlay.style.display='block';
+  const boxHeight=box.offsetHeight;
+  const margin=10;
+
+  let left=rect.left; if(left+320>window.innerWidth) left=window.innerWidth-325;
+  if(left<margin) left=margin;
+
+  const spaceBelow=window.innerHeight-rect.bottom-margin;
+  const spaceAbove=rect.top-margin;
+  let top;
+  if(boxHeight<=spaceBelow){
+    // Помещается снизу от кнопки — как раньше
+    top=rect.bottom+window.scrollY+8;
+  } else if(boxHeight<=spaceAbove){
+    // Не помещается снизу, но помещается сверху от кнопки — открываем вверх
+    top=rect.top+window.scrollY-boxHeight-8;
+  } else {
+    // Не помещается целиком ни сверху, ни снизу — прижимаем к низу экрана и включаем скролл
+    const maxH=window.innerHeight-2*margin;
+    box.style.maxHeight=maxH+'px';
+    box.style.overflowY='auto';
+    top=window.scrollY+margin;
+  }
+
+  box.style.top=top+'px'; box.style.left=left+'px';
 }
+
+const FINVIZ_URLS = {
+  'long': FINVIZ_LONG,
+  'short': FINVIZ_SHORT,
+  'long-level': FINVIZ_LONG_LEVEL,
+  'short-level': FINVIZ_SHORT_LEVEL
+};
 
 function openFinviz(mode, direction){
   document.getElementById('finvizMenuOverlay').style.display='none';
-  const url = direction==='short' ? FINVIZ_SHORT : FINVIZ_LONG;
+  const url = FINVIZ_URLS[direction] || FINVIZ_LONG;
   if(mode==='tab'){
     const w=window.open(url,'_blank'); if(!w) alert('Разреши всплывающие окна.');
   } else if(mode==='window'){
