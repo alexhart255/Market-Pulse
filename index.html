@@ -3353,7 +3353,7 @@ function _cwEnterFS() {
 }
 
 function _cwExitFS() {
-  if (document.exitFullscreen) document._cwExitFS();
+  if (document.exitFullscreen) document.exitFullscreen();
   else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
 }
@@ -3403,7 +3403,7 @@ function _cwOnFsChange() {
 
 function _cwLoop() {
   _cwDrawClock();
-  requestAnimationFrame(loop);
+  requestAnimationFrame(_cwLoop);
 }
 _cwLoop();
 }
