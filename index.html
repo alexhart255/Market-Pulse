@@ -535,43 +535,56 @@
 
   <!-- UTC CONVERTER TAB -->
   <div class="tab-panel" id="tab-utcconv">
-    <div class="section-title">Конвертер UTC времени</div>
+    <div class="section-title">Конвертер времени между часовыми поясами</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <!-- LEFT: Input UTC -->
+      <!-- LEFT: Input event date/time + zone -->
       <div style="background:#0d1e30;border:1px solid var(--border);border-radius:14px;padding:24px;">
-        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">🌍 Время встречи</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-          <span style="font-size:11px;color:var(--muted);min-width:50px;">UTC±</span>
-          <input id="utcconv-offset-input" type="number" min="-12" max="14" step="0.5" value="0"
-            style="width:70px;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">🌍 Время встречи / события</div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Часовой пояс</div>
+          <select id="utcconv-src-tz"
+            style="width:100%;background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:13px;outline:none;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            onchange="utcConvCalc()"></select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);min-width:44px;">Дата</span>
+          <input id="utcconv-date-input" type="date"
+            style="background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--bright);font-family:'Space Mono',monospace;font-size:14px;outline:none;color-scheme:dark;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
             oninput="utcConvCalc()">
-          <span id="utcconv-offset-badge" style="font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;">UTC+0</span>
+          <button onclick="utcConvToday()" title="Вернуть сегодняшнюю дату"
+            style="font-size:10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--muted);padding:5px 8px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;"
+            onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'"
+            onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">↺ Сегодня</button>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:11px;color:var(--muted);min-width:50px;">Время</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <span style="font-size:11px;color:var(--muted);min-width:44px;">Время</span>
           <input id="utcconv-time-input" type="time" value="12:00"
             style="background:#080c14;border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--bright);font-family:'Space Mono',monospace;font-size:18px;outline:none;color-scheme:dark;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
             oninput="utcConvCalc()">
         </div>
+        <div id="utcconv-offset-badge" style="font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;">UTC+0</div>
       </div>
-      <!-- RIGHT: My timezone result (auto Zurich + manual override) -->
+      <!-- RIGHT: My timezone result (auto-detected + manual override) -->
       <div style="background:#0a1f14;border:1px solid #1a4028;border-radius:14px;padding:24px;position:relative;overflow:hidden;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#4a8060;">📍 У меня</div>
           <div id="utcconv-my-badge" style="font-size:11px;color:#4a8060;font-family:'Space Mono',monospace;background:#060e0a;border:1px solid #1a4028;border-radius:5px;padding:3px 8px;"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-          <span style="font-size:11px;color:#4a8060;min-width:50px;">UTC±</span>
-          <input id="utcconv-my-offset" type="number" min="-12" max="14" step="0.5" placeholder="авто"
-            style="width:70px;background:#060e0a;border:1px solid #1a4028;border-radius:7px;padding:7px 10px;color:#80e0a0;font-family:'Space Mono',monospace;font-size:14px;outline:none;text-align:center;"
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="font-size:11px;color:#4a8060;">Часовой пояс</div>
+            <button onclick="utcConvReset()" title="Вернуть автоопределённый пояс"
+              style="margin-left:auto;font-size:10px;background:transparent;border:1px solid #1a4028;border-radius:5px;color:#4a8060;padding:4px 8px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;"
+              onmouseover="this.style.color='var(--green)';this.style.borderColor='var(--green)'"
+              onmouseout="this.style.color='#4a8060';this.style.borderColor='#1a4028'">↺ Авто</button>
+          </div>
+          <select id="utcconv-my-tz"
+            style="width:100%;background:#060e0a;border:1px solid #1a4028;border-radius:7px;padding:7px 10px;color:#80e0a0;font-family:'Space Mono',monospace;font-size:13px;outline:none;"
             onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='#1a4028'"
-            oninput="utcConvCalc()">
-          <button onclick="utcConvReset()" title="Сбросить на Цюрих"
-            style="font-size:10px;background:transparent;border:1px solid #1a4028;border-radius:5px;color:#4a8060;padding:4px 8px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;"
-            onmouseover="this.style.color='var(--green)';this.style.borderColor='var(--green)'"
-            onmouseout="this.style.color='#4a8060';this.style.borderColor='#1a4028'">↺ Цюрих</button>
+            onchange="utcConvCalc()"></select>
         </div>
         <div style="padding:16px 14px;background:#060e0a;border-radius:8px;border:1px solid #1a4028;text-align:center;">
           <div id="utcconv-result" style="font-family:'Space Mono',monospace;font-size:36px;color:var(--green);letter-spacing:4px;font-weight:700;">—</div>
@@ -579,6 +592,9 @@
         </div>
         <div style="position:absolute;inset:0;border-radius:14px;pointer-events:none;box-shadow:inset 0 0 40px rgba(0,255,136,.05);"></div>
       </div>
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.6;padding:0 2px;">
+      ℹ️ Пересчёт учитывает реальные правила перехода на летнее/зимнее время для каждой страны на выбранную дату — включая случаи, когда переход уже произошёл у одной стороны, но ещё не произошёл у другой, разные даты перехода в северном и южном полушариях, и страны/регионы, которые вообще не переводят время.
     </div>
   </div>
 
@@ -3467,6 +3483,10 @@ document.addEventListener('DOMContentLoaded', function(){
     const cleaned=saved.filter(l=>l.url!=='https://www.internetradio-schweiz.ch/us/101-smooth-jazz');
     if(cleaned.length!==saved.length) localStorage.setItem(LINKS_KEY,JSON.stringify(cleaned));
   }catch(e){}
+  utcConvPopulateSelect('utcconv-src-tz', 'UTC');
+  utcConvPopulateSelect('utcconv-my-tz', utcConvDetectMyZone());
+  const dIn = document.getElementById('utcconv-date-input');
+  if (dIn && !dIn.value) dIn.value = utcConvTodayStr();
   utcConvCalc();
 });
 
@@ -4365,53 +4385,227 @@ document.addEventListener('DOMContentLoaded', function() {
   renderForexSessions();
 });
 
-function getZurichOffsetHours(){
+// ═══ TIMEZONE-AWARE CONVERTER ═══
+// Список часовых поясов (IANA), сгруппированный по регионам.
+// Реальные правила перехода на летнее/зимнее время (и их отсутствие) берутся
+// браузером из его собственной базы данных часовых поясов (IANA tzdata) —
+// поэтому для каждой конкретной даты автоматически учитывается: разные даты
+// перехода в разных странах, обратный график в южном полушарии (Австралия,
+// Новая Зеландия, Чили) и страны/штаты, которые вообще не переводят время
+// (Япония, Китай, Индия, больше не переводят Россия, Аризона, Гавайи и т.д.)
+const UTC_TZ_GROUPS = [
+  { group: 'UTC', zones: [
+    ['UTC', 'UTC (нулевой пояс)']
+  ]},
+  { group: 'Европа', zones: [
+    ['Europe/Zurich', 'Цюрих / Берн'],
+    ['Europe/London', 'Лондон'],
+    ['Europe/Dublin', 'Дублин'],
+    ['Europe/Lisbon', 'Лиссабон'],
+    ['Europe/Madrid', 'Мадрид'],
+    ['Europe/Paris', 'Париж'],
+    ['Europe/Berlin', 'Берлин'],
+    ['Europe/Rome', 'Рим'],
+    ['Europe/Amsterdam', 'Амстердам'],
+    ['Europe/Vienna', 'Вена'],
+    ['Europe/Warsaw', 'Варшава'],
+    ['Europe/Prague', 'Прага'],
+    ['Europe/Stockholm', 'Стокгольм'],
+    ['Europe/Oslo', 'Осло'],
+    ['Europe/Helsinki', 'Хельсинки'],
+    ['Europe/Athens', 'Афины'],
+    ['Europe/Bucharest', 'Бухарест'],
+    ['Europe/Kyiv', 'Киев'],
+    ['Europe/Moscow', 'Москва (без перехода на летнее)'],
+    ['Europe/Istanbul', 'Стамбул (без перехода на летнее)']
+  ]},
+  { group: 'Америка', zones: [
+    ['America/New_York', 'Нью-Йорк (восточное время)'],
+    ['America/Chicago', 'Чикаго (центральное время)'],
+    ['America/Denver', 'Денвер (горное время)'],
+    ['America/Phoenix', 'Финикс, Аризона (без перехода на летнее)'],
+    ['America/Los_Angeles', 'Лос-Анджелес (тихоокеанское время)'],
+    ['America/Anchorage', 'Анкоридж, Аляска'],
+    ['Pacific/Honolulu', 'Гонолулу, Гавайи (без перехода на летнее)'],
+    ['America/Toronto', 'Торонто'],
+    ['America/Vancouver', 'Ванкувер'],
+    ['America/Mexico_City', 'Мехико (без перехода на летнее)'],
+    ['America/Bogota', 'Богота (без перехода на летнее)'],
+    ['America/Lima', 'Лима (без перехода на летнее)'],
+    ['America/Santiago', 'Сантьяго (южное полушарие)'],
+    ['America/Sao_Paulo', 'Сан-Паулу (без перехода на летнее)'],
+    ['America/Argentina/Buenos_Aires', 'Буэнос-Айрес (без перехода на летнее)']
+  ]},
+  { group: 'Азия и Ближний Восток', zones: [
+    ['Asia/Jerusalem', 'Иерусалим'],
+    ['Asia/Dubai', 'Дубай (без перехода на летнее)'],
+    ['Asia/Riyadh', 'Эр-Рияд (без перехода на летнее)'],
+    ['Asia/Tehran', 'Тегеран'],
+    ['Asia/Karachi', 'Карачи (без перехода на летнее)'],
+    ['Asia/Kolkata', 'Дели / Мумбаи (без перехода на летнее)'],
+    ['Asia/Dhaka', 'Дакка (без перехода на летнее)'],
+    ['Asia/Bangkok', 'Бангкок (без перехода на летнее)'],
+    ['Asia/Jakarta', 'Джакарта (без перехода на летнее)'],
+    ['Asia/Singapore', 'Сингапур (без перехода на летнее)'],
+    ['Asia/Hong_Kong', 'Гонконг (без перехода на летнее)'],
+    ['Asia/Shanghai', 'Шанхай / Пекин (без перехода на летнее)'],
+    ['Asia/Tokyo', 'Токио (без перехода на летнее)'],
+    ['Asia/Seoul', 'Сеул (без перехода на летнее)'],
+    ['Asia/Manila', 'Манила (без перехода на летнее)']
+  ]},
+  { group: 'Океания', zones: [
+    ['Australia/Perth', 'Перт (без перехода на летнее)'],
+    ['Australia/Adelaide', 'Аделаида (южное полушарие)'],
+    ['Australia/Brisbane', 'Брисбен (без перехода на летнее)'],
+    ['Australia/Sydney', 'Сидней (южное полушарие)'],
+    ['Australia/Melbourne', 'Мельбурн (южное полушарие)'],
+    ['Pacific/Auckland', 'Окленд, Новая Зеландия (южное полушарие)']
+  ]},
+  { group: 'Африка', zones: [
+    ['Africa/Casablanca', 'Касабланка'],
+    ['Africa/Lagos', 'Лагос (без перехода на летнее)'],
+    ['Africa/Cairo', 'Каир'],
+    ['Africa/Johannesburg', 'Йоханнесбург (без перехода на летнее)'],
+    ['Africa/Nairobi', 'Найроби (без перехода на летнее)']
+  ]}
+];
+
+function utcConvDetectMyZone(){
   try {
-    const now = new Date();
-    now.setSeconds(0, 0);
-    const zurichStr = now.toLocaleString('en-US', {timeZone: 'Europe/Zurich', hour12: false, hour:'2-digit', minute:'2-digit'});
-    const utcStr   = now.toLocaleString('en-US', {timeZone: 'UTC',            hour12: false, hour:'2-digit', minute:'2-digit'});
-    const toMins = s => { const p = s.split(':'); return parseInt(p[0])*60 + parseInt(p[1]); };
-    let diff = toMins(zurichStr) - toMins(utcStr);
-    if(diff > 720) diff -= 1440;
-    if(diff < -720) diff += 1440;
-    return diff / 60;
-  } catch(e) { return 1; }
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) return tz;
+  } catch(e) {}
+  return 'Europe/Zurich';
 }
-function utcConvReset(){
-  document.getElementById('utcconv-my-offset').value = '';
+
+function utcConvPopulateSelect(selectId, defaultZone){
+  const sel = document.getElementById(selectId);
+  if (!sel || sel.dataset.filled === '1') return;
+  let found = false;
+  UTC_TZ_GROUPS.forEach(g => {
+    const og = document.createElement('optgroup');
+    og.label = g.group;
+    g.zones.forEach(([id, label]) => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = label;
+      if (id === defaultZone) found = true;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  if (!found) {
+    const og = document.createElement('optgroup');
+    og.label = 'Обнаружено автоматически';
+    const opt = document.createElement('option');
+    opt.value = defaultZone;
+    opt.textContent = defaultZone.replace('_', ' ');
+    og.appendChild(opt);
+    sel.insertBefore(og, sel.firstChild);
+  }
+  sel.value = defaultZone;
+  sel.dataset.filled = '1';
+}
+
+// Разбирает UTC-момент (мс) на компоненты year/month/day/hour/minute в заданном поясе
+function utcConvZonedParts(utcMs, timeZone){
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hour12:false,
+    year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+  const parts = {};
+  dtf.formatToParts(new Date(utcMs)).forEach(p => { if (p.type!=='literal') parts[p.type]=parseInt(p.value,10); });
+  if (parts.hour===24) parts.hour=0;
+  return parts;
+}
+
+// Смещение пояса от UTC в минутах в конкретный момент времени (учитывает DST на эту дату)
+function utcConvOffsetMinutes(utcMs, timeZone){
+  const p = utcConvZonedParts(utcMs, timeZone);
+  const asUTC = Date.UTC(p.year, p.month-1, p.day, p.hour, p.minute, p.second||0);
+  return Math.round((asUTC - utcMs) / 60000);
+}
+
+// Переводит "настенное" время (год,месяц,день,час,минута) в конкретном поясе в момент UTC (мс)
+function utcConvZonedToUtc(year, month, day, hour, minute, timeZone){
+  let utcMs = Date.UTC(year, month-1, day, hour, minute);
+  for (let i=0;i<2;i++){
+    const offset = utcConvOffsetMinutes(utcMs, timeZone);
+    utcMs = Date.UTC(year, month-1, day, hour, minute) - offset*60000;
+  }
+  return utcMs;
+}
+
+function utcConvOffsetLabel(mins){
+  const sign = mins>=0 ? '+' : '-';
+  const abs = Math.abs(mins);
+  const h = Math.floor(abs/60);
+  const m = abs%60;
+  return 'UTC'+sign+h+(m ? ':'+String(m).padStart(2,'0') : '');
+}
+
+function utcConvAbbr(utcMs, timeZone){
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName:'short', hour:'2-digit' }).formatToParts(new Date(utcMs));
+    const abbr = parts.find(p => p.type === 'timeZoneName');
+    return abbr ? abbr.value : '';
+  } catch(e) { return ''; }
+}
+
+function utcConvTodayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function utcConvToday(){
+  document.getElementById('utcconv-date-input').value = utcConvTodayStr();
   utcConvCalc();
 }
-const UTC_WORLD_ZONES=[];
+
+function utcConvReset(){
+  document.getElementById('utcconv-my-tz').value = utcConvDetectMyZone();
+  utcConvCalc();
+}
+
+const MONTHS_SHORT_RU = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
 function utcConvCalc(){
-  const timeVal=document.getElementById('utcconv-time-input').value||'12:00';
-  const srcOffset=parseFloat(document.getElementById('utcconv-offset-input').value)||0;
-  const manualInput=document.getElementById('utcconv-my-offset').value;
-  const myOffset = manualInput !== '' ? parseFloat(manualInput) : getZurichOffsetHours();
-  const isAuto = manualInput === '';
+  const dateInput = document.getElementById('utcconv-date-input');
+  if (!dateInput.value) dateInput.value = utcConvTodayStr();
+  const [y, mo, d] = dateInput.value.split('-').map(Number);
 
-  const fmtOff=v=>'UTC'+(v>=0?'+':'')+v;
-  document.getElementById('utcconv-offset-badge').textContent=fmtOff(srcOffset);
-  const badge = document.getElementById('utcconv-my-badge');
-  badge.textContent = fmtOff(myOffset) + (isAuto ? ' · Цюрих' : '');
+  const timeVal = document.getElementById('utcconv-time-input').value || '12:00';
+  const [hh, mm] = timeVal.split(':').map(Number);
 
-  const [hStr,mStr]=timeVal.split(':');
-  const h=parseInt(hStr)||0;
-  const m=parseInt(mStr)||0;
+  const srcTz = document.getElementById('utcconv-src-tz').value || 'UTC';
+  const myTz = document.getElementById('utcconv-my-tz').value || utcConvDetectMyZone();
 
-  const srcMins=h*60+m;
-  const utc0Mins=srcMins - srcOffset*60;
-  const myMins=utc0Mins + myOffset*60;
+  // Момент UTC, соответствующий введённой дате/времени в исходном поясе
+  // (учитывает реальное смещение и DST этого пояса именно на эту дату)
+  const utcMs = utcConvZonedToUtc(y, mo, d, hh, mm, srcTz);
 
-  const fmtMins=mins=>{const nm=((mins%1440)+1440)%1440;const hh=Math.floor(nm/60);const mm=nm%60;return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');};
+  const srcOffset = utcConvOffsetMinutes(utcMs, srcTz);
+  const srcAbbr = utcConvAbbr(utcMs, srcTz);
+  document.getElementById('utcconv-offset-badge').textContent =
+    utcConvOffsetLabel(srcOffset) + (srcAbbr ? ' · ' + srcAbbr : '');
 
-  document.getElementById('utcconv-result').textContent=fmtMins(myMins);
+  const myOffset = utcConvOffsetMinutes(utcMs, myTz);
+  const myAbbr = utcConvAbbr(utcMs, myTz);
+  document.getElementById('utcconv-my-badge').textContent =
+    utcConvOffsetLabel(myOffset) + (myAbbr ? ' · ' + myAbbr : '');
 
-  const dayDiff=Math.floor(myMins/1440);
-  const ds=document.getElementById('utcconv-dayshift');
-  if(dayDiff>0) ds.textContent='(следующий день)';
-  else if(dayDiff<0) ds.textContent='(предыдущий день)';
-  else ds.textContent='(тот же день)';
+  const myParts = utcConvZonedParts(utcMs, myTz);
+  document.getElementById('utcconv-result').textContent =
+    String(myParts.hour).padStart(2,'0') + ':' + String(myParts.minute).padStart(2,'0');
+
+  const srcDayIndex = Math.floor(Date.UTC(y, mo-1, d) / 86400000);
+  const myDayIndex = Math.floor(Date.UTC(myParts.year, myParts.month-1, myParts.day) / 86400000);
+  const dayDiff = myDayIndex - srcDayIndex;
+
+  const dateLabel = myParts.day + ' ' + MONTHS_SHORT_RU[myParts.month-1] + ' ' + myParts.year;
+  const shiftLabel = dayDiff > 0 ? ` (+${dayDiff} дн.)` : dayDiff < 0 ? ` (${dayDiff} дн.)` : '';
+  document.getElementById('utcconv-dayshift').textContent = dateLabel + shiftLabel;
 }
 
 </script>
