@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Скриншот экрана</title>
+<style>
+  :root{
+    --bg:#0f1319;
+    --panel:#171d26;
+    --panel-2:#1f2733;
+    --line:#2c3644;
+    --text:#dce3ec;
+    --muted:#8b97a8;
+    --accent:#4ea3ff;
+    --warn:#f2c14e;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px}
+  .lead{color:var(--muted);margin:0 0 22px;max-width:70ch}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+  .stage{
+    position:relative;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;min-height:260px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #preview{display:block;max-width:100%;width:100%;background:#000}
+  #preview.hidden{display:none}
+  .empty{padding:48px 24px;text-align:center;color:var(--muted)}
+  .empty b{display:block;color:var(--text);font-weight:600;margin-bottom:6px}
+
+  #selLayer{position:absolute;inset:0;cursor:crosshair;display:none;touch-action:none}
+  #selLayer.on{display:block}
+  #selBox{
+    position:absolute;border:2px solid var(--accent);
+    box-shadow:0 0 0 9999px rgba(8,11,16,.55);
+    pointer-events:none;
+  }
+  #selBox::after{
+    content:attr(data-size);position:absolute;left:0;top:-24px;
+    background:var(--accent);color:#05203c;font-size:12px;font-weight:600;
+    padding:1px 6px;border-radius:4px;white-space:nowrap;
+  }
+  .handle{
+    position:absolute;width:10px;height:10px;background:var(--accent);
+    border:1px solid #05203c;border-radius:2px;pointer-events:none;
+  }
+  .handle[data-h="nw"]{left:-6px;top:-6px}
+  .handle[data-h="n"] {left:calc(50% - 5px);top:-6px}
+  .handle[data-h="ne"]{right:-6px;top:-6px}
+  .handle[data-h="e"] {right:-6px;top:calc(50% - 5px)}
+  .handle[data-h="se"]{right:-6px;bottom:-6px}
+  .handle[data-h="s"] {left:calc(50% - 5px);bottom:-6px}
+  .handle[data-h="sw"]{left:-6px;bottom:-6px}
+  .handle[data-h="w"] {left:-6px;top:calc(50% - 5px)}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .card h2{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 10px}
+
+  button{
+    font:inherit;color:var(--text);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;
+  }
+  button:hover:not(:disabled){border-color:#3f4d60;background:#26303d}
+  button:disabled{opacity:.42;cursor:not-allowed}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .primary{background:var(--accent);border-color:var(--accent);color:#04223e;font-weight:600;width:100%}
+  .primary:hover:not(:disabled){background:#68b1ff;border-color:#68b1ff}
+  .wide{width:100%}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:6px}
+  .grid button{padding:7px 4px;font-size:13px}
+  .grid button.active{border-color:var(--accent);color:var(--accent)}
+
+  .coords{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+  .coords label{font-size:11px;color:var(--muted);display:block;margin-bottom:2px}
+  .coords input{
+    width:100%;background:#0d1219;border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:6px;font:13px ui-monospace,Menlo,Consolas,monospace;
+  }
+
+  .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .row + .row{margin-top:8px}
+  .row input[type=number]{
+    width:64px;background:#0d1219;border:1px solid var(--line);border-radius:6px;
+    color:var(--text);padding:5px 6px;font:13px ui-monospace,monospace;
+  }
+  .hint{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+  #status{font-size:13px;color:var(--muted);min-height:20px;margin-top:10px}
+  #status.err{color:#ff8b7a}
+  #status.ok{color:#7ed492}
+
+  #countdown{
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(8,11,16,.82);font-size:96px;font-weight:700;color:var(--warn);z-index:20;
+  }
+  #countdown.on{display:flex}
+
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:14px}
+  .shot{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .shot img{width:100%;display:block;background:#000}
+  .shot .bar{display:flex;gap:6px;padding:8px}
+  .shot .bar button{flex:1;padding:5px;font-size:12px}
+  .shot .meta{font:11px ui-monospace,monospace;color:var(--muted);padding:0 8px 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Скриншот экрана</h1>
+  <p class="lead">Браузер отдаёт картинку экрана, а этот инструмент вырезает из неё нужный кусок. Можно снять весь экран или задать область — левую половину, правый нижний угол, произвольный прямоугольник. Окно мессенджера или фото просто перетащите в эту зону на реальном экране.</p>
+
+  <div class="layout">
+    <div>
+      <div class="stage">
+        <div class="empty" id="empty">
+          <b>Экран пока не подключён</b>
+          Нажмите «Подключить экран» и выберите в окне браузера весь экран.
+        </div>
+        <video id="preview" class="hidden" autoplay muted playsinline></video>
+        <div id="selLayer"><div id="selBox" style="display:none">
+          <div class="handle" data-h="nw"></div><div class="handle" data-h="n"></div>
+          <div class="handle" data-h="ne"></div><div class="handle" data-h="e"></div>
+          <div class="handle" data-h="se"></div><div class="handle" data-h="s"></div>
+          <div class="handle" data-h="sw"></div><div class="handle" data-h="w"></div>
+        </div></div>
+      </div>
+      <div class="shots" id="shots"></div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <h2>Источник</h2>
+        <button id="btnShare" class="wide">Подключить экран</button>
+        <button id="btnStop" class="wide" style="margin-top:6px" disabled>Отключить</button>
+        <p class="hint" id="srcInfo">Разрешение источника появится здесь.</p>
+      </div>
+
+      <div class="card">
+        <h2>Область</h2>
+        <div class="grid" id="presets">
+          <button data-p="full">Весь экран</button>
+        </div>
+        <button id="btnSelect" class="wide" style="margin-top:8px">Выделить мышкой на превью</button>
+        <p class="hint">Рамку можно тащить за середину и растягивать за углы и края. Стрелки на клавиатуре двигают её по пикселю, с Shift — меняют размер.</p>
+        <div class="coords">
+          <div><label for="cx">X</label><input id="cx" type="number" inputmode="numeric"></div>
+          <div><label for="cy">Y</label><input id="cy" type="number" inputmode="numeric"></div>
+          <div><label for="cw">Ширина</label><input id="cw" type="number" inputmode="numeric"></div>
+          <div><label for="ch">Высота</label><input id="ch" type="number" inputmode="numeric"></div>
+        </div>
+        <button id="btnApply" class="wide" style="margin-top:6px">Применить координаты</button>
+      </div>
+
+      <div class="card">
+        <h2>Съёмка</h2>
+        <div class="row">
+          <label for="delay">Задержка, сек</label>
+          <input id="delay" type="number" min="0" max="30" value="0">
+        </div>
+        <div class="row">
+          <label for="auto">Скачивать сразу</label>
+          <input id="auto" type="checkbox" checked>
+        </div>
+        <button id="btnShot" class="primary" style="margin-top:12px" disabled>Сделать снимок</button>
+        <p class="hint">Клавиша S — снимок, Esc — отмена выделения.</p>
+        <div id="status"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="countdown"></div>
+
+<script>
+(function(){
+  const video   = document.getElementById('preview');
+  const empty   = document.getElementById('empty');
+  const selLayer= document.getElementById('selLayer');
+  const selBox  = document.getElementById('selBox');
+  const status  = document.getElementById('status');
+  const srcInfo = document.getElementById('srcInfo');
+  const shots   = document.getElementById('shots');
+  const cd      = document.getElementById('countdown');
+  const inputs  = {x:cx, y:cy, w:cw, h:ch};
+
+  let stream = null;
+  let imageCapture = null;
+  // область хранится в долях кадра (0..1) — не зависит от разрешения источника
+  let region = {x:0, y:0, w:1, h:1};
+  let drag = null;              // текущее перетаскивание рамки
+  const TOL = 9;                // зона захвата края, px на превью
+  const CURSORS = {move:'move', n:'ns-resize', s:'ns-resize', e:'ew-resize', w:'ew-resize',
+                   nw:'nwse-resize', se:'nwse-resize', ne:'nesw-resize', sw:'nesw-resize'};
+
+  function say(text, kind){
+    status.textContent = text || '';
+    status.className = kind || '';
+  }
+
+  function srcSize(){
+    return {w: video.videoWidth || 0, h: video.videoHeight || 0};
+  }
+
+  function syncInputs(){
+    const s = srcSize();
+    if(!s.w) return;
+    inputs.x.value = Math.round(region.x * s.w);
+    inputs.y.value = Math.round(region.y * s.h);
+    inputs.w.value = Math.round(region.w * s.w);
+    inputs.h.value = Math.round(region.h * s.h);
+  }
+
+  function drawBox(){
+    if(!video.videoWidth){ selBox.style.display='none'; return; }
+    const r = video.getBoundingClientRect();
+    const p = selLayer.getBoundingClientRect();
+    const offX = r.left - p.left, offY = r.top - p.top;
+    selBox.style.display = 'block';
+    selBox.style.left   = (offX + region.x * r.width) + 'px';
+    selBox.style.top    = (offY + region.y * r.height) + 'px';
+    selBox.style.width  = (region.w * r.width) + 'px';
+    selBox.style.height = (region.h * r.height) + 'px';
+    const s = srcSize();
+    selBox.dataset.size = Math.round(region.w*s.w) + ' × ' + Math.round(region.h*s.h) + ' px';
+    selLayer.classList.add('on');
+  }
+
+  function setRegion(r, presetKey){
+    region = r;
+    syncInputs();
+    drawBox();
+    document.querySelectorAll('#presets button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.p === presetKey);
+    });
+  }
+
+  const PRESETS = {
+    full:  {x:0,y:0,w:1,h:1}
+  };
+
+  document.querySelectorAll('#presets button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      setRegion({...PRESETS[btn.dataset.p]}, btn.dataset.p);
+      const s = srcSize();
+      say('Область ' + Math.round(region.w*s.w) + '×' + Math.round(region.h*s.h) + ' px');
+    });
+  });
+
+  // ---- подключение экрана -------------------------------------------------
+  document.getElementById('btnShare').addEventListener('click', async ()=>{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+      say('Браузер не поддерживает захват экрана. Нужен Chrome, Edge, Firefox или Safari 16+.', 'err');
+      return;
+    }
+    try{
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video:{
+          displaySurface:'monitor',
+          frameRate:{ideal:1, max:5},          // нам нужен один чёткий кадр, не видео
+          width:{ideal:7680}, height:{ideal:4320} // просим максимум, браузер отдаст, что может
+        },
+        audio:false
+      });
+      const track = stream.getVideoTracks()[0];
+      // после получения потока пробуем поднять разрешение трека ещё раз явно
+      try{
+        await track.applyConstraints({
+          width:{ideal:7680}, height:{ideal:4320}, frameRate:{ideal:1}
+        });
+      }catch(_e){ /* не критично, если браузер откажет */ }
+      imageCapture = ('ImageCapture' in window) ? new ImageCapture(track) : null;
+    }catch(e){
+      say('Доступ к экрану не выдан.', 'err');
+      return;
+    }
+    video.srcObject = stream;
+    video.classList.remove('hidden');
+    empty.style.display = 'none';
+    btnStop.disabled = false; btnShot.disabled = false;
+    stream.getVideoTracks()[0].addEventListener('ended', stop);
+
+    await video.play().catch(()=>{});
+    video.addEventListener('loadedmetadata', onReady, {once:true});
+    if(video.videoWidth) onReady();
+  });
+
+  function onReady(){
+    const s = srcSize();
+    const mode = imageCapture ? 'прямой кадр из потока (ImageCapture)' : 'через видеотег (запасной способ)';
+    srcInfo.textContent = 'Источник: ' + s.w + ' × ' + s.h + ' px — ' + mode;
+    setRegion({...PRESETS.full}, 'full');
+    say('Экран подключён. Перетащите нужное окно в выделенную зону.', 'ok');
+  }
+
+  function stop(){
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    stream = null;
+    imageCapture = null;
+    video.srcObject = null;
+    video.classList.add('hidden');
+    empty.style.display = '';
+    selLayer.classList.remove('on');
+    btnStop.disabled = true; btnShot.disabled = true;
+    srcInfo.textContent = 'Разрешение источника появится здесь.';
+    say('Экран отключён.');
+  }
+  document.getElementById('btnStop').addEventListener('click', stop);
+
+  // ---- выделение мышкой ---------------------------------------------------
+  document.getElementById('btnSelect').addEventListener('click', ()=>{
+    if(!stream){ say('Сначала подключите экран.', 'err'); return; }
+    say('Протяните прямоугольник вне рамки — получится новая область. Готовую рамку можно двигать и растягивать.');
+  });
+
+  // что находится под курсором: край, угол, середина рамки или пустое место
+  function hitTest(clientX, clientY){
+    if(!video.videoWidth || selBox.style.display === 'none') return null;
+    const r = video.getBoundingClientRect();
+    const bx = r.left + region.x * r.width,  by = r.top + region.y * r.height;
+    const bw = region.w * r.width,           bh = region.h * r.height;
+    const inX = clientX >= bx - TOL && clientX <= bx + bw + TOL;
+    const inY = clientY >= by - TOL && clientY <= by + bh + TOL;
+    if(!inX || !inY) return null;
+    const onW = Math.abs(clientX - bx) <= TOL;
+    const onE = Math.abs(clientX - (bx + bw)) <= TOL;
+    const onN = Math.abs(clientY - by) <= TOL;
+    const onS = Math.abs(clientY - (by + bh)) <= TOL;
+    if(onN && onW) return 'nw';
+    if(onN && onE) return 'ne';
+    if(onS && onW) return 'sw';
+    if(onS && onE) return 'se';
+    if(onN) return 'n';
+    if(onS) return 's';
+    if(onW) return 'w';
+    if(onE) return 'e';
+    return 'move';
+  }
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  selLayer.addEventListener('pointerdown', e=>{
+    if(!video.videoWidth) return;
+    const r = video.getBoundingClientRect();
+    const mode = hitTest(e.clientX, e.clientY) || 'new';
+    drag = {
+      mode,
+      sx: e.clientX, sy: e.clientY,
+      orig: {...region},
+      startNorm: {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height}
+    };
+    selLayer.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  selLayer.addEventListener('pointermove', e=>{
+    const r = video.getBoundingClientRect();
+
+    if(!drag){                                   // просто наводим — меняем курсор
+      const m = hitTest(e.clientX, e.clientY);
+      selLayer.style.cursor = m ? CURSORS[m] : 'crosshair';
+      return;
+    }
+
+    const s = srcSize();
+    const minW = 8 / (s.w || 1), minH = 8 / (s.h || 1);
+    const dx = (e.clientX - drag.sx) / r.width;
+    const dy = (e.clientY - drag.sy) / r.height;
+    const o = drag.orig;
+
+    if(drag.mode === 'new'){
+      const cxr = clamp((e.clientX - r.left) / r.width, 0, 1);
+      const cyr = clamp((e.clientY - r.top) / r.height, 0, 1);
+      region = {
+        x: Math.min(drag.startNorm.x, cxr),
+        y: Math.min(drag.startNorm.y, cyr),
+        w: Math.abs(cxr - drag.startNorm.x),
+        h: Math.abs(cyr - drag.startNorm.y)
+      };
+    }else if(drag.mode === 'move'){
+      region = {
+        x: clamp(o.x + dx, 0, 1 - o.w),
+        y: clamp(o.y + dy, 0, 1 - o.h),
+        w: o.w, h: o.h
+      };
+    }else{
+      let {x, y, w, h} = o;
+      if(drag.mode.includes('w')){
+        const nx = clamp(o.x + dx, 0, o.x + o.w - minW);
+        w = o.w + (o.x - nx); x = nx;
+      }
+      if(drag.mode.includes('e')){
+        w = clamp(o.w + dx, minW, 1 - o.x);
+      }
+      if(drag.mode.includes('n')){
+        const ny = clamp(o.y + dy, 0, o.y + o.h - minH);
+        h = o.h + (o.y - ny); y = ny;
+      }
+      if(drag.mode.includes('s')){
+        h = clamp(o.h + dy, minH, 1 - o.y);
+      }
+      region = {x, y, w, h};
+    }
+    drawBox();
+  });
+
+  function endDrag(){
+    if(!drag) return;
+    const wasNew = drag.mode === 'new';
+    drag = null;
+    const s = srcSize();
+    if(region.w * s.w < 8 || region.h * s.h < 8){
+      setRegion({...PRESETS.full}, 'full');
+      say('Слишком маленькая область — вернул весь экран.');
+      return;
+    }
+    setRegion(region, null);
+    say((wasNew ? 'Область ' : 'Рамка: ') +
+        Math.round(region.w*s.w) + '×' + Math.round(region.h*s.h) + ' px, угол (' +
+        Math.round(region.x*s.w) + ', ' + Math.round(region.y*s.h) + ')');
+  }
+  selLayer.addEventListener('pointerup', endDrag);
+  selLayer.addEventListener('pointercancel', endDrag);
+
+  // ---- ручные координаты --------------------------------------------------
+  document.getElementById('btnApply').addEventListener('click', ()=>{
+    const s = srcSize();
+    if(!s.w){ say('Сначала подключите экран.', 'err'); return; }
+    const x = +inputs.x.value, y = +inputs.y.value, w = +inputs.w.value, h = +inputs.h.value;
+    if([x,y,w,h].some(v=>!Number.isFinite(v)) || w<1 || h<1){
+      say('Проверьте числа: ширина и высота должны быть больше нуля.', 'err'); return;
+    }
+    setRegion({
+      x: Math.max(0, Math.min(x/s.w, 1)),
+      y: Math.max(0, Math.min(y/s.h, 1)),
+      w: Math.min(w/s.w, 1 - Math.min(x/s.w, 1)),
+      h: Math.min(h/s.h, 1 - Math.min(y/s.h, 1))
+    }, null);
+    say('Область задана вручную.');
+  });
+
+  // ---- снимок -------------------------------------------------------------
+  async function shoot(){
+    if(!stream) return;
+    const delay = Math.max(0, Math.min(30, +document.getElementById('delay').value || 0));
+    if(delay > 0){
+      for(let i=delay;i>0;i--){
+        cd.classList.add('on'); cd.textContent = i;
+        await new Promise(r=>setTimeout(r,1000));
+      }
+      cd.classList.remove('on');
+    }
+    const s = srcSize();
+    const sx = Math.round(region.x*s.w), sy = Math.round(region.y*s.h);
+    const sw = Math.max(1, Math.round(region.w*s.w)), sh = Math.max(1, Math.round(region.h*s.h));
+
+    let source = video, sourceW = s.w, sourceH = s.h;
+    if(imageCapture){
+      try{
+        const bitmap = await imageCapture.grabFrame();   // кадр напрямую из потока, без видеотега
+        source = bitmap; sourceW = bitmap.width; sourceH = bitmap.height;
+      }catch(_e){ /* если не вышло — используем video как раньше */ }
+    }
+    // если у "сырого" кадра другое разрешение, чем у видеотега — пересчитываем область
+    const bx = Math.round(region.x*sourceW), by = Math.round(region.y*sourceH);
+    const bw = Math.max(1, Math.round(region.w*sourceW)), bh = Math.max(1, Math.round(region.h*sourceH));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = bw; canvas.height = bh;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;   // без сглаживания — прямое копирование пикселей
+    ctx.drawImage(source, bx, by, bw, bh, 0, 0, bw, bh);
+    if(source instanceof ImageBitmap) source.close();
+    const url = canvas.toDataURL('image/png');
+    const name = 'shot_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.png';
+    addShot(url, name, bw + '×' + bh);
+    if(document.getElementById('auto').checked) download(url, name);
+    say('Снимок готов: ' + bw + '×' + bh + ' px', 'ok');
+  }
+
+  function download(url, name){
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+  }
+
+  function addShot(url, name, size){
+    const box = document.createElement('div');
+    box.className = 'shot';
+    const img = new Image(); img.src = url; img.alt = name;
+    const meta = document.createElement('div'); meta.className='meta'; meta.textContent = size;
+    const bar = document.createElement('div'); bar.className='bar';
+    const dl = document.createElement('button'); dl.textContent='Скачать';
+    dl.onclick = ()=>download(url, name);
+    const cp = document.createElement('button'); cp.textContent='Копировать';
+    cp.onclick = async ()=>{
+      try{
+        const blob = await (await fetch(url)).blob();
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        say('Скопировано в буфер обмена.', 'ok');
+      }catch(e){ say('Браузер не дал доступ к буферу обмена.', 'err'); }
+    };
+    const rm = document.createElement('button'); rm.textContent='Удалить';
+    rm.onclick = ()=>box.remove();
+    bar.append(dl, cp, rm);
+    box.append(img, meta, bar);
+    shots.prepend(box);
+  }
+
+  document.getElementById('btnShot').addEventListener('click', shoot);
+
+  document.addEventListener('keydown', e=>{
+    const typing = ['INPUT','TEXTAREA'].includes(e.target.tagName);
+    if(typing) return;
+
+    if(e.key === 'Escape'){ drag = null; return; }
+    if(e.key === 's' || e.key === 'ы'){ shoot(); return; }
+
+    const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]};
+    if(!arrows[e.key] || !video.videoWidth) return;
+    e.preventDefault();
+    const s = srcSize();
+    const step = e.altKey ? 10 : 1;               // Alt — шаг по 10 пикселей
+    const [kx, ky] = arrows[e.key];
+    const dx = kx * step / s.w, dy = ky * step / s.h;
+
+    if(e.shiftKey){                               // Shift — меняем размер
+      region = {
+        x: region.x, y: region.y,
+        w: clamp(region.w + dx, 8/s.w, 1 - region.x),
+        h: clamp(region.h + dy, 8/s.h, 1 - region.y)
+      };
+    }else{                                        // без Shift — двигаем рамку
+      region = {
+        x: clamp(region.x + dx, 0, 1 - region.w),
+        y: clamp(region.y + dy, 0, 1 - region.h),
+        w: region.w, h: region.h
+      };
+    }
+    setRegion(region, null);
+    say('Рамка: ' + Math.round(region.w*s.w) + '×' + Math.round(region.h*s.h) + ' px, угол (' +
+        Math.round(region.x*s.w) + ', ' + Math.round(region.y*s.h) + ')');
+  });
+
+  window.addEventListener('resize', drawBox);
+})();
+</script>
+</body>
+</html>
