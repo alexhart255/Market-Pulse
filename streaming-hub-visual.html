@@ -426,11 +426,11 @@
 
             <div class="audio-options">
                 <div class="checkbox-group">
-                    <input type="checkbox" id="audioSystem" checked>
+                    <input type="checkbox" id="audioSystem" checked onchange="handleAudioSourceChange('audioSystem')">
                     <label for="audioSystem">🔊 Звук системы</label>
                 </div>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="audioMic">
+                    <input type="checkbox" id="audioMic" onchange="handleAudioSourceChange('audioMic')">
                     <label for="audioMic">🎤 Микрофон</label>
                 </div>
                 <div class="checkbox-group" style="flex: 1; max-width: 250px;">
@@ -443,6 +443,9 @@
                         <option value="480p">SD (854×480)</option>
                     </select>
                 </div>
+            </div>
+            <div id="audioHint" style="margin-top: 10px; font-size: 0.85em; color: #888; line-height: 1.5;">
+                💡 Чтобы записать «Звук системы», в диалоге выбора источника выбирай именно <strong>вкладку Chrome</strong> (а не «Весь экран» и не «Окно») и ставь галочку «Поделиться звуком вкладки» внизу диалога — на macOS это единственный режим, где Chrome вообще умеет захватывать звук.
             </div>
 
             <div class="info-box">
@@ -508,6 +511,17 @@
         ];
 
         // Screen Recording Functions
+
+        // Звук системы и микрофон — теперь взаимоисключающие варианты
+        // (одновременная запись двух аудиодорожек в MediaRecorder ненадёжна,
+        // к тому же пользователю нужен только один источник звука за раз).
+        function handleAudioSourceChange(changedId) {
+            const sysBox = document.getElementById('audioSystem');
+            const micBox = document.getElementById('audioMic');
+            if (changedId === 'audioSystem' && sysBox.checked) micBox.checked = false;
+            if (changedId === 'audioMic' && micBox.checked) sysBox.checked = false;
+        }
+
         async function startRecording() {
             try {
                 const includeSystemAudio = document.getElementById('audioSystem').checked;
@@ -570,6 +584,21 @@
 
                 stream = new MediaStream(tracks);
                 recordedChunks = [];
+
+                // Проверяем, что звук реально попал в поток. getDisplayMedia({audio:...})
+                // только просит браузер ПОКАЗАТЬ возможность поделиться звуком —
+                // сам звук появится, только если в системном диалоге была выбрана
+                // именно "Вкладка Chrome" и отмечена галочка "Поделиться звуком вкладки".
+                // На macOS звук при выборе "Экран"/"Окно" не поддерживается вовсе.
+                if (includeSystemAudio && displayStream.getAudioTracks().length === 0) {
+                    alert(
+                        'Звук системы не записался.\n\n' +
+                        'В диалоге выбора источника нужно было выбрать именно "Вкладка Chrome" ' +
+                        '(а не "Весь экран" или "Окно") и поставить галочку "Поделиться звуком вкладки" ' +
+                        'внизу диалога. На macOS это единственный способ захватить звук через Chrome.\n\n' +
+                        'Запись продолжится без звука.'
+                    );
+                }
 
                 // Битрейт видео подбираем под выбранное качество, а звук всегда пишем
                 // с высоким битрейтом (320 кбит/с) — по умолчанию MediaRecorder часто
