@@ -44,6 +44,16 @@
     0%,100% { background:#1e0d0d; box-shadow:0 0 20px 3px rgba(226,75,74,.15); border-color:#E24B4A }
     50%      { background:#3a1010; box-shadow:0 0 60px 14px rgba(226,75,74,.60); border-color:#ff6b6b }
   }
+  .entry-clock.orange {
+    border-color: #FF8C1A;
+    background: #241505;
+    box-shadow: 0 0 48px 10px rgba(255,140,26,.28);
+    animation: entryClockBlinkOrange 1s ease-in-out infinite;
+  }
+  @keyframes entryClockBlinkOrange {
+    0%,100% { background:#241505; box-shadow:0 0 20px 3px rgba(255,140,26,.20); border-color:#FF8C1A }
+    50%      { background:#3a2408; box-shadow:0 0 60px 14px rgba(255,140,26,.65); border-color:#ffb054 }
+  }
 
   /* === Заголовок статуса === */
   .entry-clock-label {
@@ -69,6 +79,7 @@
   }
   .digital-time.green { color: #1D9E75; text-shadow: 0 0 20px rgba(29,158,117,.5); }
   .digital-time.red   { color: #E24B4A; text-shadow: 0 0 20px rgba(226,75,74,.5); animation: dtBlink .8s ease-in-out infinite; }
+  .digital-time.orange{ color: #FF8C1A; text-shadow: 0 0 20px rgba(255,140,26,.55); animation: dtBlink .8s ease-in-out infinite; }
   @keyframes dtBlink { 0%,100%{opacity:1} 50%{opacity:.45} }
 
   /* === UTC блок внутри карточки === */
@@ -87,6 +98,7 @@
   }
   .utc-block.green { border-color: #1a4a30; background: #0a1e14; }
   .utc-block.red   { border-color: #4a1a1a; background: #1a0a0a; }
+  .utc-block.orange{ border-color: #5a3a10; background: #1e1305; }
   .utc-label { color: #666; font-size: 12px; white-space: nowrap; }
   .utc-controls { display: flex; align-items: center; gap: 6px; }
   .utc-btn {
@@ -116,6 +128,7 @@
   }
   .utc-value.green { color: #1D9E75; background: #041410; border-color: #1a4a30; }
   .utc-value.red   { color: #E24B4A; background: #180808; border-color: #5a1a1a; }
+  .utc-value.orange{ color: #FF8C1A; background: #1e1305; border-color: #5a3a10; }
   #stepLabel { font-size: 11px; color: #444; }
   .utc-btn-auto { font-size: 12px; color: #60cc80; border-color: #1a5a28; }
   .utc-btn-auto:hover { color: #00ff88; border-color: #00cc44; }
@@ -131,6 +144,123 @@
   }
   .entry-mins.green { color: #1D9E75; }
   .entry-mins.red   { color: #E24B4A; }
+  .entry-mins.orange{ color: #FF8C1A; }
+
+  /* === Оповещение о новости === */
+  .news-alert {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    margin-top: 8px;
+    color: #FF8C1A;
+    text-align: center;
+    letter-spacing: .04em;
+    font-weight: 700;
+    animation: newsPulse 1s ease-in-out infinite;
+  }
+  .news-alert.acked {
+    animation: none;
+    color: #8a7355;
+    font-weight: 400;
+    opacity: .8;
+  }
+  @keyframes newsPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .news-ack-btn {
+    background: #1a1a1a;
+    color: #FF8C1A;
+    border: 1px solid #FF8C1A;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 3px 9px;
+    cursor: pointer;
+    animation: none;
+    opacity: 1;
+  }
+  .news-ack-btn:hover { background: #FF8C1A; color: #1a1005; }
+
+  /* === Блок ввода новостей === */
+  .news-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 14px 14px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    width: 100%;
+  }
+  .news-header { font-size: 12px; color: #666; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
+  .news-input-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .news-input {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #eee;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+  .news-input::placeholder { color: #555; }
+  .news-input-time { width: 92px; }
+  .news-input-country { width: 52px; text-align: center; text-transform: uppercase; }
+  .news-input-name { flex: 1; min-width: 110px; }
+  .news-add-btn {
+    background: #FF8C1A;
+    color: #1a1005;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    width: 32px;
+    cursor: pointer;
+  }
+  .news-add-btn:hover { background: #ffa64a; }
+  .news-list { display: flex; flex-direction: column; gap: 5px; max-height: 160px; overflow-y: auto; }
+  .news-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #bbb;
+    background: #171717;
+    border: 1px solid #2a2a2a;
+    border-radius: 7px;
+    padding: 5px 8px;
+  }
+  .news-item.next { border-color: #FF8C1A; color: #ffb054; }
+  .news-item.acked { opacity: .55; }
+  .news-item-time { color: #00e5ff; font-weight: 700; min-width: 42px; }
+  .news-item-country { color: #999; min-width: 24px; text-transform: uppercase; }
+  .news-item-name { flex: 1; }
+  .news-item-del {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+  .news-item-del:hover { color: #E24B4A; }
+  .news-empty { font-size: 12px; color: #444; text-align: center; padding: 4px 0; }
+  .news-clear-btn {
+    align-self: center;
+    font-size: 11px;
+    color: #555;
+    background: none;
+    border: 1px solid #2a2a2a;
+    border-radius: 7px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .news-clear-btn:hover { color: #E24B4A; border-color: #5a1a1a; }
 
   /* === Тиканье === */
   .tick-controls { margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 9px; width: 100%; }
@@ -212,6 +342,10 @@
     </div>
 
     <div class="entry-mins" id="ec-mins">--</div>
+    <div class="news-alert" id="newsAlert" style="display:none;">
+      <span id="newsAlertText"></span>
+      <button id="newsAckBtn" class="news-ack-btn" title="Квитировать — перестать мигать по этой новости">✓ Квитировать</button>
+    </div>
 
     <!-- UTC блок внутри карточки -->
     <div class="utc-block" id="utcBlock">
@@ -225,6 +359,19 @@
       <button id="utcAuto" class="utc-btn utc-btn-auto" title="Определить автоматически">⟳ Авто</button>
     </div>
 
+    <!-- Новости дня -->
+    <div class="news-block" id="newsBlock">
+      <div class="news-header">📰 Новости дня (время в твоём UTC выше)</div>
+      <div class="news-input-row">
+        <input type="time" id="newsTime" class="news-input news-input-time">
+        <input type="text" id="newsCountry" class="news-input news-input-country" placeholder="US" maxlength="4">
+        <input type="text" id="newsName" class="news-input news-input-name" placeholder="Название новости">
+        <button id="newsAdd" class="news-add-btn" title="Добавить">+</button>
+      </div>
+      <div class="news-list" id="newsList"></div>
+      <button id="newsClear" class="news-clear-btn">Очистить всё</button>
+    </div>
+
     <div class="tick-controls">
       <div class="tick-sep"></div>
       <div class="tick-checkbox-row">
@@ -232,9 +379,7 @@
         ТИКАНЬЕ
       </div>
       <div class="tick-style-row">
-        <button id="tickPrev">◀</button>
         <span id="tickStyleLabel">🔔 Мягкий клик</span>
-        <button id="tickNext">▶</button>
       </div>
       <div class="tick-vol-row">
         <span>🔈</span>
@@ -297,6 +442,157 @@ document.getElementById('utcAuto').onclick = () => {
 
 updateUtcDisplay();
 
+// ═══ NEWS EVENTS ═══
+const NEWS_KEY = 'clockNewsEvents';
+let newsEvents = []; // {time:'HH:MM', country:'US', name:'...'}
+let newsDateKey = '';
+let lastActiveNews = null;
+let orangeTickActive = false;
+
+const flagMap = {
+  US:'🇺🇸', UK:'🇬🇧', GB:'🇬🇧', EU:'🇪🇺', EZ:'🇪🇺', CN:'🇨🇳', JP:'🇯🇵',
+  DE:'🇩🇪', FR:'🇫🇷', CH:'🇨🇭', CA:'🇨🇦', AU:'🇦🇺', NZ:'🇳🇿', RU:'🇷🇺', IT:'🇮🇹', ES:'🇪🇸'
+};
+function countryDisplay(code) {
+  if (!code) return '';
+  const up = code.trim().toUpperCase();
+  return flagMap[up] ? flagMap[up] + ' ' + up : code.trim();
+}
+
+function todayKey() {
+  return getNow().toDateString();
+}
+
+function loadNewsEvents() {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(NEWS_KEY) || 'null'); } catch(e) {}
+  const tk = todayKey();
+  if (stored && stored.dateKey === tk) {
+    newsEvents = stored.events || [];
+  } else {
+    newsEvents = []; // новый день — список чист
+  }
+  newsDateKey = tk;
+  saveNewsEvents();
+}
+
+function saveNewsEvents() {
+  try { localStorage.setItem(NEWS_KEY, JSON.stringify({ dateKey: newsDateKey, events: newsEvents })); } catch(e) {}
+}
+
+// ═══ Квитирование (acknowledge) ═══
+const ACK_KEY = 'clockNewsAck';
+let ackedEvents = new Set();
+let ackDateKey = '';
+
+function eventKey(ev) { return ev.time + '|' + (ev.country||'') + '|' + ev.name; }
+
+function loadAcked() {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(ACK_KEY) || 'null'); } catch(e) {}
+  const tk = todayKey();
+  if (stored && stored.dateKey === tk) {
+    ackedEvents = new Set(stored.keys || []);
+  } else {
+    ackedEvents = new Set();
+  }
+  ackDateKey = tk;
+  saveAcked();
+}
+
+function saveAcked() {
+  try { localStorage.setItem(ACK_KEY, JSON.stringify({ dateKey: ackDateKey, keys: [...ackedEvents] })); } catch(e) {}
+}
+
+function sortNewsEvents() {
+  newsEvents.sort((a, b) => a.time.localeCompare(b.time));
+}
+
+function renderNewsList() {
+  const listEl = document.getElementById('newsList');
+  if (!listEl) return;
+  if (!newsEvents.length) {
+    listEl.innerHTML = '<div class="news-empty">Событий пока нет</div>';
+    return;
+  }
+  const nearest = getActiveNews();
+  listEl.innerHTML = newsEvents.map((ev, i) => {
+    const isNext = nearest && nearest.ev === ev;
+    const acked = ackedEvents.has(eventKey(ev));
+    return '<div class="news-item' + (isNext ? ' next' : '') + (acked ? ' acked' : '') + '">' +
+      '<span class="news-item-time">' + ev.time + '</span>' +
+      '<span class="news-item-country">' + countryDisplay(ev.country) + '</span>' +
+      '<span class="news-item-name">' + escapeHtml(ev.name) + (acked ? ' ✓' : '') + '</span>' +
+      '<button class="news-item-del" data-idx="' + i + '" title="Удалить">✕</button>' +
+    '</div>';
+  }).join('');
+  listEl.querySelectorAll('.news-item-del').forEach(btn => {
+    btn.onclick = () => {
+      newsEvents.splice(parseInt(btn.dataset.idx), 1);
+      saveNewsEvents();
+      renderNewsList();
+    };
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('newsAdd').onclick = () => {
+  const timeEl = document.getElementById('newsTime');
+  const countryEl = document.getElementById('newsCountry');
+  const nameEl = document.getElementById('newsName');
+  const time = timeEl.value;
+  const name = nameEl.value.trim();
+  if (!time || !name) return;
+  newsEvents.push({ time: time, country: countryEl.value.trim(), name: name });
+  sortNewsEvents();
+  saveNewsEvents();
+  renderNewsList();
+  timeEl.value = ''; countryEl.value = ''; nameEl.value = '';
+  timeEl.focus();
+};
+
+document.getElementById('newsName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('newsAdd').click();
+});
+
+document.getElementById('newsClear').onclick = () => {
+  if (!newsEvents.length) return;
+  if (!confirm('Удалить все новости дня?')) return;
+  newsEvents = [];
+  saveNewsEvents();
+  renderNewsList();
+};
+
+// Возвращает ближайшее "активное" событие (за 30 мин до и до 10 мин после)
+function getActiveNews() {
+  const now = getNow();
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  let best = null, bestDiff = Infinity;
+  newsEvents.forEach(ev => {
+    const [h, m] = ev.time.split(':').map(Number);
+    const evMin = h * 60 + m;
+    const diff = evMin - nowMin;
+    if (diff <= 30 && diff >= -10 && Math.abs(diff) < Math.abs(bestDiff)) {
+      bestDiff = diff; best = ev;
+    }
+  });
+  return best ? { ev: best, diffMin: bestDiff } : null;
+}
+
+loadNewsEvents();
+loadAcked();
+renderNewsList();
+
+document.getElementById('newsAckBtn').onclick = () => {
+  if (!lastActiveNews) return;
+  ackedEvents.add(eventKey(lastActiveNews.ev));
+  saveAcked();
+  renderNewsList();
+};
+
 // ═══ TIME ═══
 function getNow() {
   const now = new Date();
@@ -338,95 +634,24 @@ function soundTrill() {
   });
 }
 
-// ═══ TICK SOUNDS ═══
-const tickStyleList = [
-  { key: 'classic', label: '🕐 Механические' },
-  { key: 'soft',    label: '🔔 Мягкий клик'  },
-  { key: 'metro',   label: '⏱ Метроном'      },
-  { key: 'vintage', label: '🕰 Старинные'     },
-  { key: 'elec',    label: '💡 Электронный'   },
-];
-let tickStyleIdx = 1;
-
-function updateTickStyleLabel() {
-  document.getElementById('tickStyleLabel').textContent = tickStyleList[tickStyleIdx].label;
+// ═══ TICK SOUND (единственный звук — «Мягкий клик») ═══
+function playSoftTick(ctx, vol) {
+  const g = ctx.createGain();
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++)
+    data[i] = (Math.random()*2-1) * Math.exp(-i/(data.length*0.15));
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.8;
+  g.gain.setValueAtTime(vol * 0.55, ctx.currentTime);
+  src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
 }
 
-document.getElementById('tickPrev').addEventListener('click', () => {
-  tickStyleIdx = (tickStyleIdx - 1 + tickStyleList.length) % tickStyleList.length;
-  updateTickStyleLabel();
-  if (document.getElementById('tickEnabled').checked) playTick();
-});
-document.getElementById('tickNext').addEventListener('click', () => {
-  tickStyleIdx = (tickStyleIdx + 1) % tickStyleList.length;
-  updateTickStyleLabel();
-  if (document.getElementById('tickEnabled').checked) playTick();
-});
-
-const tickSounds = {
-  classic: (ctx, vol, beat) => {
-    const freq = beat % 2 === 0 ? 1800 : 1200;
-    const g = ctx.createGain(), o = ctx.createOscillator(), dist = ctx.createWaveShaper();
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) curve[i] = (i < 128 ? i/128 : (i-256)/128) * 3;
-    dist.curve = curve;
-    o.type = 'square'; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol * 0.18, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
-    o.connect(dist); dist.connect(g); g.connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime + 0.05);
-  },
-  soft: (ctx, vol) => {
-    const g = ctx.createGain();
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++)
-      data[i] = (Math.random()*2-1) * Math.exp(-i/(data.length*0.15));
-    const src = ctx.createBufferSource(); src.buffer = buf;
-    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.8;
-    g.gain.setValueAtTime(vol * 0.55, ctx.currentTime);
-    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
-  },
-  metro: (ctx, vol) => {
-    const g = ctx.createGain(), o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    o1.type = 'triangle'; o1.frequency.value = 1500;
-    o2.type = 'triangle'; o2.frequency.value = 800;
-    g.gain.setValueAtTime(vol * 0.25, ctx.currentTime);
-    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.06);
-    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
-    o1.start(); o1.stop(ctx.currentTime + 0.07);
-    o2.start(); o2.stop(ctx.currentTime + 0.07);
-  },
-  vintage: (ctx, vol, beat) => {
-    const freq = beat % 2 === 0 ? 420 : 320;
-    const g = ctx.createGain(), o = ctx.createOscillator(), f = ctx.createBiquadFilter();
-    f.type = 'lowpass'; f.frequency.value = 600; f.Q.value = 4;
-    o.type = 'sine'; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol * 0.4, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
-    o.connect(f); f.connect(g); g.connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime + 0.2);
-  },
-  elec: (ctx, vol) => {
-    const g = ctx.createGain(), o = ctx.createOscillator();
-    o.type = 'sine'; o.frequency.value = 2200;
-    g.gain.setValueAtTime(0, ctx.currentTime);
-    g.gain.linearRampToValueAtTime(vol * 0.15, ctx.currentTime + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.045);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime + 0.05);
-  }
-};
-
-let tickBeat = 0;
 function playTick() {
   const c = getACtx();
   if (c.state === 'suspended') c.resume();
-  const style = tickStyleList[tickStyleIdx].key;
   const vol = parseInt(document.getElementById('tickVolume').value) / 100;
-  const fn = tickSounds[style];
-  if (fn) fn(c, vol, tickBeat);
-  tickBeat++;
+  playSoftTick(c, vol);
 }
 
 let tickLastSec = -1;
@@ -434,8 +659,8 @@ setInterval(() => {
   if (!document.getElementById('tickEnabled').checked) return;
   const now = getNow();
   const min = now.getMinutes(), sec = now.getSeconds();
-  const isRed = min >= 55 || min < 5;
-  if (!isRed) return;
+  const isRedTime = min >= 55 || min < 5;
+  if (!isRedTime && !orangeTickActive) return;
   if (sec === tickLastSec) return;
   tickLastSec = sec;
   playTick();
@@ -447,18 +672,45 @@ document.addEventListener('click', () => {
 }, { once: false });
 
 // ═══ DRAW CLOCK ═══
-let prevClockRed = null;
+let prevAlarmActive = null;
+
+// Когда красная (граница часа) и оранжевая (новость) сигнализации активны
+// одновременно — раз в секунду переключаем видимый цвет между ними.
+let altPhase = 0;
+setInterval(() => { altPhase = 1 - altPhase; }, 1000);
 
 function drawClock() {
   const zh = getNow();
   const hours = zh.getHours(), minutes = zh.getMinutes(), seconds = zh.getSeconds();
-  const isRed = minutes >= 55 || minutes < 5;
 
-  const faceColor   = isRed ? '#3a0a0a' : '#0a2e20';
-  const handColor   = isRed ? '#E24B4A' : '#1D9E75';
-  const tickColor   = isRed ? '#E24B4A' : '#1D9E75';
-  const borderColor = isRed ? '#E24B4A' : '#1D9E75';
-  const blinkAlpha  = isRed
+  // Ежедневный автосброс списка новостей
+  const tk = todayKey();
+  if (tk !== newsDateKey) { loadNewsEvents(); renderNewsList(); }
+  if (tk !== ackDateKey) { loadAcked(); }
+
+  const isRedRaw = minutes >= 55 || minutes < 5;
+  const activeNews = getActiveNews();
+  const isAcked = activeNews ? ackedEvents.has(eventKey(activeNews.ev)) : false;
+  const isOrangeRaw = !!activeNews && !isAcked;
+  lastActiveNews = activeNews;
+  orangeTickActive = isOrangeRaw;
+
+  // Что показываем прямо сейчас: если активны обе — чередуем раз в секунду,
+  // если активна только одна — показываем её.
+  let isRed, isOrange;
+  if (isRedRaw && isOrangeRaw) {
+    isRed    = altPhase === 0;
+    isOrange = altPhase === 1;
+  } else {
+    isRed    = isRedRaw;
+    isOrange = isOrangeRaw;
+  }
+
+  const faceColor   = isOrange ? '#4a2a05' : (isRed ? '#3a0a0a' : '#0a2e20');
+  const handColor   = isOrange ? '#FF8C1A' : (isRed ? '#E24B4A' : '#1D9E75');
+  const tickColor   = isOrange ? '#FF8C1A' : (isRed ? '#E24B4A' : '#1D9E75');
+  const borderColor = isOrange ? '#FF8C1A' : (isRed ? '#E24B4A' : '#1D9E75');
+  const blinkAlpha  = (isRed || isOrange)
     ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(Date.now() / (1000 / (2 * Math.PI))))
     : 1;
 
@@ -515,12 +767,13 @@ function drawClock() {
   ctx.globalAlpha = 1;
 
   // UI обновления
-  const cls = isRed ? 'red' : 'green';
+  const cls = isOrange ? 'orange' : (isRed ? 'red' : 'green');
   const ecEl  = document.getElementById('ec');
   const ecMin = document.getElementById('ec-mins');
   const dtEl  = document.getElementById('digitalTime');
   const utcBlock = document.getElementById('utcBlock');
   const utcVal   = document.getElementById('utcDisplay');
+  const newsAlert = document.getElementById('newsAlert');
 
   if (ecEl)  ecEl.className  = 'entry-clock ' + cls;
   if (dtEl) {
@@ -538,11 +791,39 @@ function drawClock() {
     ecMin.textContent = minsText;
   }
 
-  if (prevClockRed !== null) {
-    if (isRed  && !prevClockRed) soundBell();
-    if (!isRed && prevClockRed)  soundTrill();
+  if (newsAlert) {
+    const textEl = document.getElementById('newsAlertText');
+    const ackBtn = document.getElementById('newsAckBtn');
+    if (activeNews) {
+      const d = activeNews.diffMin;
+      const countryTxt = countryDisplay(activeNews.ev.country);
+      let whenTxt;
+      if (d > 0.5) whenTxt = 'через ' + Math.ceil(d) + ' мин';
+      else if (d < -0.5) whenTxt = 'началась ' + Math.ceil(-d) + ' мин назад';
+      else whenTxt = 'сейчас';
+      newsAlert.style.display = 'flex';
+      if (textEl) textEl.textContent = '📰 ' + whenTxt + ' (' + activeNews.ev.time + ')' +
+        (countryTxt ? ' ' + countryTxt : '') + ' — ' + activeNews.ev.name;
+      if (isAcked) {
+        newsAlert.classList.add('acked');
+        if (ackBtn) ackBtn.style.display = 'none';
+      } else {
+        newsAlert.classList.remove('acked');
+        if (ackBtn) ackBtn.style.display = 'inline-block';
+      }
+    } else {
+      newsAlert.style.display = 'none';
+      if (textEl) textEl.textContent = '';
+    }
   }
-  prevClockRed = isRed;
+
+  // Один звук на вход/выход из тревоги, даже если сработали обе сигнализации разом.
+  const alarmActive = isRedRaw || isOrangeRaw;
+  if (prevAlarmActive !== null) {
+    if (alarmActive && !prevAlarmActive) soundBell();
+    if (!alarmActive && prevAlarmActive) soundTrill();
+  }
+  prevAlarmActive = alarmActive;
 }
 
 // ═══ FULLSCREEN ═══
@@ -613,6 +894,8 @@ function loop() {
   requestAnimationFrame(loop);
 }
 loop();
+
+setInterval(() => { if (newsEvents.length) renderNewsList(); }, 5000);
 </script>
 </body>
 </html>
