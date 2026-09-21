@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Циферблат · Вход в сделку</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -361,7 +363,7 @@
 
     <!-- Новости дня -->
     <div class="news-block" id="newsBlock">
-      <div class="news-header">📰 Новости дня (время в твоём UTC выше)</div>
+      <div class="news-header">📰 Новости дня (время в твоём UTC выше) <span id="syncStatus" style="float:right;color:#555;">☁️ …</span></div>
       <div class="news-input-row">
         <input type="time" id="newsTime" class="news-input news-input-time">
         <input type="text" id="newsCountry" class="news-input news-input-country" placeholder="US" maxlength="4">
@@ -391,6 +393,30 @@
 </div>
 
 <script>
+// ═══ FIREBASE ═══
+const firebaseConfig = {
+  apiKey: "AIzaSyCMLnV2A6MEorX5rHqQFF9qxZ4UI41R23Y",
+  authDomain: "clockwidget-815e1.firebaseapp.com",
+  databaseURL: "https://clockwidget-815e1-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "clockwidget-815e1",
+  storageBucket: "clockwidget-815e1.firebasestorage.app",
+  messagingSenderId: "543841629769",
+  appId: "1:543841629769:web:279589f5ff83ac2ef03198",
+  measurementId: "G-NWC8FM402P"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function setSyncStatus(text, color) {
+  const el = document.getElementById('syncStatus');
+  if (el) { el.textContent = text; el.style.color = color; }
+}
+// Встроенный индикатор соединения Firebase
+db.ref('.info/connected').on('value', (snap) => {
+  if (snap.val() === true) setSyncStatus('☁️ синхронизировано', '#1D9E75');
+  else setSyncStatus('☁️ нет связи…', '#E24B4A');
+});
+
 // ═══ UTC OFFSET ═══
 let utcOffsetMin = parseInt(localStorage.getItem('clockUtcOffset') || '60');
 let stepMin = 60;
@@ -443,11 +469,12 @@ document.getElementById('utcAuto').onclick = () => {
 updateUtcDisplay();
 
 // ═══ NEWS EVENTS ═══
-const NEWS_KEY = 'clockNewsEvents';
 let newsEvents = []; // {time:'HH:MM', country:'US', name:'...'}
 let newsDateKey = '';
 let lastActiveNews = null;
 let orangeTickActive = false;
+let newsRef = null;
+let isWritingNews = false; // чтобы не зациклить собственную запись
 
 const flagMap = {
   US:'🇺🇸', UK:'🇬🇧', GB:'🇬🇧', EU:'🇪🇺', EZ:'🇪🇺', CN:'🇨🇳', JP:'🇯🇵',
@@ -460,48 +487,58 @@ function countryDisplay(code) {
 }
 
 function todayKey() {
-  return getNow().toDateString();
+  const d = getNow();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function loadNewsEvents() {
-  let stored = null;
-  try { stored = JSON.parse(localStorage.getItem(NEWS_KEY) || 'null'); } catch(e) {}
   const tk = todayKey();
-  if (stored && stored.dateKey === tk) {
-    newsEvents = stored.events || [];
-  } else {
-    newsEvents = []; // новый день — список чист
-  }
   newsDateKey = tk;
-  saveNewsEvents();
+  if (newsRef) newsRef.off(); // отписаться от предыдущего дня
+  newsRef = db.ref('news/' + tk);
+  newsRef.on('value', (snap) => {
+    if (isWritingNews) return; // это наша же запись — уже обновили локально
+    const val = snap.val();
+    newsEvents = (val && val.events) || [];
+    renderNewsList();
+  });
 }
 
 function saveNewsEvents() {
-  try { localStorage.setItem(NEWS_KEY, JSON.stringify({ dateKey: newsDateKey, events: newsEvents })); } catch(e) {}
+  if (!newsRef) return;
+  isWritingNews = true;
+  newsRef.set({ events: newsEvents })
+    .catch(e => console.error('Firebase save error:', e))
+    .finally(() => { isWritingNews = false; });
 }
 
 // ═══ Квитирование (acknowledge) ═══
-const ACK_KEY = 'clockNewsAck';
 let ackedEvents = new Set();
 let ackDateKey = '';
+let ackRef = null;
+let isWritingAck = false;
 
-function eventKey(ev) { return ev.time + '|' + (ev.country||'') + '|' + ev.name; }
+function eventKey(ev) { return (ev.time + '|' + (ev.country||'') + '|' + ev.name).replace(/[.#$/\[\]]/g, '_'); }
 
 function loadAcked() {
-  let stored = null;
-  try { stored = JSON.parse(localStorage.getItem(ACK_KEY) || 'null'); } catch(e) {}
   const tk = todayKey();
-  if (stored && stored.dateKey === tk) {
-    ackedEvents = new Set(stored.keys || []);
-  } else {
-    ackedEvents = new Set();
-  }
   ackDateKey = tk;
-  saveAcked();
+  if (ackRef) ackRef.off();
+  ackRef = db.ref('ack/' + tk);
+  ackRef.on('value', (snap) => {
+    if (isWritingAck) return;
+    const val = snap.val();
+    ackedEvents = new Set(val && val.keys ? val.keys : []);
+    renderNewsList();
+  });
 }
 
 function saveAcked() {
-  try { localStorage.setItem(ACK_KEY, JSON.stringify({ dateKey: ackDateKey, keys: [...ackedEvents] })); } catch(e) {}
+  if (!ackRef) return;
+  isWritingAck = true;
+  ackRef.set({ keys: [...ackedEvents] })
+    .catch(e => console.error('Firebase save error:', e))
+    .finally(() => { isWritingAck = false; });
 }
 
 function sortNewsEvents() {
