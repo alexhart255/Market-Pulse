@@ -1271,6 +1271,27 @@
     <button onclick="openFinviz('window','short-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
       <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w Low, SMA50↓</div></div>
     </button>
+
+    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
+
+    <!-- MARUBOZU / CLOSING AT HIGH-LOW -->
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#c084fc;padding:8px 12px 2px;opacity:.7;">◆ MARUBOZU — закрытие впритык к хай/лоу</div>
+
+    <div style="font-size:9px;letter-spacing:1px;color:#00ff88;padding:4px 12px 2px;opacity:.65;">▲ закрытие на хае дня (без хвоста сверху)</div>
+    <button onclick="openFinviz('tab','marubozu-long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#00ff88;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu White</div></div>
+    </button>
+    <button onclick="openFinviz('window','marubozu-long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#00ff88;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu White</div></div>
+    </button>
+
+    <div style="font-size:9px;letter-spacing:1px;color:#ff3b5c;padding:8px 12px 2px;opacity:.65;">▼ закрытие на лое дня (без хвоста снизу)</div>
+    <button onclick="openFinviz('tab','marubozu-short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ff3b5c;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu Black</div></div>
+    </button>
+    <button onclick="openFinviz('window','marubozu-short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu Black</div></div>
+    </button>
   </div>
 </div>
 
@@ -2923,6 +2944,18 @@ const FINVIZ_SHORT = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind
 const FINVIZ_LONG_LEVEL  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_pattern_horizontal,ta_highlow52w_b0to10h,ta_sma50_pa&o=-marketcap';
 const FINVIZ_SHORT_LEVEL = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_pattern_horizontal,ta_highlow52w_a0to10l,ta_sma50_pb&o=-marketcap';
 
+// "Закрытие на хай/лоу дня" (Marubozu) — свеча без хвоста со стороны закрытия.
+// ВНИМАНИЕ: точный код после ta_candlestick_ нужно проверить самому —
+// зайди на finviz.com/screener.ashx -> Technical -> Candlestick -> выбери
+// "Marubozu (White)" для лонга / "Marubozu (Black)" для шорта, и скопируй
+// код параметра из адресной строки (ниже подставлены типичные значения mw/mb,
+// но Finviz мог назвать их иначе — сверься с реальным URL).
+// Это фильтр Elite-only и он строже твоего условия: требует отсутствия хвоста
+// С ОБЕИХ сторон свечи, а не только со стороны закрытия ("Closing Marubozu"
+// отдельным фильтром на Finviz не представлен).
+const FINVIZ_LONG_MARUBOZU  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_candlestick_mw&o=-marketcap';
+const FINVIZ_SHORT_MARUBOZU = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_candlestick_mb&o=-marketcap';
+
 function openFinvizMenu(btn){
   const overlay=document.getElementById('finvizMenuOverlay');
   const box=document.getElementById('finvizMenuBox');
@@ -2961,7 +2994,9 @@ const FINVIZ_URLS = {
   'long': FINVIZ_LONG,
   'short': FINVIZ_SHORT,
   'long-level': FINVIZ_LONG_LEVEL,
-  'short-level': FINVIZ_SHORT_LEVEL
+  'short-level': FINVIZ_SHORT_LEVEL,
+  'marubozu-long': FINVIZ_LONG_MARUBOZU,
+  'marubozu-short': FINVIZ_SHORT_MARUBOZU
 };
 
 function openFinviz(mode, direction){
