@@ -500,7 +500,6 @@
     <button class="tab active" onclick="switchTab('today',this)">Сегодня</button>
     <button class="tab" onclick="openInvestingMenu(this)">🌐 Investing.com</button>
     <button class="tab" onclick="openFinvizMenu(this)">📊 Finviz</button>
-    <button class="tab" onclick="openInPlayMenu(this)">🔥 Finviz In Play</button>
     <button class="tab" onclick="openCmeMenu(this)">📈 CME Vol2Vol</button>
   </div>
   <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;">
@@ -1213,85 +1212,151 @@
 
   <!-- FOREX SESSIONS TAB -->
   <div class="tab-panel" id="tab-forex">
-    <div class="section-title">Forex сессии — расписание по Цюриху</div>
+    <div class="section-title">Биржи и Forex-сессии — расписание по Цюриху</div>
     <div style="background:#08121e;border:1px solid #1a3a5a;border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--text);line-height:1.7;">
-      🌞 <strong style="color:var(--accent);">Лето (CEST, UTC+2)</strong> &nbsp;·&nbsp; ❄️ <strong style="color:#60aaff;">Зима (CET, UTC+1)</strong> — все времена по Цюриху. Нажмите на сессию чтобы увидеть подробности.
+      🌞 <strong style="color:var(--accent);">Лето (CEST, UTC+2)</strong> &nbsp;·&nbsp; ❄️ <strong style="color:#60aaff;">Зима (CET, UTC+1)</strong> — все времена по Цюриху. Биржи работают по местному времени, поэтому у NYSE, Лондона и европейских бирж время в Цюрихе зимой не меняется (меняется у Токио и Австралии). Нажмите на Forex-сессию чтобы увидеть подробности.
     </div>
+    <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin:4px 0 10px;">🏛 Часы работы бирж</div>
+    <div id="exchangeHoursList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px;"></div>
+    <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#4a6080;margin:4px 0 10px;">💱 Forex-сессии (условные блоки по 08:00–17:00 местного времени)</div>
     <div id="forexSessionsList" style="display:flex;flex-direction:column;gap:10px;"></div>
     <div style="margin-top:14px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
-      * Золото (XAU/USD) торгуется во всех сессиях как глобальный OTC-инструмент. Переход на зимнее время — последнее воскресенье октября.
+      * Золото (XAU/USD) торгуется во всех сессиях как глобальный OTC-инструмент. Цюрих и Европа переходят на зимнее время в последнее воскресенье октября (25.10.2026), США — в первое воскресенье ноября (01.11.2026). В неделю между этими датами (и пару недель в марте) NYSE открывается в 14:30 вместо 15:30. Официальные часы бирж сверяйте на их сайтах.
     </div>
   </div>
 
 <footer>MARKET PULSE &nbsp;·&nbsp; Образовательный характер &nbsp;·&nbsp; Не является инвестиционной рекомендацией</footer>
 </div>
 
-<!-- FINVIZ MENU -->
+<!-- FINVIZ MENU (5 нумерованных блоков с пунктами А, Б, В…) -->
 <div id="finvizMenuOverlay" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:2000;">
-  <div id="finvizMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:310px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
+  <div id="finvizMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:370px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
     <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">📊 Finviz Screener</div>
+    <div style="font-size:10px;color:#4a6080;padding:2px 12px 4px;line-height:1.5;">Базовый набор для пунктов 1А, 1Б, 2А, 2Б, 3А, 3Б: Mcap Small+ · Stocks only · USA · Price&gt;$5 · Float&gt;10M · AvgVol&gt;500K · CurVol&gt;500K · ATR&gt;1. В строках — только добавочные фильтры.</div>
 
-    <!-- LONG -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#00ff88;padding:8px 12px 4px;opacity:.7;">▲ LONG — тренд вверх</div>
-    <button onclick="openFinviz('tab','long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#00ff88;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">SMA50↑ SMA200↑ RSI>50 Price>$5</div></div>
-    </button>
-    <button onclick="openFinviz('window','long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#00ff88;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">SMA50↑ SMA200↑ RSI>50 Price>$5</div></div>
-    </button>
-
-    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
-
-    <!-- SHORT -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ff3b5c;padding:8px 12px 4px;opacity:.7;">▼ SHORT — тренд вниз</div>
-    <button onclick="openFinviz('tab','short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ff3b5c;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">SMA50↓ SMA200↓ RSI<50 ShortFloat↑</div></div>
-    </button>
-    <button onclick="openFinviz('window','short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">SMA50↓ SMA200↓ RSI<50 ShortFloat↑</div></div>
-    </button>
-
-    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
-
-    <!-- LEVEL / CONSOLIDATION -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ffb020;padding:8px 12px 2px;opacity:.7;">⏸ У УРОВНЯ — не может пробить</div>
-
-    <div style="font-size:9px;letter-spacing:1px;color:#00ff88;padding:4px 12px 2px;opacity:.65;">▲ упёрлась в сопротивление (лонг на пробой)</div>
-    <button onclick="openFinviz('tab','long-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#00ff88;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w High, SMA50↑</div></div>
-    </button>
-    <button onclick="openFinviz('window','long-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#00ff88;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w High, SMA50↑</div></div>
-    </button>
-
-    <div style="font-size:9px;letter-spacing:1px;color:#ff3b5c;padding:8px 12px 2px;opacity:.65;">▼ упёрлась в поддержку (шорт на пробой)</div>
-    <button onclick="openFinviz('tab','short-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ff3b5c;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w Low, SMA50↓</div></div>
-    </button>
-    <button onclick="openFinviz('window','short-level')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Horiz. S/R, у 52w Low, SMA50↓</div></div>
-    </button>
-
-    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
-
-    <!-- MARUBOZU / CLOSING AT HIGH-LOW -->
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#c084fc;padding:8px 12px 2px;opacity:.7;">◆ MARUBOZU — закрытие впритык к хай/лоу</div>
-
-    <div style="font-size:9px;letter-spacing:1px;color:#00ff88;padding:4px 12px 2px;opacity:.65;">▲ закрытие на хае дня (без хвоста сверху)</div>
-    <button onclick="openFinviz('tab','marubozu-long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#00ff88;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu White</div></div>
-    </button>
-    <button onclick="openFinviz('window','marubozu-long')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#00ff88;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu White</div></div>
-    </button>
-
-    <div style="font-size:9px;letter-spacing:1px;color:#ff3b5c;padding:8px 12px 2px;opacity:.65;">▼ закрытие на лое дня (без хвоста снизу)</div>
-    <button onclick="openFinviz('tab','marubozu-short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ff3b5c;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu Black</div></div>
-    </button>
-    <button onclick="openFinviz('window','marubozu-short')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ff3b5c;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Candlestick: Marubozu Black</div></div>
-    </button>
+    <div style="border:1px solid #1a2a3a;border-radius:12px;background:#0d1a2b;margin:8px 2px;padding:6px 0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px;">
+        <div style="min-width:24px;height:24px;border-radius:50%;background:#c0d8f0;color:#0b1522;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;">1</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c0d8f0;font-weight:700;">Тренд вверх и вниз</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #00ff88;color:#00ff88;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">А</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#00ff88;font-family:'Syne',sans-serif;">LONG · тренд вверх</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ Price&gt;SMA50 · Price&gt;SMA200 · RSI&gt;50</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','long')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','long')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ff3b5c;color:#ff3b5c;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Б</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ff3b5c;font-family:'Syne',sans-serif;">SHORT · тренд вниз</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ Price&lt;SMA50 · Price&lt;SMA200 · RSI&lt;50 · Short Float высокий</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','short')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','short')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+    </div>
+    <div style="border:1px solid #1a2a3a;border-radius:12px;background:#0d1a2b;margin:8px 2px;padding:6px 0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px;">
+        <div style="min-width:24px;height:24px;border-radius:50%;background:#ffb020;color:#0b1522;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;">2</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#ffb020;font-weight:700;">У уровня — не может пробить</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #00ff88;color:#00ff88;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">А</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#00ff88;font-family:'Syne',sans-serif;">LONG · упёрлась в сопротивление</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ паттерн Horizontal S/R · 0–10% ниже 52w High · Price&gt;SMA50</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','long-level')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','long-level')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ff3b5c;color:#ff3b5c;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Б</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ff3b5c;font-family:'Syne',sans-serif;">SHORT · упёрлась в поддержку</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ паттерн Horizontal S/R · 0–10% выше 52w Low · Price&lt;SMA50</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','short-level')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','short-level')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+    </div>
+    <div style="border:1px solid #1a2a3a;border-radius:12px;background:#0d1a2b;margin:8px 2px;padding:6px 0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px;">
+        <div style="min-width:24px;height:24px;border-radius:50%;background:#c084fc;color:#0b1522;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;">3</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c084fc;font-weight:700;">Закрытие впритык к хай/лоу</div>
+      </div>
+      <div style="font-size:10px;color:#4a6080;padding:0 12px 6px 46px;line-height:1.5;">А–Б: базовый набор, нет тени с обеих сторон свечи (строго). В–Е: лёгкий набор — Change Up · AvgVol&gt;500K · Price&gt;$5 · вид Technical. Свечи запускай по одной.</div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#0a1f10'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #00ff88;color:#00ff88;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">А</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#00ff88;font-family:'Syne',sans-serif;">LONG · закрытие на хае (Marubozu White)</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ Candlestick: Marubozu White</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','marubozu-long')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','marubozu-long')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1f0a0e'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ff3b5c;color:#ff3b5c;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Б</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ff3b5c;font-family:'Syne',sans-serif;">SHORT · закрытие на лое (Marubozu Black)</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">+ Candlestick: Marubozu Black</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','marubozu-short')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','marubozu-short')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#150f24'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #c084fc;color:#c084fc;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">В</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#c084fc;font-family:'Syne',sans-serif;">Лёгкий набор · Marubozu White</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">нет теней ни сверху, ни снизу (самый строгий)</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','cs-marubozu')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','cs-marubozu')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#150f24'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #c084fc;color:#c084fc;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Г</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#c084fc;font-family:'Syne',sans-serif;">Лёгкий набор · Hammer</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">длинная нижняя тень, верхней почти нет</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','cs-hammer')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','cs-hammer')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#150f24'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #c084fc;color:#c084fc;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Д</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#c084fc;font-family:'Syne',sans-serif;">Лёгкий набор · Long Lower Shadow</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">длинная нижняя тень, закрытие у хая</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','cs-lls')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','cs-lls')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#150f24'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #c084fc;color:#c084fc;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Е</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#c084fc;font-family:'Syne',sans-serif;">Лёгкий набор · Dragonfly Doji</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">открытие и закрытие у хая, длинная нижняя тень</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','cs-dragonfly')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','cs-dragonfly')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="padding:6px 12px 2px 46px;font-size:10px;color:#4a6080;line-height:1.55;">
+        ⏰ Смотри после закрытия США (16:00 NY = 22:00 по Цюриху; в неделю разных переводов часов — 21:00).<br>
+        ⚠️ Коды Candlestick (mw, h, lls, dd) проверь по реальному URL Finviz; часть свечных фильтров может требовать Elite.
+      </div>
+    </div>
+    <div style="border:1px solid #1a2a3a;border-radius:12px;background:#0d1a2b;margin:8px 2px;padding:6px 0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px;">
+        <div style="min-width:24px;height:24px;border-radius:50%;background:#ffb020;color:#0b1522;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;">4</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#ffb020;font-weight:700;">ZS-сетап — большой ход + у хая</div>
+      </div>
+      <div style="font-size:10px;color:#4a6080;padding:0 12px 6px 46px;line-height:1.5;">Change ≥ +5% · RelVol &gt; 1.5 · AvgVol &gt; 500K · ATR &gt; 5 · вид Technical (видно ATR, Price, Change)</div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ffb020;color:#ffb020;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">А</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ffb020;font-family:'Syne',sans-serif;">ZS · 0–3% ниже 52w High · NASDAQ</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">52-Week High: 0–3% below · Exchange: NASDAQ</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','zs-nasdaq')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','zs-nasdaq')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ffb020;color:#ffb020;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">Б</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ffb020;font-family:'Syne',sans-serif;">ZS · 0–3% ниже 52w High · все биржи</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">то же без фильтра биржи</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','zs-all')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','zs-all')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ffb020;color:#ffb020;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">В</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ffb020;font-family:'Syne',sans-serif;">ZS · New High · NASDAQ</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">52-Week High: New High · Exchange: NASDAQ</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','zs-newhigh')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','zs-newhigh')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+    </div>
+    <div style="border:1px solid #1a2a3a;border-radius:12px;background:#0d1a2b;margin:8px 2px;padding:6px 0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px;">
+        <div style="min-width:24px;height:24px;border-radius:50%;background:#ffaa00;color:#0b1522;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;">5</div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#ffaa00;font-weight:700;">In Play — горячие акции дня</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 12px;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
+        <div style="min-width:24px;height:24px;border-radius:7px;border:1px solid #ffaa00;color:#ffaa00;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;">А</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;color:#ffaa00;font-family:'Syne',sans-serif;">In Play · гэп + повышенный объём</div><div style="font-size:10px;color:#4a6080;margin-top:2px;line-height:1.45;">Mcap Small+ · USA · Price $2–$100 · AvgVol&gt;2M · RelVol&gt;1 · Gap Up 2% · сортировка по Change</div></div>
+        <button title="Новая вкладка" onclick="openFinviz('tab','inplay')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">🗂️</button>
+        <button title="Отдельное окно" onclick="openFinviz('window','inplay')" style="background:transparent;border:1px solid #1e3a5a;border-radius:7px;padding:5px 9px;color:#c0d8f0;font-size:13px;cursor:pointer;line-height:1;">⧉</button>
+      </div>
+      <div style="padding:6px 12px 2px 46px;font-size:10px;color:#4a6080;line-height:1.55;">
+        ⏰ Открывай в 15:10–15:25 по Цюриху — США открываются в 15:30 круглый год. В неделю разных переводов часов (26–31 окт 2026) — в 14:10–14:25.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1302,29 +1367,6 @@
 <div id="finvizBackBtn" style="display:none;position:fixed;top:14px;right:18px;z-index:1600;">
   <button onclick="document.getElementById('finvizFS').style.cssText='display:none;';document.getElementById('finvizBackBtn').style.display='none';document.getElementById('appRoot').style.display='';document.getElementById('finvizFSFrame').src='about:blank';window.scrollTo(0,0);"
     style="background:#0b1522;border:1px solid #2a3f5a;border-radius:9px;padding:8px 18px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">← Вернуться в Market Pulse</button>
-</div>
-
-<!-- IN PLAY MENU -->
-<div id="inPlayMenuOverlay" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:2000;">
-  <div id="inPlayMenuBox" style="position:absolute;background:#0b1522;border:1px solid #1e3a5a;border-radius:14px;padding:8px;min-width:330px;box-shadow:0 12px 40px rgba(0,0,0,.85);">
-    <div style="font-size:10px;color:#4a6080;letter-spacing:2px;text-transform:uppercase;padding:6px 12px 10px;border-bottom:1px solid #1a2a3a;margin-bottom:6px;">🔥 Finviz — In Play Screener</div>
-
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#ffaa00;padding:8px 12px 4px;opacity:.7;">📋 Фильтры: RelVol>1x · Gap>2% · AvgVol>2M · $2–$100</div>
-
-    <button onclick="openInPlay('tab')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">🗂️</span><div><div style="font-weight:700;color:#ffaa00;">Новая вкладка</div><div style="font-size:10px;color:#4a6080;">Открыть рядом в браузере</div></div>
-    </button>
-    <button onclick="openInPlay('window')" style="display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:9px;padding:9px 12px;color:#c0d8f0;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;" onmouseover="this.style.background='#1a1200'" onmouseout="this.style.background='transparent'">
-      <span style="font-size:16px;">⧉</span><div><div style="font-weight:700;color:#ffaa00;">Отдельное окно</div><div style="font-size:10px;color:#4a6080;">Новое окно браузера</div></div>
-    </button>
-
-    <div style="height:1px;background:#1a2a3a;margin:6px 4px;"></div>
-
-    <div style="padding:8px 12px 6px;font-size:11px;color:#4a6080;line-height:1.6;">
-      ⏰ Открывай в <span style="color:#ffaa00;font-weight:700;">15:10–15:25</span> (лето) или <span style="color:#00e5ff;font-weight:700;">16:10–16:25</span> (зима) по Цюриху.<br>
-      Сортировка по Change % — самые горячие акции сверху.
-    </div>
-  </div>
 </div>
 
 <!-- CME GROUP MENU -->
@@ -2956,6 +2998,15 @@ const FINVIZ_SHORT_LEVEL = 'https://finviz.com/screener.ashx?v=111&f=cap_smallov
 const FINVIZ_LONG_MARUBOZU  = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_candlestick_mw&o=-marketcap';
 const FINVIZ_SHORT_MARUBOZU = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,ind_stocksonly,geo_usa,sh_price_o5,sh_float_o10,sh_avgvol_o500,sh_curvol_o500,ta_averagetruerange_o1,ta_candlestick_mb&o=-marketcap';
 
+// ZS-сетап и «закрытие у хая» (коды: ta_change_u5 = Change Up 5%; ta_highlow52w_b0to3h = 0-3% below 52w High;
+// ta_highlow52w_nh = New High; sh_relvol_o1.5 = RelVol > 1.5; sh_avgvol_o500 = AvgVol > 500K;
+// ta_averagetruerange_o5 = ATR > 5; exch_nasd = NASDAQ; v=171 = вид Technical)
+const F2_BASE_ZS = 'https://finviz.com/screener.ashx?v=171&f=ta_change_u5,sh_relvol_o1.5,sh_avgvol_o500,ta_averagetruerange_o5';
+const F2_BASE_CS = 'https://finviz.com/screener.ashx?v=171&f=ta_change_u,sh_avgvol_o500,sh_price_o5';
+
+// In Play — бывшая отдельная карточка
+const FINVIZ_INPLAY = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,country_usa,geo_usa,price_2to100,sh_avgvol_o2000,sh_relvol_o1,ta_gap_u2&ft=4&o=-change';
+
 function openFinvizMenu(btn){
   const overlay=document.getElementById('finvizMenuOverlay');
   const box=document.getElementById('finvizMenuBox');
@@ -2967,7 +3018,7 @@ function openFinvizMenu(btn){
   const boxHeight=box.offsetHeight;
   const margin=10;
 
-  let left=rect.left; if(left+320>window.innerWidth) left=window.innerWidth-325;
+  let left=rect.left; if(left+380>window.innerWidth) left=window.innerWidth-385;
   if(left<margin) left=margin;
 
   const spaceBelow=window.innerHeight-rect.bottom-margin;
@@ -2996,39 +3047,26 @@ const FINVIZ_URLS = {
   'long-level': FINVIZ_LONG_LEVEL,
   'short-level': FINVIZ_SHORT_LEVEL,
   'marubozu-long': FINVIZ_LONG_MARUBOZU,
-  'marubozu-short': FINVIZ_SHORT_MARUBOZU
+  'marubozu-short': FINVIZ_SHORT_MARUBOZU,
+  'zs-nasdaq':   F2_BASE_ZS + ',ta_highlow52w_b0to3h,exch_nasd&o=-change',
+  'zs-all':      F2_BASE_ZS + ',ta_highlow52w_b0to3h&o=-change',
+  'zs-newhigh':  F2_BASE_ZS + ',ta_highlow52w_nh,exch_nasd&o=-change',
+  // Candlestick: коды mw / h / lls / dd — типичные значения Finviz, сверь с реальным URL
+  'cs-marubozu': F2_BASE_CS + ',ta_candlestick_mw&o=-change',
+  'cs-hammer':   F2_BASE_CS + ',ta_candlestick_h&o=-change',
+  'cs-lls':      F2_BASE_CS + ',ta_candlestick_lls&o=-change',
+  'cs-dragonfly':F2_BASE_CS + ',ta_candlestick_dd&o=-change',
+  'inplay': FINVIZ_INPLAY
 };
 
-function openFinviz(mode, direction){
+function openFinviz(mode, key){
   document.getElementById('finvizMenuOverlay').style.display='none';
-  const url = FINVIZ_URLS[direction] || FINVIZ_LONG;
+  const url = FINVIZ_URLS[key];
+  if(!url) return;
   if(mode==='tab'){
     const w=window.open(url,'_blank'); if(!w) alert('Разреши всплывающие окна.');
   } else if(mode==='window'){
     const w=window.open(url,'_blank','width=1440,height=900,menubar=no,toolbar=no,location=no,scrollbars=yes'); if(!w) alert('Разреши всплывающие окна.');
-  }
-}
-
-// ═══════════════════════════════════════════
-// FINVIZ IN PLAY MENU
-// ═══════════════════════════════════════════
-const FINVIZ_INPLAY = 'https://finviz.com/screener.ashx?v=111&f=cap_smallover,country_usa,geo_usa,price_2to100,sh_avgvol_o2000,sh_relvol_o1,ta_gap_u2&ft=4&o=-change';
-
-function openInPlayMenu(btn){
-  const overlay=document.getElementById('inPlayMenuOverlay');
-  const box=document.getElementById('inPlayMenuBox');
-  const rect=btn.getBoundingClientRect();
-  let left=rect.left; if(left+340>window.innerWidth) left=window.innerWidth-345;
-  box.style.top=(rect.bottom+window.scrollY+8)+'px'; box.style.left=left+'px';
-  overlay.style.display='block';
-}
-
-function openInPlay(mode){
-  document.getElementById('inPlayMenuOverlay').style.display='none';
-  if(mode==='tab'){
-    const w=window.open(FINVIZ_INPLAY,'_blank'); if(!w) alert('Разреши всплывающие окна.');
-  } else if(mode==='window'){
-    const w=window.open(FINVIZ_INPLAY,'_blank','width=1440,height=900,menubar=no,toolbar=no,location=no,scrollbars=yes'); if(!w) alert('Разреши всплывающие окна.');
   }
 }
 
@@ -4523,13 +4561,13 @@ const FOREX_SESSIONS = [
     name: 'Веллингтон',
     sub: 'Новая Зеландия — начало недели',
     summer: 'Вс 23:00 → Пн 01:00',
-    winter: 'Вс 22:00 → Пн 00:00',
+    winter: 'Вс 23:00 → Пн 01:00',
     colorHeader: '#085041',
     colorBorder: '#9FE1CB',
     colorText: '#9FE1CB',
     pairs: ['NZD/USD', 'NZD/JPY', 'AUD/NZD', 'NZD/CHF'],
     commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)'],
-    note: 'Начало торговой недели. Низкая ликвидность, широкие спреды. Золото уже торгуется, но с осторожностью — объёмы минимальные.',
+    note: 'Начало торговой недели: Forex открывается в воскресенье в 23:00 по Цюриху круглый год (17:00 по Нью-Йорку). Низкая ликвидность, широкие спреды. Золото уже торгуется, но с осторожностью — объёмы минимальные.',
     tip: 'Лучшие инструменты: NZD/USD и AUD/NZD. Избегайте крупных позиций — рынок ещё не раскачался.',
     activity: 20,
   },
@@ -4538,14 +4576,14 @@ const FOREX_SESSIONS = [
     emoji: '🦘',
     name: 'Сидней',
     sub: 'Австралия',
-    summer: '01:00 → 09:00',
-    winter: '00:00 → 08:00',
+    summer: '00:00 → 09:00',
+    winter: '22:00 → 07:00',
     colorHeader: '#0C447C',
     colorBorder: '#B5D4F4',
     colorText: '#B5D4F4',
     pairs: ['AUD/USD', 'AUD/JPY', 'NZD/USD', 'AUD/NZD', 'AUD/CHF'],
     commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть'],
-    note: 'Умеренная активность. Хорошие условия для AUD и NZD пар. Азиатские новости начинают влиять на рынок.',
+    note: 'Умеренная активность. Хорошие условия для AUD и NZD пар. Азиатские новости начинают влиять на рынок. Время зависит от перехода часов в Австралии (с первого воскресенья октября по первое воскресенье апреля): с 4 по 25 октября 2026 сессия идёт 23:00 → 08:00 по Цюриху.',
     tip: 'AUD/USD — основной инструмент сессии. Спреды уже ниже, чем у Веллингтона.',
     activity: 40,
   },
@@ -4571,7 +4609,7 @@ const FOREX_SESSIONS = [
     name: 'Европа / Лондон',
     sub: 'Лондон — крупнейший Forex центр мира',
     summer: '09:00 → 18:00',
-    winter: '08:00 → 17:00',
+    winter: '09:00 → 18:00',
     colorHeader: '#3C3489',
     colorBorder: '#CECBF6',
     colorText: '#CECBF6',
@@ -4585,16 +4623,16 @@ const FOREX_SESSIONS = [
     id: 'usa',
     emoji: '🗽',
     name: 'Нью-Йорк',
-    sub: 'США · Пик: пересечение с Лондоном 15–18ч',
-    summer: '15:00 → 23:00',
-    winter: '14:00 → 22:00',
+    sub: 'США · Пик: пересечение с Лондоном 14–18ч',
+    summer: '14:00 → 23:00',
+    winter: '14:00 → 23:00',
     colorHeader: '#791F1F',
     colorBorder: '#F7C1C1',
     colorText: '#F7C1C1',
     pairs: ['EUR/USD', 'GBP/USD', 'USD/CAD', 'USD/CHF', 'USD/JPY', 'EUR/GBP', 'AUD/USD'],
     commodities: ['XAU/USD (золото)', 'XAG/USD (серебро)', 'WTI нефть', 'Brent нефть', 'S&P 500', 'NASDAQ (NQ)', 'Медь', 'Природный газ'],
-    note: 'Максимальная волатильность в 15:00–18:00 — пересечение с Лондоном. ФРС, данные NFP, CPI — всё выходит в эту сессию. Самые большие движения недели.',
-    tip: 'Пересечение Лондон + Нью-Йорк (15–18ч по Цюриху) — лучшее время всей недели для торговли EUR/USD и золотом.',
+    note: 'Максимальная волатильность в 14:00–18:00 — пересечение с Лондоном. Данные США (NFP, CPI) выходят в 14:30, акции США открываются в 15:30. В неделю разных переводов часов (26–31 октября 2026 и пара недель в марте) всё на час раньше: 13:30 и 14:30.',
+    tip: 'Пересечение Лондон + Нью-Йорк (14–18ч по Цюриху) — лучшее время всей недели для торговли EUR/USD и золотом.',
     activity: 100,
   },
   {
@@ -4603,13 +4641,13 @@ const FOREX_SESSIONS = [
     name: 'Мёртвая зона',
     sub: 'Торговля не рекомендуется',
     summer: '23:00 → 01:00',
-    winter: '22:00 → 00:00',
+    winter: '23:00 → 01:00',
     colorHeader: '#444441',
     colorBorder: '#D3D1C7',
     colorText: '#D3D1C7',
     pairs: ['—'],
     commodities: ['—'],
-    note: 'Рынок практически пустой. Минимальные объёмы, огромные спреды, возможны ложные движения. Большинство профессиональных трейдеров в это время не торгуют.',
+    note: 'Время ролловера (17:00 по Нью-Йорку), закрытие Нью-Йорка. Формально Сидней уже открыт, но ликвидность минимальна, спреды огромные, возможны ложные движения. Большинство профессиональных трейдеров в это время не торгуют.',
     tip: 'Используйте это время для анализа, планирования на завтра и отдыха.',
     activity: 5,
   },
@@ -4694,9 +4732,42 @@ function closeForexModal() {
   document.getElementById('forexModalOverlay').classList.remove('open');
 }
 
+
+// ═══ ЧАСЫ РАБОТЫ БИРЖ (время по Цюриху) ═══
+const EXCHANGE_HOURS = [
+  { flag: '🇺🇸', name: 'Нью-Йорк · NYSE / Nasdaq', local: '09:30–16:00 ET', summer: '15:30 → 22:00', winter: '15:30 → 22:00',
+    note: 'Премаркет с 10:00, постмаркет до 02:00 (04:00–20:00 ET). 26–31 окт 2026 и пару недель в марте: 14:30 → 21:00.' },
+  { flag: '🇬🇧', name: 'Лондон · LSE', local: '08:00–16:30 UK', summer: '09:00 → 17:30', winter: '09:00 → 17:30',
+    note: 'Переход часов в Великобритании и Швейцарии совпадает, разница всегда 1 час.' },
+  { flag: '🇨🇭', name: 'Цюрих · SIX Swiss Exchange', local: '09:00–17:30', summer: '09:00 → 17:30', winter: '09:00 → 17:30', note: '' },
+  { flag: '🇩🇪🇫🇷', name: 'Франкфурт (Xetra) / Париж (Euronext)', local: '09:00–17:30', summer: '09:00 → 17:30', winter: '09:00 → 17:30', note: '' },
+  { flag: '🇯🇵', name: 'Токио · TSE', local: '09:00–11:30, 12:30–15:30 JST', summer: '02:00 → 04:30, 05:30 → 08:30', winter: '01:00 → 03:30, 04:30 → 07:30',
+    note: 'В Японии нет перехода на летнее время, поэтому в Цюрихе время сдвигается на час.' },
+  { flag: '🇦🇺', name: 'Сидней · ASX', local: '10:00–16:00', summer: '02:00 → 08:00 (4–25 окт: 01:00 → 07:00)', winter: '00:00 → 06:00',
+    note: 'В Австралии летнее время идёт в наши зимние месяцы, поэтому сдвиги в Цюрихе меняются несколько раз за год.' }
+];
+
+function renderExchangeHours() {
+  const box = document.getElementById('exchangeHoursList');
+  if (!box) return;
+  box.innerHTML = EXCHANGE_HOURS.map(e => `
+    <div style="background:#111927;border:1px solid #1e2d42;border-radius:10px;padding:12px 18px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;">
+      <div style="font-size:24px;line-height:1;">${e.flag}</div>
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:#eaf4ff;margin-bottom:2px;">${e.name} <span style="font-size:11px;font-weight:400;color:#4a6080;">— ${e.local}</span></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:#00e5ff;">🌞 ${e.summer}</span>
+          <span style="font-size:12px;font-family:'Space Mono',monospace;color:#60aaff;">❄️ ${e.winter}</span>
+        </div>
+        ${e.note ? `<div style="font-size:10px;color:#4a6080;margin-top:4px;line-height:1.5;">${e.note}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
 // Init on load
 document.addEventListener('DOMContentLoaded', function() {
   renderForexSessions();
+  renderExchangeHours();
 });
 
 // ═══ TIMEZONE-AWARE CONVERTER ═══
