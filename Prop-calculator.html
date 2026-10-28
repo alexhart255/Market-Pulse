@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор проп-фирм</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#0f1115; color:#e8eaed; margin:0; padding:24px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.sub { color:#9aa0a6; margin:0 0 20px; font-size:14px; }
+  .btn { background:#2f6fed; color:#fff; border:0; border-radius:8px; padding:10px 14px; font-size:14px; cursor:pointer; margin-top:12px; }
+  .inputs { align-items:start; }
+  .inputs > div { display:flex; flex-direction:column; min-width:0; }
+  .inputs label { display:flex; align-items:flex-end; min-height:2.6em; line-height:1.3; }
+  .inputs input, .inputs select { height:44px; padding:0 12px; }
+  .inputs select { padding-right:34px; }
+  select { -webkit-appearance:none; appearance:none; padding-right:34px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%239aa0a6' stroke-width='2'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; }
+  @media (max-width:700px){ .inputs label { min-height:0; } }
+  .info b { color:#fff; }
+  .info { background:#171a21; border:1px solid #2f6fed; border-radius:12px; padding:14px 16px; margin-bottom:16px; line-height:1.6; }
+  .info h2 { font-size:15px; margin:0 0 8px; color:#c9cdd4; }
+  [hidden] { display:none !important; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tab { flex:1; background:#232833; color:#c9cdd4; border:1px solid #2a2f3a; border-radius:10px; padding:12px; font-size:15px; cursor:pointer; }
+  .tab.active { background:#2f6fed; border-color:#2f6fed; color:#fff; }
+  select { width:100%; background-color:#0f1115; border:1px solid #333a46; color:#e8eaed; border-radius:8px; padding:9px 10px; font-size:14px; }
+  .rules { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .rule { display:flex; align-items:center; gap:14px; background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:14px 16px; }
+  .rule b { font-size:28px; color:#5b8cff; }
+  .rule span { font-size:14px; color:#c9cdd4; line-height:1.4; }
+  .card { background:#171a21; border:1px solid #2a2f3a; border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:15px; margin:0 0 12px; color:#c9cdd4; }
+  .inputs { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  label { display:block; font-size:12px; color:#9aa0a6; margin:0 0 4px; }
+  input { width:100%; background:#0f1115; border:1px solid #333a46; color:#e8eaed; border-radius:8px; padding:9px 10px; font-size:14px; }
+  input:focus { outline:none; border-color:#5b8cff; }
+  .result { font-size:15px; line-height:1.55; }
+  .ok { color:#4ade80; } .bad { color:#f87171; } .warn { color:#fbbf24; }
+  .big { font-size:26px; font-weight:700; margin:8px 0; }
+  .hint { font-size:12px; color:#9aa0a6; margin-top:8px; }
+  .tool-head { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; background:none; border:0; color:inherit; font:inherit; text-align:left; cursor:pointer; padding:0; }
+  .tool-title { display:block; font-size:15px; color:#fff; font-weight:600; margin-bottom:4px; }
+  .tool-sub { display:block; font-size:13px; color:#9aa0a6; line-height:1.45; }
+  .tool-arrow { color:#5b8cff; font-size:18px; transition:transform .15s; }
+  .tool-head[aria-expanded="true"] .tool-arrow { transform:rotate(180deg); }
+  .tool-card:hover { border-color:#2f6fed; }
+  .tool-menu { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:14px; }
+  .tool-opt { background:#232833; color:#e8eaed; border:1px solid #2a2f3a; border-radius:8px; padding:11px 12px; font-size:14px; cursor:pointer; }
+  .tool-opt:hover { background:#2f6fed; border-color:#2f6fed; color:#fff; }
+  @media (max-width:700px){ .inputs, .rules, .tool-menu { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Калькулятор вывода</h1>
+  <div class="tabs">
+    <button class="tab active" id="btn-next" onclick="showTab('next')">NextPropTrader</button>
+    <button class="tab" id="btn-four" onclick="showTab('four')">4PropTrader</button>
+  </div>
+  <div id="tab-next">
+  <div class="rules">
+    <div class="rule"><b>20%</b><span>Лучший день не больше 20% от текущей прибыли</span></div>
+    <div class="rule"><b>30%</b><span>Лучшая сделка не больше 30% от текущей прибыли</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Ваши данные</h2>
+    <div class="inputs">
+      <div>
+        <label for="balance">Текущая прибыль на счёте, $</label>
+        <input id="balance" type="number" step="0.01" placeholder="например 10000">
+      </div>
+      <div>
+        <label for="bestDay">Лучший день за всю историю, $</label>
+        <input id="bestDay" type="number" step="0.01" placeholder="например 250">
+      </div>
+      <div>
+        <label for="bestTrade">Лучшая сделка за всю историю, $</label>
+        <input id="bestTrade" type="number" step="0.01" placeholder="например 200">
+      </div>
+    </div>
+    <div class="hint">Прибыль вводите ту, что лежит на счёте сейчас, после всех прошлых выводов. Лучший день и сделку меняйте только когда побили рекорд: выводы их не уменьшают.</div>
+  </div>
+
+  <div class="card">
+    <h2>Сколько можно вывести сейчас</h2>
+    <div id="result" class="result">Введите данные.</div>
+  </div>
+
+  <div class="card">
+    <h2>Проверить свою сумму</h2>
+    <label for="payoutAmount">Сколько хотите вывести, $</label>
+    <input id="payoutAmount" type="number" step="0.01" placeholder="например 1000">
+    <div id="payoutResult" class="result" style="margin-top:10px">Введите сумму вывода.</div>
+  </div>
+
+  <div class="card tool-card">
+    <button type="button" class="tool-head" id="plannerHead" aria-expanded="false" aria-controls="plannerMenu">
+      <span>
+        <span class="tool-title">План цели вывода</span>
+        <span class="tool-sub">Планировщик по правилам 20% / 30%: что получится для любой заданной суммы. Нажмите, чтобы выбрать, как открыть.</span>
+      </span>
+      <span class="tool-arrow">▾</span>
+    </button>
+    <div class="tool-menu" id="plannerMenu" hidden>
+      <button type="button" class="tool-opt" data-open="self">Открыть в этом окне</button>
+      <button type="button" class="tool-opt" data-open="tab">Открыть в новой вкладке</button>
+      <button type="button" class="tool-opt" data-open="window">Открыть в новом окне</button>
+      <button type="button" class="tool-opt" data-open="download">Скачать отдельным файлом</button>
+    </div>
+  </div>
+  </div>
+
+  <div id="tab-four" hidden>
+    <div class="rules">
+      <div class="rule"><b>40%</b><span>Лучший день не больше 40% от прибыли за текущий цикл</span></div>
+      <div class="rule"><b>4 дня</b><span>Минимум 4 прибыльных дня до запроса вывода</span></div>
+    </div>
+    <div class="card">
+      <h2>Ваши данные</h2>
+      <div class="inputs">
+        <div><label for="f_size">Размер счёта</label>
+          <select id="f_size">
+            <option value="10000">$10,000</option><option value="25000">$25,000</option>
+            <option value="50000" selected>$50,000</option><option value="100000">$100,000</option>
+            <option value="150000">$150,000</option><option value="250000">$250,000</option>
+          </select></div>
+        <div><label for="f_balance">Баланс на счёте сейчас, $</label>
+          <input id="f_balance" type="number" step="0.01" placeholder="например 53000"></div>
+        <div><label for="f_base">Баланс после последнего запроса на вывод, $</label>
+          <input id="f_base" type="number" step="0.01" placeholder="пусто, если ещё не подавали"></div>
+        <div><label for="f_day">Лучший день в цикле, $</label>
+          <input id="f_day" type="number" step="0.01" placeholder="например 800"></div>
+        <div><label for="f_days">Прибыльных дней в цикле</label>
+          <input id="f_days" type="number" step="1" placeholder="например 4"></div>
+        <div><label for="f_n">Какой по счёту вывод</label>
+          <select id="f_n"><option value="1">1-й</option><option value="2">2-й</option><option value="3">3-й</option><option value="4">4-й</option><option value="5">5-й и дальше</option></select></div>
+        <div><label for="f_paid">Уже выплачено на этом счёте за всё время, $</label>
+          <input id="f_paid" type="number" step="0.01" placeholder="пусто, если ещё не выводили"></div>
+      </div>
+      <div class="hint">Вводите баланс так, как он показан в платформе. Прибыль и прибыль цикла калькулятор считает сам. После каждого запроса на вывод (одобрили вас или отказали) впишите в «Баланс на счёте сейчас» то, что показывает платформа, и нажмите «Новый цикл». Если вывод прошёл, это баланс после вывода. Если отказали, баланс остался прежним. Он запомнится как точка отсчёта, а лучший день и прибыльные дни обнулятся. Данные сохраняются в браузере.</div>
+      <button class="btn" onclick="newCycle()">Новый цикл (после запроса на вывод)</button>
+    </div>
+    <div class="info" id="f_info"></div>
+    <div class="card">
+      <h2>Сколько можно вывести сейчас</h2>
+      <div id="f_result" class="result">Введите данные.</div>
+    </div>
+    <div class="card">
+      <h2>Проверить свою сумму</h2>
+      <label for="f_want">Сколько хотите вывести, $</label>
+      <input id="f_want" type="number" step="0.01" placeholder="например 1000">
+      <div id="f_wantResult" class="result" style="margin-top:10px">Введите сумму вывода.</div>
+    </div>
+  </div>
+</div>
+
+<script type="text/plain" id="plannerSrc"><!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>План цели вывода</title><style>body{background:#11151c;color:#eef0f5;font:16px system-ui;margin:0;padding:24px}main{max-width:900px;margin:auto}.card{background:#1a202a;padding:22px;border-radius:14px;margin:18px 0}input{background:#10141b;color:white;border:1px solid #556070;border-radius:8px;padding:12px;font-size:20px;width:220px;max-width:90%}label{display:block;margin-bottom:10px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:14px 6px;border-bottom:1px solid #39414d}.value{color:#6be49e;font-size:22px}.note{color:#bac3d0;line-height:1.6}button{padding:10px;border:0;border-radius:6px;cursor:pointer}</style><main><h1>Произвольная цель вывода</h1><p class="note">Планировщик по заданной модели: лучший день ≤ 20% чистой прибыли, лучшая сделка ≤ 30%. Это расчёт консистентности, а не подтверждение доступной выплаты компанией.</p><section class="card"><label for="goal">Введите цель / предполагаемую общую чистую прибыль, $</label><input id="goal" type="number" min="0.01" step="0.01" value="750"><button id="reset">Сбросить</button><p id="err"></p><table><tbody id="out"></tbody></table></section><section class="card"><h2>Как читать результат</h2><p class="note">Расчёт предполагает, что ваша общая чистая прибыль равна введённой цели. Если хотите вывести $750, но накопленная чистая прибыль другая, проценты нужно считать от этой прибыли, а не от заявки $750.</p><p class="note">Дневной результат — сумма прибыльных и убыточных сделок за сессию. Если единственная сделка дня прибыльная, она одновременно является результатом дня: тогда ограничение дня 20% строже ограничения сделки 30%.</p><p class="note">Пять прибыльных дней — математический минимум в этой модели, а не отдельное правило компании. Он достигается при пяти равных прибыльных днях без убыточных дней. При убытках обычно потребуется больше.</p><p class="note">Не вводите номинальные $50,000 funded-аккаунта как заработанную прибыль. Планировщик не учитывает drawdown, резерв, комиссии сверх уже учтённых в P&amp;L, ограничения выплат и порядок расчёта после прошлых выплат.</p></section></main><script>const g=document.getElementById('goal'),o=document.getElementById('out'),e=document.getElementById('err');const money=x=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(x);function calc(){const n=Number(g.value);if(!Number.isFinite(n)||n<=0){o.innerHTML='';e.textContent='Введите положительную сумму.';return;}e.textContent='';const d=Math.floor((n*.2+1e-9)*100)/100,t=Math.floor((n*.3+1e-9)*100)/100;o.innerHTML=[['Введённая цель',money(n)],['Чистая прибыль, принятая для этого плана',money(n)],['Максимум лучшего дня (20%)',money(d)],['Максимум лучшей сделки (30%)',money(t)],['Если за день только одна прибыльная сделка',money(d)+' максимум'],['Минимум прибыльных дней при отсутствии убытков','5'],['Пример распределения на 10 дней',money(n/10)+' в среднем за день']].map(([a,b])=>'<tr><td>'+a+'</td><td class="value">'+b+'</td></tr>').join('');try{localStorage.setItem('customGoal',g.value)}catch{}}g.oninput=calc;document.getElementById('reset').onclick=()=>{g.value='';calc()};try{const v=localStorage.getItem('customGoal');if(v!==null)g.value=v}catch{}calc();<\/script></html></script>
+
+<script>
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function money(x){ return '$' + x.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+const EPS = 0.000001;
+
+function calculate(){
+  const balance = num(document.getElementById('balance').value);
+  const bestDay = Math.max(0, num(document.getElementById('bestDay').value));
+  const bestTrade = Math.max(0, num(document.getElementById('bestTrade').value));
+  const want = num(document.getElementById('payoutAmount').value);
+
+  const r = document.getElementById('result');
+  const pr = document.getElementById('payoutResult');
+
+  if(balance <= 0){
+    r.innerHTML = '<span class="warn">Введите текущую прибыль больше нуля.</span>';
+    pr.innerHTML = '<span class="warn">Нет прибыли для вывода.</span>';
+    return;
+  }
+
+  const required = Math.max(bestDay / 0.20, bestTrade / 0.30);
+  const dayOk = bestDay <= balance * 0.20 + EPS;
+  const tradeOk = bestTrade <= balance * 0.30 + EPS;
+  const canPayout = dayOk && tradeOk;
+
+  let html = '';
+  html += '<div>Текущая прибыль: <b>' + money(balance) + '</b></div>';
+  html += '<div>Лучший день: <b>' + money(bestDay) + '</b> (допустимо до ' + money(balance * 0.20) + ')</div>';
+  html += '<div>Лучшая сделка: <b>' + money(bestTrade) + '</b> (допустимо до ' + money(balance * 0.30) + ')</div>';
+
+  if(canPayout){
+    html += '<div class="big ok">Можно вывести до ' + money(balance) + '</div>';
+    html += '<div class="ok">Правила соблюдены.</div>';
+  } else {
+    html += '<div class="big bad">Сейчас вывод недоступен</div>';
+    html += '<div class="bad">Нужна прибыль минимум ' + money(required) + '.</div>';
+    html += '<div class="warn">Не хватает: <b>' + money(required - balance) + '</b></div>';
+    if(!dayOk) html += '<div class="bad">Лучший день больше 20% текущей прибыли.</div>';
+    if(!tradeOk) html += '<div class="bad">Лучшая сделка больше 30% текущей прибыли.</div>';
+  }
+  r.innerHTML = html;
+
+  if(want <= 0){
+    pr.innerHTML = '<span class="warn">Введите сумму вывода.</span>';
+    return;
+  }
+  if(!canPayout){
+    pr.innerHTML = '<div class="bad">Вывод ' + money(want) + ' сейчас невозможен: сначала доведите прибыль до ' + money(required) + '.</div>';
+    return;
+  }
+  if(want > balance){
+    pr.innerHTML = '<div class="bad">Нельзя вывести ' + money(want) + ': на счёте только ' + money(balance) + '.</div>';
+    return;
+  }
+
+  const after = balance - want;
+  let out = '<div class="ok">Вывод ' + money(want) + ' доступен.</div>';
+  out += '<div>После вывода на счёте останется: <b>' + money(after) + '</b></div>';
+  if(after + EPS >= required){
+    out += '<div class="ok">Остатка достаточно: следующий вывод останется доступным.</div>';
+  } else {
+    out += '<div class="warn">Следующий вывод будет заблокирован. Нужно набрать прибыль до ' + money(required) + ', то есть ещё <b>' + money(required - after) + '</b>.</div>';
+  }
+  pr.innerHTML = out;
+}
+
+const FOUR = {10000:{t:600,c:900}, 25000:{t:1500,c:1500}, 50000:{t:3000,c:2000}, 100000:{t:6000,c:2500}, 150000:{t:8000,c:3000}, 250000:{t:10000,c:4000}};
+const F_MIN = 900, F_NET = 100;
+
+function showTab(name){
+  document.getElementById('tab-next').hidden = name !== 'next';
+  document.getElementById('tab-four').hidden = name !== 'four';
+  document.getElementById('btn-next').classList.toggle('active', name === 'next');
+  document.getElementById('btn-four').classList.toggle('active', name === 'four');
+}
+
+function netPayout(amount, paid){
+  const free = Math.max(0, 8000 - paid);
+  const fee = Math.max(0, amount - free) * 0.05;
+  return { fee: fee, net: amount - fee };
+}
+
+function calculateFour(){
+  const g = id => document.getElementById(id);
+  const acc = FOUR[g('f_size').value];
+  const size = parseInt(g('f_size').value, 10);
+  const balance = num(g('f_balance').value);
+  const base = g('f_base').value === '' ? size : num(g('f_base').value);
+  const profit = balance - size;
+  const cycle = balance - base;
+  const day = Math.max(0, num(g('f_day').value));
+  const days = num(g('f_days').value);
+  const n = parseInt(g('f_n').value, 10);
+  const want = num(g('f_want').value);
+  const paid = Math.max(0, num(g('f_paid').value));
+  const r = g('f_result'), wr = g('f_wantResult');
+
+  g('f_info').innerHTML =
+    '<h2>Что оставлять на счёте при выводе</h2>' +
+    '<div>Размер счёта: <b>' + money(size) + '</b></div>' +
+    '<div>Порог вывода: <b>' + money(acc.t) + '</b></div>' +
+    '<div>Запас над порогом: <b>' + money(F_NET) + '</b> (одинаков для всех счетов)</div>' +
+    '<div>После вывода оставляйте прибыли не меньше: <b>' + money(acc.t + F_NET) + '</b></div>' +
+    '<div>То есть баланс в платформе должен остаться не меньше: <b>' + money(size + acc.t + F_NET) + '</b></div>' +
+    '<div>Прибыльных дней до запроса вывода: минимум <b>4</b>. Они не обязаны идти подряд: убыточные дни между ними допустимы, считается общее число прибыльных дней в цикле.</div>';
+
+
+  if(balance <= 0){
+    r.innerHTML = '<span class="warn">Введите баланс на счёте.</span>';
+    wr.innerHTML = '<span class="warn">Введите баланс на счёте.</span>';
+    return;
+  }
+  const above = Math.max(0, profit - acc.t);
+  const eligible = Math.max(0, above - F_NET);
+  const cap = n <= 4 ? acc.c * (1 + 0.1 * (n - 1)) : Infinity;
+  const maxPayout = Math.min(eligible, cap);
+  const requiredCycle = day / 0.40;
+  const dayOk = cycle > 0 && day <= cycle * 0.40 + EPS;
+  const daysOk = days >= 4;
+  const aboveThreshold = profit > acc.t;
+  const minOk = maxPayout + EPS >= F_MIN;
+  const can = dayOk && daysOk && aboveThreshold && minOk;
+
+  let h = '';
+  h += '<div class="' + (aboveThreshold ? 'ok' : 'bad') + '">Прибыль на счёте: <b>' + money(profit) + '</b>, порог вывода: <b>' + money(acc.t) + '</b></div>';
+  h += '<div class="' + (minOk ? 'ok' : 'bad') + '">Сверх порога: <b>' + money(above) + '</b>, минус запас $' + F_NET + ': <b>' + money(eligible) + '</b>' + (cap === Infinity ? ', лимита на вывод нет' : ', лимит на этот вывод: <b>' + money(cap) + '</b>') + '</div>';
+  h += '<div class="' + (cycle > 0 ? 'ok' : 'bad') + '">Прибыль за текущий цикл: <b>' + money(cycle) + '</b></div>';
+  h += '<div class="' + (dayOk ? 'ok' : 'bad') + '">Лучший день: <b>' + money(day) + '</b> (допустимо до ' + money(Math.max(0, cycle * 0.40)) + ')</div>';
+  h += '<div class="' + (daysOk ? 'ok' : 'bad') + '">Прибыльных дней: <b>' + days + '</b> из 4 нужных</div>';
+
+  if(can){
+    h += '<div class="big ok">Можно вывести до ' + money(maxPayout) + '</div>';
+    h += '<div class="ok">Условия выполнены.</div>';
+    const np = netPayout(maxPayout, paid);
+    h += '<div class="ok">На руки придёт: <b>' + money(np.net) + '</b>' + (np.fee > 0 ? ' (удержат 5%: ' + money(np.fee) + ')' : ' (удержаний нет)') + '</div>';
+  } else {
+    h += '<div class="big bad">Сейчас вывод недоступен</div>';
+    if(!aboveThreshold) h += '<div class="bad">Прибыль не выше порога: нужно ещё ' + money(acc.t - profit + F_MIN) + ', чтобы набрать минимальный вывод ' + money(F_MIN) + '.</div>';
+    else if(!minOk) h += '<div class="bad">Доступно меньше минимального вывода ' + money(F_MIN) + ': не хватает ' + money(F_MIN - maxPayout) + '.</div>';
+    if(!dayOk) h += '<div class="bad">Лучший день больше 40% прибыли цикла. Нужно заработать ещё <b>' + money(base + requiredCycle - balance) + '</b>, чтобы баланс на счёте стал не меньше ' + money(base + requiredCycle) + '.</div>';
+    if(!daysOk) h += '<div class="bad">Нужно ещё прибыльных дней: ' + Math.max(0, 4 - days) + '.</div>';
+  }
+  if(n >= 2 && n <= 4) h += '<div class="hint">Лимит 2–4 вывода я считаю как +10% к базовому за каждый вывод: на сайте формулировка неоднозначная.</div>';
+  r.innerHTML = h;
+
+  if(want <= 0){ wr.innerHTML = '<span class="warn">Введите сумму вывода.</span>'; return; }
+  if(!can){ wr.innerHTML = '<div class="bad">Вывод ' + money(want) + ' сейчас невозможен, см. условия выше.</div>'; return; }
+  if(want + EPS < F_MIN){ wr.innerHTML = '<div class="bad">Минимальный вывод ' + money(F_MIN) + '.</div>'; return; }
+  if(want > maxPayout + EPS){ wr.innerHTML = '<div class="bad">Нельзя вывести ' + money(want) + ': максимум сейчас ' + money(maxPayout) + '.</div>'; return; }
+  const left = profit - want;
+  let o = '<div class="ok">Вывод ' + money(want) + ' доступен.</div>';
+  const nw = netPayout(want, paid);
+  o += '<div class="ok">На руки придёт: <b>' + money(nw.net) + '</b>' + (nw.fee > 0 ? ' (удержат 5%: ' + money(nw.fee) + ')' : ' (удержаний нет)') + '</div>';
+  o += '<div>После вывода прибыль на счёте: <b>' + money(left) + '</b></div>';
+  if(left + EPS < acc.t + F_NET) o += '<div class="warn">Остаток ниже порога плюс запас $' + F_NET + ' (' + money(acc.t + F_NET) + '): запрос могут отклонить.</div>';
+  wr.innerHTML = o;
+}
+
+function newCycle(){
+  const g = id => document.getElementById(id);
+  if(!confirm('Начать новый цикл? Точкой отсчёта станет баланс из поля «Баланс на счёте сейчас», лучший день и прибыльные дни обнулятся.')) return;
+  g('f_base').value = g('f_balance').value;
+  g('f_day').value = '';
+  g('f_days').value = '';
+  calculateFour(); save();
+}
+
+/* Планировщик цели вывода: исходный код хранится ниже и открывается как отдельная страница */
+function plannerHtml(){
+  return document.getElementById('plannerSrc').textContent.replace(/<\\\/script>/g, '<' + '/script>');
+}
+function plannerUrl(){
+  return URL.createObjectURL(new Blob([plannerHtml()], {type:'text/html;charset=utf-8'}));
+}
+function openPlanner(mode){
+  if(mode === 'download'){
+    const a = document.createElement('a');
+    a.href = plannerUrl();
+    a.download = 'plan-celi-vyvoda.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return;
+  }
+  const url = plannerUrl();
+  if(mode === 'self'){ location.href = url; return; }
+  const w = mode === 'window'
+    ? window.open(url, '_blank', 'popup=yes,width=1000,height=800')
+    : window.open(url, '_blank');
+  if(!w) alert('Браузер заблокировал новое окно. Разрешите всплывающие окна для этой страницы.');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+document.getElementById('plannerHead').addEventListener('click', function(){
+  const menu = document.getElementById('plannerMenu');
+  const open = menu.hidden;
+  menu.hidden = !open;
+  this.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+document.querySelectorAll('#plannerMenu [data-open]').forEach(b => {
+  b.addEventListener('click', () => openPlanner(b.dataset.open));
+});
+
+const KEY = 'payout_calc_v4';
+function save(){
+  try{
+    const d = {};
+    document.querySelectorAll('input,select').forEach(e => { if(e.id) d[e.id] = e.value; });
+    localStorage.setItem(KEY, JSON.stringify(d));
+  }catch(err){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+    for(const id in d){ const e = document.getElementById(id); if(e) e.value = d[id]; }
+  }catch(err){}
+}
+
+document.addEventListener('input', () => { calculate(); calculateFour(); save(); });
+document.addEventListener('change', () => { calculateFour(); save(); });
+load();
+calculate();
+calculateFour();
+</script>
+</body>
+</html>
