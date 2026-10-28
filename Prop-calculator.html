@@ -55,6 +55,7 @@
   .tool-opt { background:#232833; color:#e8eaed; border:1px solid #2a2f3a; border-radius:8px; padding:11px 12px; font-size:14px; cursor:pointer; }
   .tool-opt:hover { background:#2f6fed; border-color:#2f6fed; color:#fff; }
   @media (max-width:700px){ .inputs, .rules, .tool-menu { grid-template-columns:1fr; } }
+  .sync .btn { margin:0 0 0 10px; padding:6px 12px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -62,6 +63,8 @@
   <h1>Калькулятор вывода</h1>
   <div class="sync">
     <span id="syncStatus">Облако: подключение…</span>
+    <button class="btn" id="loginBtn" hidden>Войти через Google</button>
+    <button class="btn" id="logoutBtn" hidden>Выйти</button>
   </div>
   <div class="tabs">
     <button class="tab active" id="btn-next" onclick="showTab('next')">NextPropTrader</button>
@@ -392,9 +395,12 @@ calculateFour();
 </script>
 
 <script type="module">
-/* Облачная синхронизация через Firebase Firestore без входа. Если облако недоступно, калькулятор работает как раньше. */
+/* Облачная синхронизация через Firebase с входом через Google.
+   Данные каждого пользователя лежат в users/<его uid>/calculator/state.
+   Без входа облако не используется, цифры остаются только на этом устройстве. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAbBDDHF2RRBAHxR7PKYG2aECEj6N5F_qg",
@@ -407,11 +413,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const ref = () => doc(db, 'calculator', 'state');
+const auth = getAuth(app);
 
 const statusEl = document.getElementById('syncStatus');
-let ready = false, applying = false, timer = null;
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+let ready = false, applying = false, timer = null, uid = null;
 
+const ref = () => doc(db, 'users', uid, 'calculator', 'state');
 function setStatus(text, cls){ statusEl.textContent = text; statusEl.className = cls || ''; }
 function collect(){
   const f = {};
@@ -425,6 +434,7 @@ function apply(fields){
   applying = false;
 }
 async function push(){
+  if(!uid) return;
   try{
     await setDoc(ref(), { fields: collect(), updatedAt: serverTimestamp() });
     setStatus('Облако: сохранено ✓', 'ok');
@@ -433,25 +443,42 @@ async function push(){
   }
 }
 window.cloudPush = function(){
-  if(!ready || applying) return;
+  if(!ready || applying || !uid) return;
   clearTimeout(timer);
   setStatus('Облако: сохранение…', 'warn');
   timer = setTimeout(push, 700);
 };
 
-(async () => {
+loginBtn.onclick = async () => {
+  try{
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  }catch(e){
+    setStatus('Вход не удался (' + (e.code || e.message) + ')', 'bad');
+  }
+};
+logoutBtn.onclick = async () => { try{ await signOut(auth); }catch(e){} };
+
+onAuthStateChanged(auth, async (user) => {
+  ready = false;
+  if(!user){
+    uid = null;
+    loginBtn.hidden = false; logoutBtn.hidden = true;
+    setStatus('Облако: вход не выполнен. Данные только на этом устройстве.', 'warn');
+    return;
+  }
+  uid = user.uid;
+  loginBtn.hidden = true; logoutBtn.hidden = false;
   setStatus('Облако: загрузка…', 'warn');
   try{
     const snap = await getDoc(ref());
     if(snap.exists() && snap.data().fields){ apply(snap.data().fields); }
     else { await push(); }
     ready = true;
-    setStatus('Облако: синхронизировано ✓', 'ok');
+    setStatus('Облако: синхронизировано ✓ (' + (user.email || 'Google') + ')', 'ok');
   }catch(e){
-    ready = false;
-    setStatus('Облако: нет связи (' + (e.code || e.message) + '). Данные пока только на этом устройстве.', 'bad');
+    setStatus('Облако: нет доступа (' + (e.code || e.message) + '). Данные пока только на этом устройстве.', 'bad');
   }
-})();
+});
 </script>
 </body>
 </html>
