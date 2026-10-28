@@ -61,8 +61,7 @@
 <div class="wrap">
   <h1>Калькулятор вывода</h1>
   <div class="sync">
-    <span id="syncStatus">Облако: не подключено. Данные хранятся только на этом устройстве.</span>
-    <button type="button" class="btn" id="syncBtn" hidden>Войти через Google</button>
+    <span id="syncStatus">Облако: подключение…</span>
   </div>
   <div class="tabs">
     <button class="tab active" id="btn-next" onclick="showTab('next')">NextPropTrader</button>
@@ -393,9 +392,8 @@ calculateFour();
 </script>
 
 <script type="module">
-/* Облачная синхронизация через Firebase (Google-вход + Firestore). Если облако недоступно, калькулятор работает как раньше. */
+/* Облачная синхронизация через Firebase Firestore без входа. Если облако недоступно, калькулятор работает как раньше. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -408,12 +406,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 const ref = () => doc(db, 'calculator', 'state');
 
 const statusEl = document.getElementById('syncStatus');
-const btn = document.getElementById('syncBtn');
 let ready = false, applying = false, timer = null;
 
 function setStatus(text, cls){ statusEl.textContent = text; statusEl.className = cls || ''; }
@@ -443,36 +439,19 @@ window.cloudPush = function(){
   timer = setTimeout(push, 700);
 };
 
-btn.hidden = false;
-btn.addEventListener('click', async () => {
-  try{
-    if(auth.currentUser){ await signOut(auth); }
-    else { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  }catch(e){
-    setStatus('Облако: не удалось войти (' + (e.code || e.message) + ')', 'bad');
-  }
-});
-
-onAuthStateChanged(auth, async user => {
-  if(!user){
-    ready = false;
-    btn.textContent = 'Войти через Google';
-    setStatus('Облако: войдите, чтобы данные синхронизировались между устройствами.');
-    return;
-  }
-  btn.textContent = 'Выйти';
+(async () => {
   setStatus('Облако: загрузка…', 'warn');
   try{
     const snap = await getDoc(ref());
     if(snap.exists() && snap.data().fields){ apply(snap.data().fields); }
     else { await push(); }
     ready = true;
-    setStatus('Облако: синхронизировано ✓ (' + user.email + ')', 'ok');
+    setStatus('Облако: синхронизировано ✓', 'ok');
   }catch(e){
     ready = false;
-    setStatus('Облако: нет доступа (' + (e.code || e.message) + ')', 'bad');
+    setStatus('Облако: нет связи (' + (e.code || e.message) + '). Данные пока только на этом устройстве.', 'bad');
   }
-});
+})();
 </script>
 </body>
 </html>
