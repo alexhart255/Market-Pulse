@@ -43,6 +43,8 @@
   .ok { color:#4ade80; } .bad { color:#f87171; } .warn { color:#fbbf24; }
   .big { font-size:26px; font-weight:700; margin:8px 0; }
   .hint { font-size:12px; color:#9aa0a6; margin-top:8px; }
+  .sync { display:flex; align-items:center; justify-content:space-between; gap:12px; background:#171a21; border:1px solid #2a2f3a; border-radius:10px; padding:10px 14px; margin:0 0 16px; font-size:13px; color:#9aa0a6; }
+  .sync .btn { margin:0; padding:8px 12px; font-size:13px; white-space:nowrap; }
   .tool-head { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; background:none; border:0; color:inherit; font:inherit; text-align:left; cursor:pointer; padding:0; }
   .tool-title { display:block; font-size:15px; color:#fff; font-weight:600; margin-bottom:4px; }
   .tool-sub { display:block; font-size:13px; color:#9aa0a6; line-height:1.45; }
@@ -58,6 +60,10 @@
 <body>
 <div class="wrap">
   <h1>Калькулятор вывода</h1>
+  <div class="sync">
+    <span id="syncStatus">Облако: не подключено. Данные хранятся только на этом устройстве.</span>
+    <button type="button" class="btn" id="syncBtn" hidden>Войти через Google</button>
+  </div>
   <div class="tabs">
     <button class="tab active" id="btn-next" onclick="showTab('next')">NextPropTrader</button>
     <button class="tab" id="btn-four" onclick="showTab('four')">4PropTrader</button>
@@ -370,6 +376,7 @@ function save(){
     document.querySelectorAll('input,select').forEach(e => { if(e.id) d[e.id] = e.value; });
     localStorage.setItem(KEY, JSON.stringify(d));
   }catch(err){}
+  if(window.cloudPush) window.cloudPush();
 }
 function load(){
   try{
@@ -383,6 +390,89 @@ document.addEventListener('change', () => { calculateFour(); save(); });
 load();
 calculate();
 calculateFour();
+</script>
+
+<script type="module">
+/* Облачная синхронизация через Firebase (Google-вход + Firestore). Если облако недоступно, калькулятор работает как раньше. */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAbBDDHF2RRBAHxR7PKYG2aECEj6N5F_qg",
+  authDomain: "prop-calculator-35ed8.firebaseapp.com",
+  projectId: "prop-calculator-35ed8",
+  storageBucket: "prop-calculator-35ed8.firebasestorage.app",
+  messagingSenderId: "649187033301",
+  appId: "1:649187033301:web:08a7e193229bf45f6a625c"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const ref = () => doc(db, 'calculator', 'state');
+
+const statusEl = document.getElementById('syncStatus');
+const btn = document.getElementById('syncBtn');
+let ready = false, applying = false, timer = null;
+
+function setStatus(text, cls){ statusEl.textContent = text; statusEl.className = cls || ''; }
+function collect(){
+  const f = {};
+  document.querySelectorAll('input,select').forEach(e => { if(e.id) f[e.id] = e.value; });
+  return f;
+}
+function apply(fields){
+  applying = true;
+  for(const id in fields){ const e = document.getElementById(id); if(e) e.value = fields[id]; }
+  window.calculate(); window.calculateFour(); window.save();
+  applying = false;
+}
+async function push(){
+  try{
+    await setDoc(ref(), { fields: collect(), updatedAt: serverTimestamp() });
+    setStatus('Облако: сохранено ✓', 'ok');
+  }catch(e){
+    setStatus('Облако: ошибка сохранения (' + (e.code || e.message) + ')', 'bad');
+  }
+}
+window.cloudPush = function(){
+  if(!ready || applying) return;
+  clearTimeout(timer);
+  setStatus('Облако: сохранение…', 'warn');
+  timer = setTimeout(push, 700);
+};
+
+btn.hidden = false;
+btn.addEventListener('click', async () => {
+  try{
+    if(auth.currentUser){ await signOut(auth); }
+    else { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  }catch(e){
+    setStatus('Облако: не удалось войти (' + (e.code || e.message) + ')', 'bad');
+  }
+});
+
+onAuthStateChanged(auth, async user => {
+  if(!user){
+    ready = false;
+    btn.textContent = 'Войти через Google';
+    setStatus('Облако: войдите, чтобы данные синхронизировались между устройствами.');
+    return;
+  }
+  btn.textContent = 'Выйти';
+  setStatus('Облако: загрузка…', 'warn');
+  try{
+    const snap = await getDoc(ref());
+    if(snap.exists() && snap.data().fields){ apply(snap.data().fields); }
+    else { await push(); }
+    ready = true;
+    setStatus('Облако: синхронизировано ✓ (' + user.email + ')', 'ok');
+  }catch(e){
+    ready = false;
+    setStatus('Облако: нет доступа (' + (e.code || e.message) + ')', 'bad');
+  }
+});
 </script>
 </body>
 </html>
